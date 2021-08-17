@@ -1,0 +1,4 @@
+.vscode/
+docs/
+tsconfig.json
+config.ts
