@@ -1,7 +1,7 @@
 import Conn from "../core/Conn.ts";
+import Crypto from "../core/Crypto.ts";
 import Mapp from "../core/Mapp.ts";
 import Validate from "../core/Validate.ts";
-import Web from "../core/Web.ts";
 
 export class AwardList {
 	public druid = 0;		// $5.00 for a Druid Award
@@ -26,14 +26,12 @@ export class ForumPost {
 	
 	// Fixed Content
 	private forum: string;
+	private id: number;					// Tracks the ID of the post within its parent forum.
 	private category: string;
 	private title: string;
-	
-	private image: string;				// Image Slug URL (our internal slug)
 	private url: string;				// Link to the Source URL (External Site)
-	private slug: string;				// Our internal URL / path / slug.
 	private authorId: number;
-	
+	private hash: string;				// Hash (for image and object storage)
 	private content: string;			// Text content for the post.
 	
 	// Tracked Values
@@ -54,44 +52,42 @@ export class ForumPost {
 	
 	constructor(
 		forum: string,
+		id: number,
 		category: string,
 		title: string,
-		image: string,
 		url: string,
 		authorId: number,
 		status: ForumPostStatus,
 		content: string = "",
-		slug: string = "",
 	) {
 		this.forum = forum;
+		this.id = id;
 		this.category = category;
 		this.title = title;
-		this.image = image;
 		this.url = url;
 		this.authorId = authorId;
 		this.status = status;
 		this.content = content;
-		this.slug = !slug ? Web.getSlugFromTitle(this.title) : slug;		// Automatically Generate the URL from the Title
+		this.hash = Crypto.simpleHash(this.forum + this.id + this.authorId + this.id + this.category);
 	}
 	
 	public static buildPost(
 		conn: Conn,
 		forum: string,
+		id: number,
 		category: string,
 		title: string,
-		image: string,
 		url: string,
 		authorId: number,
 		status: ForumPostStatus,
 		content = "",
-		slug = "",
 	): ForumPost | false {
 		
 		// Verify certain values exist:
+		if(typeof id !== "number") { return conn.error("Invalid `id` entry.") }
 		if(typeof forum !== "string" || !forum) { return conn.error("Must include a `forum` entry."); }
 		if(typeof title !== "string" || !title) { return conn.error("Must include a `title` entry."); }
 		if(typeof url !== "string" || !url) { return conn.error("Must include a `url` entry."); }
-		if(typeof image !== "string" || !image) { return conn.error("Must include an `image` entry."); }
 		
 		// Size Limits
 		if(title.length < 3) { return conn.error("`title` is too short."); }
@@ -121,32 +117,13 @@ export class ForumPost {
 			}
 		}
 		
-		// Image Requirements
-		if(!image.match(/^[\w\W]+(\.)+(jpg|jpeg|png|webp)$/i)) {
-			return conn.error("Invalid `image` mime-type used.");
-		}
-		
-		// If we're retrieving a full image URL, we'll need to run this:
-		// try {
-		// 	new URL(image);
-		// } catch {
-		// 	return conn.error("Invalid `image` url.");
-		// }
-		
 		// TODO: Make sure the author exists.
 		
 		// TODO: Verify user permissions.
 		
 		// TODO: Determine status (such as if the user can make it featured)
 		
-		// Make sure we're not overwriting an existing URL.
-		if(Mapp.redis.hget("post:" + forum + ":" + slug, "slug")) {
-			
-			// TODO: 
-			// If we are overwriting an existing URL, we need to modify it a bit.
-		}
-		
-		return new ForumPost(forum, category, title, image, url, authorId, status, content, slug);
+		return new ForumPost(forum, id, category, title, url, authorId, status, content);
 	}
 	
 	public applyNewPost(status = ForumPostStatus.Automatic) {
@@ -181,25 +158,26 @@ export class ForumPost {
 		return true;
 	}
 	
-	public static async loadFromSlug(conn: Conn, forum: string, slug: string): Promise<ForumPost | false> {
-		const p = await Mapp.redis.hmget("post:" + forum + ":" + slug,
+	public static async loadFromId(conn: Conn, forum: string, id: number): Promise<ForumPost | false> {
+		const raw = await Mapp.redis.hmget("post:" + forum + ":" + id,
 		
 			// Fixed Content
-			"category",			// 0
-			"title",			// 1
-			"image",			// 2
-			"url",				// 3
-			"authorId",			// 4
-			"content",			// 5
-			"slug",				// 6
+			"forum",			// 0
+			"id",				// 1
+			"category",			// 2
+			"title",			// 3
+			"url",				// 4
+			"authorId",			// 5
+			"hash",				// 6
+			"content",			// 7
 			
 			// Tracked Values
-			"status",			// 7
-			"timePosted",		// 8
-			"timeEdited",		// 9
-			"views",			// 10
-			"clicks",			// 11
-			"comments",			// 12
+			"status",			// 8
+			"timePosted",		// 9
+			"timeEdited",		// 10
+			"views",			// 11
+			"clicks",			// 12
+			"comments",			// 13
 			
 			// Awards
 			"awards.druid",
@@ -208,64 +186,63 @@ export class ForumPost {
 			"awards.seed",
 		);
 		
-		if(typeof p[1] !== "string") { return conn.error("Entry loaded is invalid."); }
+		if(typeof raw[1] !== "string") { return conn.error("Entry loaded is invalid."); }
 		
 		const post = ForumPost.buildPost(
 			conn,
-			forum,
-			p[0] as string,
-			p[1] as string,
-			p[2] as string,
-			p[3] as string,
-			Number(p[4] as string),
-			Number(p[7] as string),
-			p[5] as string,
-			slug
+			forum,								// forum
+			Number(raw[1] as string),			// id
+			raw[2] as string,					// category
+			raw[3] as string,					// title
+			raw[4] as string,					// url
+			Number(raw[5] as string),			// authorId
+												// hash (no need to send)
+			Number(raw[8] as string),			// status (required for verification)
+			raw[7] as string,					// content
 		);
 		
 		if(!post) { return false; }
 		
 		post.applyTrackedValues(
-			Number(p[7] as string),
-			Number(p[8] as string),
-			Number(p[9] as string),
-			Number(p[10] as string),
-			Number(p[11] as string),
-			Number(p[12] as string)
+			Number(raw[8] as string),			// status
+			Number(raw[9] as string),			// timePosted
+			Number(raw[10] as string),			// timeEdited
+			Number(raw[11] as string),			// views
+			Number(raw[12] as string),			// clicks
+			Number(raw[13] as string)			// comments
 		);
 		
-		post.applyAwards(Number(p[13] as string), Number(p[14] as string), Number(p[15] as string), Number(p[16] as string));
+		post.applyAwards(Number(raw[13] as string), Number(raw[14] as string), Number(raw[15] as string), Number(raw[16] as string));
 		
 		return post;
 	}
 	
 	public saveToRedis() {
-		Mapp.redis.hmset("post:" + this.forum + ":" + this.slug,
+		Mapp.redis.hmset("post:" + this.forum + ":" + this.id,
 			
 			// Fixed Content
+			["forum", this.forum],
+			["id", this.id],
 			["category", this.category],
 			["title", this.title],
-			["image", this.image],
 			["url", this.url],
 			["authorId", this.authorId],
+			["hash", this.hash],
 			["content", this.content],
-			["timePosted", this.timePosted],
-			["slug", this.slug],
 			
-			// ----- Commonly Updated Values ----- //
+			// Tracked Values
 			["status", this.status],
+			["timePosted", this.timePosted],
+			["timeEdited", this.timeEdited],
+			["views", this.views],
+			["clicks", this.clicks],
+			["comments", this.comments],
 			
 			// Awards
 			["awards.druid", this.awards.druid],
 			["awards.tree", this.awards.tree],
 			["awards.plant", this.awards.plant],
 			["awards.seed", this.awards.seed],
-			
-			// Tracked Values
-			["timeEdited", this.timeEdited],
-			["views", this.views],
-			["clicks", this.clicks],
-			["comments", this.comments],
 		);
 	}
 	
@@ -273,11 +250,6 @@ export class ForumPost {
 	public sanitizePostData() {
 		this.title = Validate.safeText(this.title);
 		this.content = Validate.safeText(this.content);
-	}
-	
-	// GET API
-	public static get(forum: string, slug: string) {
-		// Mapp.redis.hgetall("post:" + forum + ":" + slug);
 	}
 }
 

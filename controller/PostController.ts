@@ -20,7 +20,7 @@ export default class PostController extends WebController {
 	}
 	
 	// GET /post/:forum							// Returns recent posts that the user hasn't acquired yet.
-	// GET /post/:forum/:slug					// Returns a specific post based on a slug.
+	// GET /post/:forum/:id						// Returns a specific post based on an id.
 	async getController(conn: Conn): Promise<Response> {
 		
 		// Make sure the forum exists
@@ -28,17 +28,14 @@ export default class PostController extends WebController {
 			return await conn.sendFail("Post Request: Forum does not exist.");
 		}
 		
-		// If we're checking slugs, e.g. GET /post/:forum/:slug
+		// If we're checking IDs, e.g. GET /post/:forum/:id
 		if(conn.url3) {
 			
 			// Make sure the slug is valid:
 			if(!Validate.isValidSlug(conn.url3)) { return await conn.sendFail("Post Request: Invalid post url."); }
 			
-			// Attempt to retrieve the post:
-			ForumPost.loadFromSlug(conn, conn.url2, conn.url3);
-			
 			// Retrieve the post
-			const post = await ForumPost.loadFromSlug(conn, conn.url2, conn.url3);
+			const post = await ForumPost.loadFromId(conn, conn.url2, Number(conn.url3));
 			
 			if(post) {
 				return await conn.sendJson(post);
@@ -58,14 +55,13 @@ export default class PostController extends WebController {
 		const post = ForumPost.buildPost(
 			conn,
 			rawData.forum && typeof rawData.forum === "string" ? rawData.forum : "",
+			rawData.id && typeof rawData.id === "number" ? rawData.id : 0,
 			rawData.category && typeof rawData.category === "string" ? rawData.category : "",
 			rawData.title && typeof rawData.title === "string"? rawData.title : "",
-			rawData.image && typeof rawData.image === "string" ? rawData.image : "",
 			rawData.url && typeof rawData.url === "string" ? rawData.url : "",
 			rawData.authorId && typeof rawData.authorId === "string" ? Number(rawData.authorId) : 0,
 			rawData.status && typeof rawData.status === "string" ? Number(rawData.status) : ForumPostStatus.Automatic,
 			rawData.content && typeof rawData.content === "string" ? rawData.content : "",
-			rawData.slug && typeof rawData.slug === "string" ? rawData.slug : "",
 		);
 		
 		// On Failure
