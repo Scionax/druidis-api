@@ -1,7 +1,8 @@
 #!/usr/bin/env deno
 
-// deno run --allow-net --allow-write --allow-read --allow-run server.ts
-// deno run --allow-net --allow-write --allow-read --allow-run server.ts -port 8000 -specialOpts needToSetup
+// deno run --allow-net --allow-write --allow-read --allow-run --allow-env server.ts
+// deno run --allow-net --allow-write --allow-read --allow-run --allow-env server.ts -port 8000 -specialOpts needToSetup
+// deno test
 
 import { connectRedis } from "./deps.ts";
 import { config } from "./config.ts";
@@ -43,6 +44,39 @@ const RouteMap: { [name: string]: WebController } = {
 // Initializations
 Forum.initialize();
 ImageMod.initialize();
+
+// // Load AWS
+// import { ApiFactory } from './deps.ts';
+// import { S3 } from './deps.ts';
+// const factory = new ApiFactory( {credentials: {awsAccessKeyId: "WWLE1X0S4AYDF2169E2F", awsSecretKey: "AcPm37JBJ56euHgo49NFQlneoj9bpttJUGKlpEDY" }, region: "us-east-1"})
+// var a = await factory.determineCurrentRegion();
+// console.info(a);
+// var b = await factory.buildServiceClient({a});
+// const s3 = new S3(factory)
+
+// console.log(await s3.listBuckets().catch(err => err));
+
+// $client = new S3Client([
+//     'region' => '',
+//     'version' => '2006-03-01',
+//     'endpoint' => $ENDPOINT,
+//     'credentials' => [
+//         'key' => AWS_KEY,
+//         'secret' => AWS_SECRET_KEY
+//     ],
+//     // Set the S3 class to use objects.dreamhost.com/bucket
+//     // instead of bucket.objects.dreamhost.com
+//     'use_path_style_endpoint' => true
+// ]);
+
+// const result = await s3.getBucketAcl({ "Bucket": "druidis-api" });
+
+// const identity = await factory.ensureCredentialsAvailable();
+// console.log('identity');
+// console.log(identity);
+// console.log('You are', identity.UserId, 'in account', identity.Account);
+// console.log('Identity ARN:', identity.Arn);
+
 
 // Server Routing
 async function handle(conn: Deno.Conn) {

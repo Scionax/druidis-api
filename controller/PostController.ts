@@ -1,5 +1,7 @@
 import Conn from "../core/Conn.ts";
+import ImageMod from "../core/ImageMod.ts";
 import Validate from "../core/Validate.ts";
+import Web from "../core/Web.ts";
 import { Forum } from "../model/Forum.ts";
 import { ForumPost, ForumPostStatus } from "../model/ForumPost.ts";
 import WebController from "./WebController.ts";
@@ -72,6 +74,24 @@ export default class PostController extends WebController {
 		
 		// Save To Database
 		post.saveToRedis();
+		
+		
+		// TODO: REMOVE
+		// TODO: REMOVE
+		// TODO: REMOVE
+		// TODO: REMOVE
+		// console.log("DOWNLOADING IMAGE");
+		// const val = await Web.download("data", "image-test.png", "https://www.mozilla.org/media/protocol/img/logos/firefox/logo-md.7b8726d9ecb1.png");
+		// console.log("IMAGE HAS BEEN DOWNLOADED");
+		
+		// const imageUse = ;
+		// ImageMod.convert("data/image-test.png", "data/image-result.webp", 96, 96);
+		// ImageMod.convert("data/image-test2.webp", "data/image-result.webp", 1125, 750);
+		// ImageMod.convert("data/image-test3.jpeg", "data/image-result.webp", 500, 750);
+		ImageMod.convert("data/image-test4.jpeg", "data/image-result.webp", 500, 550);
+		console.log("CONVERTING IMAGE");
+		
+		
 		
 		if(!post) {
 			return await conn.sendFail(conn.errorReason);

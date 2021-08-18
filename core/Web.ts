@@ -1,6 +1,14 @@
 import OpenGraph from "../core/OpenGraph.ts";
 import Validate from "./Validate.ts";
 import Conn from "./Conn.ts";
+import { Buffer } from "../deps.ts";
+
+export interface DownlodedFile {
+	file: string,
+	dir: string,
+	fullPath: string,
+	size: number
+}
 
 export default abstract class Web {
 	
@@ -52,5 +60,32 @@ export default abstract class Web {
 		
 		// Return OpenGraph Tags through API
 		conn.sendJson( ogData );
+	}
+	
+	// Download From URL
+	static async download ( dir: string, file: string, url: string|URL, options?: RequestInit ): Promise<DownlodedFile> {
+		
+		const response = await fetch(url, options);
+		
+		if(response.status != 200){
+			return Promise.reject(new Deno.errors.Http(`status ${response.status}-'${response.statusText}' received instead of 200`));
+		}
+		
+		const blob = await response.blob();
+		const size = blob.size; // Size in Bytes
+		const buffer = await blob.arrayBuffer();
+		const unit8arr = new Buffer(buffer).bytes();
+		const fullPath = `${dir}/${file}`;
+		
+		// TODO: Implement 'ensureDir' once it's stable.
+		// https://deno.land/std@0.105.0/fs/README.md
+		
+		try {
+			await Deno.writeFile(fullPath, unit8arr, {create: true, mode: 0o755, append: false});
+		} catch {
+			console.error("Unable to write to: " + fullPath);
+		}
+		
+		return Promise.resolve({file, dir, fullPath, size});
 	}
 }
