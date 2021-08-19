@@ -1,7 +1,8 @@
 import OpenGraph from "../core/OpenGraph.ts";
 import Validate from "./Validate.ts";
 import Conn from "./Conn.ts";
-import { Buffer } from "../deps.ts";
+import { Buffer, ensureDir } from "../deps.ts";
+import VerboseLog from "./VerboseLog.ts";
 
 export interface DownlodedFile {
 	file: string,
@@ -34,13 +35,20 @@ export default abstract class Web {
 	
 	static async fetchHTML( url: string ): Promise<string> {
 		
-		const response = await fetch(url, {
-			method: "GET",
-			headers: { "Content-Type": "text/plain" },
-		});
+		try {
+			const response = await fetch(url, {
+				method: "GET",
+				headers: { "Content-Type": "text/plain" },
+			});
+			
+			// Retrieve the site's HTML
+			return await response.text()
+		}
 		
-		// Retrieve the site's HTML
-		return await response.text()
+		catch {
+			console.error("Failed a fetch() call with url: " + url);
+			return Promise.reject("Failed HTML Fetch.");
+		}
 	}
 	
 	static async fetchOGData( conn: Conn, url: string ): Promise<void> {
@@ -63,12 +71,17 @@ export default abstract class Web {
 	}
 	
 	// Download From URL
-	static async download ( dir: string, file: string, url: string|URL, options?: RequestInit ): Promise<DownlodedFile> {
+	static async download( dir: string, file: string, url: string|URL, options?: RequestInit ): Promise<DownlodedFile | false> {
+		let response: Response;
 		
-		const response = await fetch(url, options);
+		try {
+			response = await fetch(url, options);
+		} catch {
+			return VerboseLog.error(`URL Fetch Failed. Likely the result of a malformed URL.`);
+		}
 		
 		if(response.status != 200){
-			return Promise.reject(new Deno.errors.Http(`status ${response.status}-'${response.statusText}' received instead of 200`));
+			return VerboseLog.error(`Web.download() returned status ${response.status}-'${response.statusText}'`);
 		}
 		
 		const blob = await response.blob();
@@ -77,13 +90,13 @@ export default abstract class Web {
 		const unit8arr = new Buffer(buffer).bytes();
 		const fullPath = `${dir}/${file}`;
 		
-		// TODO: Implement 'ensureDir' once it's stable.
-		// https://deno.land/std@0.105.0/fs/README.md
+		// Make sure the directory exists.
+		await ensureDir(`${Deno.cwd()}/${dir}`);
 		
 		try {
 			await Deno.writeFile(fullPath, unit8arr, {create: true, mode: 0o755, append: false});
 		} catch {
-			console.error("Unable to write to: " + fullPath);
+			return VerboseLog.error("Unable to write to: " + fullPath);
 		}
 		
 		return Promise.resolve({file, dir, fullPath, size});

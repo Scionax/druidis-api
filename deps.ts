@@ -1,11 +1,6 @@
 export { assert, assertEquals } from "https://deno.land/std@0.103.0/testing/asserts.ts";
 export { getCookies, setCookie, deleteCookie } from "https://deno.land/std@0.104.0/http/cookie.ts";
 
-// Oak
-// export { Application } from "https://deno.land/x/oak@v8.0.0/mod.ts";
-// export type { Context } from "https://deno.land/x/oak@v8.0.0/mod.ts";
-// export { oakCors } from "https://deno.land/x/cors@v1.2.2/mod.ts";
-
 // Redis
 export { connect as connectRedis } from "https://deno.land/x/redis@v0.23.1/mod.ts";
 export type { Redis } from "https://deno.land/x/redis@v0.23.1/mod.ts";
@@ -27,5 +22,4 @@ export * as path from "https://deno.land/std@0.104.0/path/mod.ts";
 export { DOMParser, Element } from "https://deno.land/x/deno_dom@v0.1.13-alpha/deno-dom-wasm.ts";
 
 // AWS
-export { ApiFactory } from 'https://deno.land/x/aws_api@v0.4.1/client/mod.ts';
-export { S3 } from 'https://deno.land/x/aws_api@v0.4.1/services/s3/mod.ts';
+export { S3 } from "https://deno.land/x/aws_sdk@v3.23.0-1/client-s3/S3.ts";

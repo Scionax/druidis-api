@@ -57,7 +57,7 @@ export default class PostController extends WebController {
 		const post = ForumPost.buildPost(
 			conn,
 			rawData.forum && typeof rawData.forum === "string" ? rawData.forum : "",
-			rawData.id && typeof rawData.id === "number" ? rawData.id : 0,
+			0, // Assign to 0 when creating a new post.
 			rawData.category && typeof rawData.category === "string" ? rawData.category : "",
 			rawData.title && typeof rawData.title === "string"? rawData.title : "",
 			rawData.url && typeof rawData.url === "string" ? rawData.url : "",
@@ -75,27 +75,44 @@ export default class PostController extends WebController {
 		// Save To Database
 		post.saveToRedis();
 		
-		
-		// TODO: REMOVE
-		// TODO: REMOVE
-		// TODO: REMOVE
-		// TODO: REMOVE
-		// console.log("DOWNLOADING IMAGE");
-		// const val = await Web.download("data", "image-test.png", "https://www.mozilla.org/media/protocol/img/logos/firefox/logo-md.7b8726d9ecb1.png");
-		// console.log("IMAGE HAS BEEN DOWNLOADED");
-		
-		// const imageUse = ;
-		// ImageMod.convert("data/image-test.png", "data/image-result.webp", 96, 96);
-		// ImageMod.convert("data/image-test2.webp", "data/image-result.webp", 1125, 750);
-		// ImageMod.convert("data/image-test3.jpeg", "data/image-result.webp", 500, 750);
-		ImageMod.convert("data/image-test4.jpeg", "data/image-result.webp", 500, 550);
-		console.log("CONVERTING IMAGE");
-		
-		
-		
 		if(!post) {
 			return await conn.sendFail(conn.errorReason);
 		}
+		
+		// If there is no image data, prevent the post.
+		if(rawData.image) {
+			if(!rawData.imageWidth || !rawData.imageHeight || typeof rawData.imageWidth !== "number" || typeof rawData.imageHeight !== "number") {
+				return await conn.sendFail("Must include a valid `imageWidth` and `imageHeight`.");
+			}
+			
+			// Prepare Directory & Image Name
+			const imageDir = post.getImageDir();
+			const imagePath = post.getImagePath();
+			
+			// Download Image
+			if(typeof rawData.image === "string") {
+				const downloadedImage = await Web.download(imageDir, imagePath, rawData.image);
+				
+				if(downloadedImage === false) {
+					return await conn.sendFail("Unable to retrieve source image.");
+				}
+			}
+			
+			// TODO: if(typeof rawData.image === "File") // No need to download from an external page.
+			else {
+				return await conn.sendFail("Must provide an image source URL.");
+			}
+			
+			// Crop and Resize the image as needed, convert it to webp.
+			const fullImagePath = `${Deno.cwd()}/${imageDir}/${imagePath}`;
+			ImageMod.convert(fullImagePath, fullImagePath, rawData.imageWidth, rawData.imageHeight);
+			
+		} else {
+			return await conn.sendFail("Must include: image, imageWidth, imageHeight.");
+		}
+		
+		// Save Image to Object Storage
+		
 		
 		// Return Success
 		return await conn.sendJson(post);

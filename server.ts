@@ -1,7 +1,7 @@
 #!/usr/bin/env deno
 
-// deno run --allow-net --allow-write --allow-read --allow-run --allow-env server.ts
-// deno run --allow-net --allow-write --allow-read --allow-run --allow-env server.ts -port 8000 -specialOpts needToSetup
+// deno run --allow-net --allow-write --allow-read --allow-run --allow-env --unstable server.ts
+// deno run --allow-net --allow-write --allow-read --allow-run --allow-env --unstable server.ts -port 8000 -specialOpts needToSetup
 // deno test
 
 import { connectRedis } from "./deps.ts";
@@ -12,8 +12,8 @@ import WebController from "./controller/WebController.ts";
 import ImageMod from "./core/ImageMod.ts";
 import PostController from "./controller/PostController.ts";
 import DataController from "./controller/DataController.ts";
-import VerboseLog from "./core/VerboseLog.ts";
 import Conn from "./core/Conn.ts";
+import ObjectStorage from "./core/ObjectStorage.ts";
 
 // Handle Setup Arguments
 // for( let i = 0; i < Deno.args.length; i++ ) {
@@ -44,39 +44,7 @@ const RouteMap: { [name: string]: WebController } = {
 // Initializations
 Forum.initialize();
 ImageMod.initialize();
-
-// // Load AWS
-// import { ApiFactory } from './deps.ts';
-// import { S3 } from './deps.ts';
-// const factory = new ApiFactory( {credentials: {awsAccessKeyId: "WWLE1X0S4AYDF2169E2F", awsSecretKey: "AcPm37JBJ56euHgo49NFQlneoj9bpttJUGKlpEDY" }, region: "us-east-1"})
-// var a = await factory.determineCurrentRegion();
-// console.info(a);
-// var b = await factory.buildServiceClient({a});
-// const s3 = new S3(factory)
-
-// console.log(await s3.listBuckets().catch(err => err));
-
-// $client = new S3Client([
-//     'region' => '',
-//     'version' => '2006-03-01',
-//     'endpoint' => $ENDPOINT,
-//     'credentials' => [
-//         'key' => AWS_KEY,
-//         'secret' => AWS_SECRET_KEY
-//     ],
-//     // Set the S3 class to use objects.dreamhost.com/bucket
-//     // instead of bucket.objects.dreamhost.com
-//     'use_path_style_endpoint' => true
-// ]);
-
-// const result = await s3.getBucketAcl({ "Bucket": "druidis-api" });
-
-// const identity = await factory.ensureCredentialsAvailable();
-// console.log('identity');
-// console.log(identity);
-// console.log('You are', identity.UserId, 'in account', identity.Account);
-// console.log('Identity ARN:', identity.Arn);
-
+ObjectStorage.connectToS3();		// Connect to AWS
 
 // Server Routing
 async function handle(conn: Deno.Conn) {
@@ -92,9 +60,7 @@ async function handle(conn: Deno.Conn) {
 		
 		// No API Found
 		else {
-			await requestEvent.respondWith(
-				new Response("404 - Request Not Found", { status: 404 })
-			);
+			await requestEvent.respondWith( new Response("404 - Request Not Found", { status: 404 }) );
 		}
 	}
 }
@@ -105,11 +71,9 @@ console.log("Launching Server on Port " + serv.port + ".")
 
 if(serv.certFile && serv.keyFile) {
 	const server = Deno.listenTls({
-		port: serv.port,
-		certFile: serv.certFile,
-		keyFile: serv.keyFile,
-		// alpnProtocols: ["h2", "http/1.1"],
-	})
+		port: serv.port, certFile: serv.certFile, keyFile: serv.keyFile,
+		// alpnProtocols: ["h2", "http/1.1"]
+	});
 	for await (const conn of server) { handle(conn); }
 } else {
 	const server = Deno.listen({ port: serv.port });

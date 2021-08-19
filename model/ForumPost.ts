@@ -2,6 +2,7 @@ import Conn from "../core/Conn.ts";
 import Crypto from "../core/Crypto.ts";
 import Mapp from "../core/Mapp.ts";
 import Validate from "../core/Validate.ts";
+import { ensureDir } from "../deps.ts";
 
 export class AwardList {
 	public druid = 0;		// $5.00 for a Druid Award
@@ -74,7 +75,7 @@ export class ForumPost {
 	public static buildPost(
 		conn: Conn,
 		forum: string,
-		id: number,
+		id: number,					// Set to 0 if you're creating a new post.
 		category: string,
 		title: string,
 		url: string,
@@ -84,7 +85,7 @@ export class ForumPost {
 	): ForumPost | false {
 		
 		// Verify certain values exist:
-		if(typeof id !== "number") { return conn.error("Invalid `id` entry.") }
+		if(typeof id !== "number") { return conn.error("Invalid `id` entry."); }
 		if(typeof forum !== "string" || !forum) { return conn.error("Must include a `forum` entry."); }
 		if(typeof title !== "string" || !title) { return conn.error("Must include a `title` entry."); }
 		if(typeof url !== "string" || !url) { return conn.error("Must include a `url` entry."); }
@@ -123,6 +124,15 @@ export class ForumPost {
 		
 		// TODO: Determine status (such as if the user can make it featured)
 		
+		// TODO: Make sure author hasn't posted similar content recently (avoid accidental duplications)
+		
+		// TODO: Determine Next Available ID
+		if(id === 0) {
+			
+			// TODO: TEMPORARY.
+			id = 2;
+		}
+		
 		return new ForumPost(forum, id, category, title, url, authorId, status, content);
 	}
 	
@@ -158,6 +168,18 @@ export class ForumPost {
 		return true;
 	}
 	
+	// Image Functions
+	public getImageDir() {
+		const dir = `data/${Mapp.getYYMM()}/${Mapp.getDD()}`;
+		ensureDir(`${Deno.cwd()}/${dir}`);
+		return dir;
+	}
+	
+	public getImagePath() {
+		return `img-${this.id}-${this.hash}.webp`;
+	}
+	
+	// Load a Post From an ID
 	public static async loadFromId(conn: Conn, forum: string, id: number): Promise<ForumPost | false> {
 		const raw = await Mapp.redis.hmget("post:" + forum + ":" + id,
 		

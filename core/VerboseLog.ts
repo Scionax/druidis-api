@@ -16,4 +16,11 @@ export default abstract class VerboseLog {
             console.log(...args);
         }
     }
+    
+    static error(...args: Array<string | unknown>): false {
+        if(VerboseLog.isVerbose) {
+            console.error(...args);
+        }
+		return false;
+    }
 }
