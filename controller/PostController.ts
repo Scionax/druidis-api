@@ -1,6 +1,7 @@
 import { config } from "../config.ts";
 import Conn from "../core/Conn.ts";
 import ImageMod from "../core/ImageMod.ts";
+import Mapp from "../core/Mapp.ts";
 import ObjectStorage from "../core/ObjectStorage.ts";
 import Validate from "../core/Validate.ts";
 import Web from "../core/Web.ts";
@@ -55,6 +56,23 @@ export default class PostController extends WebController {
 		const rawData = await WebController.getPostValues(conn);
 		if(!conn.success) { return await conn.sendFail(conn.errorReason); }
 		
+		// Make sure the author hasn't re-submitted the same content (such as accidentally clicking twice).
+		const authorId = 0; // TODO: Change authorID based on the Connection.
+		
+		if(Mapp.recentPosts[authorId]) {
+			if(
+				Mapp.recentPosts[authorId].title === rawData.title ||
+				Mapp.recentPosts[authorId].url === rawData.url ||
+				Mapp.recentPosts[authorId].lastPost > Math.floor(Date.now() / 1000) - 5		// Posted within last five seconds.
+			) {
+				return await conn.sendFail(`Resubmission Error. Already posted "${rawData.title}" at ${rawData.url}, or a re-submission was attempted too quickly.`);
+			}
+		} else {
+			Mapp.recentPosts[authorId] = { lastPost: 0, title: "", url: "" };
+		}
+		
+		Mapp.recentPosts[authorId].lastPost = Math.floor(Date.now() / 1000);
+		
 		// If there is no image data, prevent the post.
 		// TODO: Allow video submissions (eventually).
 		if(!rawData.image) {
@@ -66,7 +84,7 @@ export default class PostController extends WebController {
 		}
 		
 		// Convert Raw Data to ForumPost
-		const post = ForumPost.buildPost(
+		const post = await ForumPost.buildPost(
 			conn,
 			rawData.forum && typeof rawData.forum === "string" ? rawData.forum : "",
 			0, // Assign to 0 for new posts.
@@ -83,6 +101,10 @@ export default class PostController extends WebController {
 		
 		post.applyNewPost();	// Post Successful. Update NEW POST values.
 		post.saveToRedis();		// Save To Database
+		
+		// The post was at least partially successful. Update the author's submission data to catch recent posts.
+		Mapp.recentPosts[authorId].title = rawData.title as string;
+		Mapp.recentPosts[authorId].url = rawData.url as string;
 		
 		// Prepare Directory & Image Name
 		const imageDir = post.getImageDir();

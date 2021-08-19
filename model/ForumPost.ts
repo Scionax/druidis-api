@@ -72,7 +72,7 @@ export class ForumPost {
 		this.hash = Crypto.simpleHash(this.forum + this.id + this.authorId + this.id + this.category);
 	}
 	
-	public static buildPost(
+	public static async buildPost(
 		conn: Conn,
 		forum: string,
 		id: number,					// Set to 0 if you're creating a new post.
@@ -82,7 +82,7 @@ export class ForumPost {
 		authorId: number,
 		status: ForumPostStatus,
 		content = "",
-	): ForumPost | false {
+	): Promise<ForumPost | false> {
 		
 		// Verify certain values exist:
 		if(typeof id !== "number") { return conn.error("Invalid `id` entry."); }
@@ -124,13 +124,14 @@ export class ForumPost {
 		
 		// TODO: Determine status (such as if the user can make it featured)
 		
-		// TODO: Make sure author hasn't posted similar content recently (avoid accidental duplications)
-		
-		// TODO: Determine Next Available ID
+		// Determine Next Available ID
 		if(id === 0) {
+			id = await Mapp.redis.incr(`post:nextId:${forum}`);
 			
-			// TODO: TEMPORARY.
-			id = 2;
+			// Make sure this id isn't already taken:
+			if(await ForumPost.checkIfPostExists(forum, id)) {
+				return conn.error(`Error creating ID ${id}. Please contact the administrator, this is a problem.`);
+			}
 		}
 		
 		return new ForumPost(forum, id, category, title, url, authorId, status, content);
@@ -179,7 +180,10 @@ export class ForumPost {
 		return `img-${this.id}-${this.hash}.webp`;
 	}
 	
-	// Load a Post From an ID
+	public static async checkIfPostExists(forum: string, id: number): Promise<boolean> {
+		return (await Mapp.redis.exists(`post:${forum}:${id}`)) === 0 ? false : true;
+	}
+	
 	public static async loadFromId(conn: Conn, forum: string, id: number): Promise<ForumPost | false> {
 		const raw = await Mapp.redis.hmget("post:" + forum + ":" + id,
 		
@@ -210,7 +214,7 @@ export class ForumPost {
 		
 		if(typeof raw[1] !== "string") { return conn.error("Entry loaded is invalid."); }
 		
-		const post = ForumPost.buildPost(
+		const post = await ForumPost.buildPost(
 			conn,
 			forum,								// forum
 			Number(raw[1] as string),			// id

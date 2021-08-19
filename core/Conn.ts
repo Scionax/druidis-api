@@ -49,9 +49,9 @@ export default class Conn {
 	// return await WebController.sendBadRequest("So that error just happened.");
 	async sendFail( reason = "Bad Request", status = 400 ): Promise<Response> {
 		VerboseLog.verbose( "WebRouter.sendBadRequest() Error: " + reason );
-		return await new Response(null, {
+		return await new Response(reason, {
 			status: status,
-			statusText: reason,
+			statusText: "Bad Request",
 			headers: {
 				"Access-Control-Allow-Origin": "*",
 				"Content-Type": "application/json; charset=utf-8",
