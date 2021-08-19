@@ -1,5 +1,7 @@
+import { config } from "../config.ts";
 import Conn from "../core/Conn.ts";
 import ImageMod from "../core/ImageMod.ts";
+import ObjectStorage from "../core/ObjectStorage.ts";
 import Validate from "../core/Validate.ts";
 import Web from "../core/Web.ts";
 import { Forum } from "../model/Forum.ts";
@@ -53,11 +55,21 @@ export default class PostController extends WebController {
 		const rawData = await WebController.getPostValues(conn);
 		if(!conn.success) { return await conn.sendFail(conn.errorReason); }
 		
+		// If there is no image data, prevent the post.
+		// TODO: Allow video submissions (eventually).
+		if(!rawData.image) {
+			return await conn.sendFail("Must include: image, imageWidth, imageHeight.");
+		}
+		
+		if(!rawData.imageWidth || !rawData.imageHeight || typeof rawData.imageWidth !== "number" || typeof rawData.imageHeight !== "number") {
+			return await conn.sendFail("Must include a valid `imageWidth` and `imageHeight`.");
+		}
+		
 		// Convert Raw Data to ForumPost
 		const post = ForumPost.buildPost(
 			conn,
 			rawData.forum && typeof rawData.forum === "string" ? rawData.forum : "",
-			0, // Assign to 0 when creating a new post.
+			0, // Assign to 0 for new posts.
 			rawData.category && typeof rawData.category === "string" ? rawData.category : "",
 			rawData.title && typeof rawData.title === "string"? rawData.title : "",
 			rawData.url && typeof rawData.url === "string" ? rawData.url : "",
@@ -69,50 +81,38 @@ export default class PostController extends WebController {
 		// On Failure
 		if(post == false || !conn.success) { return await conn.sendFail(conn.errorReason); }
 		
-		// Post Successful. Update NEW POST values.
-		post.applyNewPost();
+		post.applyNewPost();	// Post Successful. Update NEW POST values.
+		post.saveToRedis();		// Save To Database
 		
-		// Save To Database
-		post.saveToRedis();
+		// Prepare Directory & Image Name
+		const imageDir = post.getImageDir();
+		const imagePath = post.getImagePath();
 		
-		if(!post) {
-			return await conn.sendFail(conn.errorReason);
+		// Download Image
+		if(typeof rawData.image === "string") {
+			const downloadedImage = await Web.download(imageDir, imagePath, rawData.image);
+			
+			if(downloadedImage === false) {
+				return await conn.sendFail("Unable to retrieve source image.");
+			}
 		}
 		
-		// If there is no image data, prevent the post.
-		if(rawData.image) {
-			if(!rawData.imageWidth || !rawData.imageHeight || typeof rawData.imageWidth !== "number" || typeof rawData.imageHeight !== "number") {
-				return await conn.sendFail("Must include a valid `imageWidth` and `imageHeight`.");
-			}
-			
-			// Prepare Directory & Image Name
-			const imageDir = post.getImageDir();
-			const imagePath = post.getImagePath();
-			
-			// Download Image
-			if(typeof rawData.image === "string") {
-				const downloadedImage = await Web.download(imageDir, imagePath, rawData.image);
-				
-				if(downloadedImage === false) {
-					return await conn.sendFail("Unable to retrieve source image.");
-				}
-			}
-			
-			// TODO: if(typeof rawData.image === "File") // No need to download from an external page.
-			else {
-				return await conn.sendFail("Must provide an image source URL.");
-			}
-			
-			// Crop and Resize the image as needed, convert it to webp.
-			const fullImagePath = `${Deno.cwd()}/${imageDir}/${imagePath}`;
-			ImageMod.convert(fullImagePath, fullImagePath, rawData.imageWidth, rawData.imageHeight);
-			
-		} else {
-			return await conn.sendFail("Must include: image, imageWidth, imageHeight.");
+		// TODO: if(typeof rawData.image === "File") // No need to download from an external page.
+		else {
+			return await conn.sendFail("Must provide an image source URL.");
 		}
+		
+		// Crop and Resize the image as needed, convert it to webp.
+		const fullImagePath = `${Deno.cwd()}/${imageDir}/${imagePath}`;
+		await ImageMod.convert(fullImagePath, fullImagePath, rawData.imageWidth, rawData.imageHeight);
 		
 		// Save Image to Object Storage
-		
+		try {
+			const fileContents = await Deno.readFile(fullImagePath);
+			ObjectStorage.putObject(config.objectStore.bucket, `${imageDir}/${imagePath}`, fileContents);
+		} catch {
+			return await conn.sendFail("Server error on image transfer.");
+		}
 		
 		// Return Success
 		return await conn.sendJson(post);

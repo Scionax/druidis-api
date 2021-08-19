@@ -240,7 +240,9 @@ export class ForumPost {
 	}
 	
 	public saveToRedis() {
-		Mapp.redis.hmset("post:" + this.forum + ":" + this.id,
+		
+		// TODO: hmset is deprecated, but hset (the supposed alternative) is not functioning. Wait until fixed.
+		return Mapp.redis.hmset("post:" + this.forum + ":" + this.id,
 			
 			// Fixed Content
 			["forum", this.forum],

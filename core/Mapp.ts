@@ -1,4 +1,4 @@
-import { join, Redis } from "../deps.ts";
+import { Redis } from "../deps.ts";
 import { Forum } from "../model/Forum.ts";
 
 /*
@@ -7,6 +7,8 @@ import { Forum } from "../model/Forum.ts";
 	- Cache
 	- Paths
 */
+
+type TrackRecentPost = { title: string; url: string; lastPost: number; }
 
 export default abstract class Mapp {
 	
@@ -17,6 +19,7 @@ export default abstract class Mapp {
 	// --------------------------- //
 	// ---------- CACHE ---------- //
 	static forums: { [id: string]: Forum } = {};
+	static recentPosts: { [authorId: number]: TrackRecentPost } = {};		// Used to prevent re-submitting same material.
 	
 	// --------------------------- //
 	// ---------- Time ---------- //

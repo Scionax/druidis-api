@@ -143,10 +143,8 @@ export default abstract class ImageMod {
 			if(origWidth > 680 && w > 680) {
 				option += (option === "" ? "" : " ") + `-resize 680 0`;
 			}
-			console.log("w: ", w);
 		}
-		console.log("origWidth: ", origWidth);
-		console.log("option: ", option);
+		
 		await ImageMod.convertFormal(inputImage, outputImage, option);
 	}
 	

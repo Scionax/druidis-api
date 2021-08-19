@@ -27,8 +27,8 @@ export default abstract class ObjectStorage {
 	}
 	
 	// ObjectStorage.putObject("druidis-cdn", "forum/image-1-CDJF.webp", imageData)
-	static putObject(bucket: string, key: string, data: string | Blob | Uint8Array | undefined) {
-		ObjectStorage.s3.putObject({Bucket: bucket, Key: key, Body: data});		// ContentEncoding: "", ContentType: ""
+	static async putObject(bucket: string, key: string, data: string | Blob | Uint8Array | undefined) {
+		return await ObjectStorage.s3.putObject({Bucket: bucket, Key: key, Body: data});		// ContentEncoding: "", ContentType: ""
 	}
 	
 	// List Bucket Example
