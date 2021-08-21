@@ -1,22 +1,24 @@
 import Conn from "../core/Conn.ts";
 import Crypto from "../core/Crypto.ts";
 import Mapp from "../core/Mapp.ts";
+import RedisDB from "../core/RedisDB.ts";
 import Validate from "../core/Validate.ts";
 import { ensureDir } from "../deps.ts";
 
 // Forum Posts Types / Tables
-export const enum ForumPostTable {
+export const enum PostTable {
 	Standard = "post",				// post:Forum:id				// A standard post. Added to the pagination set.
 	Queued = "queued",				// queued:Forum:id				// Post is awaiting moderator approval. Delete entirely if rejected.
 	Featured = "featured",			// featured:Forum:id			// A featured post. Might be historical content, interesting content to cycle in, etc.
 	Sponsored = "sponsored",		// sponsored:Forum:id			// A sponsored post. Fit into the regular posts where appropriate.
 }
 
-export const enum ForumPostStatus {
+export const enum PostStatus {
 	Hidden = 0,			// Hidden Post (was approved and entered into "Visible" at one point; closest we have to deleted)
 	Visible = 1,		// Standard Visibility
-	Featured = 4,		// Featured Post; may get boosted visibility
-	Sticky = 7,			// Sticky Post.
+	Sponsored = 3,		// Sponsored Post.
+	Featured = 7,		// Featured Post; may get boosted visibility
+	Sticky = 8,			// Sticky Post.
 	Announced = 9,		// Announcement Post. Stickied at the top.
 }
 
@@ -40,7 +42,7 @@ export class ForumPost {
 	private content: string;			// Text content for the post.
 	
 	// Tracked Values
-	private status: ForumPostStatus;	// Post Status: Deleted, Denied, Hidden, Approval, Visible, Featured, Stickied, Announced
+	private status: PostStatus;			// Post Status: Deleted, Denied, Hidden, Approval, Visible, Featured, Stickied, Announced
 	private views = 0;					// Views (Impressions) this post has had.
 	private clicks = 0;					// Clicks on this post.
 	private comments = 0;				// Number of comments on this post.
@@ -62,7 +64,8 @@ export class ForumPost {
 		title: string,
 		url: string,
 		authorId: number,
-		status: ForumPostStatus,
+		hash: string,
+		status: PostStatus,
 		content: string = "",
 	) {
 		this.forum = forum;
@@ -71,12 +74,12 @@ export class ForumPost {
 		this.title = title;
 		this.url = url;
 		this.authorId = authorId;
+		this.hash = hash;
 		this.status = status;
 		this.content = content;
-		this.hash = Crypto.simpleHash(this.forum + this.id + this.authorId + this.id + this.category);
 	}
 	
-	public static async buildPost(
+	public static async buildNewPost(
 		conn: Conn,
 		forum: string,
 		id: number,					// Set to 0 if you're creating a new post.
@@ -84,12 +87,12 @@ export class ForumPost {
 		title: string,
 		url: string,
 		authorId: number,
-		status: ForumPostStatus,
+		status: PostStatus,
 		content = "",
 	): Promise<ForumPost | false> {
 		
 		// Verify certain values exist:
-		if(typeof id !== "number") { return conn.error("Invalid `id` entry."); }
+		if(typeof id !== "number" || id < 0) { return conn.error("Invalid `id` entry."); }
 		if(typeof forum !== "string" || !forum) { return conn.error("Must include a `forum` entry."); }
 		if(typeof title !== "string" || !title) { return conn.error("Must include a `title` entry."); }
 		if(typeof url !== "string" || !url) { return conn.error("Must include a `url` entry."); }
@@ -108,7 +111,7 @@ export class ForumPost {
 		if(category && !Mapp.forums[forum].hasCategory(category) ) { return conn.error("`category` is not valid."); }
 		
 		// TODO: Make conditional based on user permissions (e.g. mods and admins can expand beyond 
-		if(status > ForumPostStatus.Visible) { return conn.error("`status` cannot start above visible state."); }
+		if(status > PostStatus.Visible) { return conn.error("`status` cannot start above visible state."); }
 		
 		// URL Requirements
 		if(url) {
@@ -119,30 +122,33 @@ export class ForumPost {
 			}
 		}
 		
+		// Prepare Hash
+		const hash = Crypto.simpleHash(forum + id + authorId + id + category);
+		
 		// TODO: Make sure the author exists.
 		
 		// TODO: Verify user permissions.
 		
 		// TODO: Determine status (such as if the user can make it featured)
 		
-		// Determine Next Available ID
+		// Determine Next Available ID (for new posts only)
 		if(id === 0) {
-			id = await Mapp.redis.incr(`post:nextId:${forum}`);
+			id = await RedisDB.nextPostId(forum);
 			
 			// Make sure this id isn't already taken:
-			if(await ForumPost.checkIfPostExists(forum, id)) {
-				return conn.error(`Error creating ID ${id}. Please contact the administrator, this is a problem.`);
+			if(id === 0 || await ForumPost.checkIfPostExists(forum, id)) {
+				return conn.error(`Error creating ID ${id} in forum ${forum}. Please contact the administrator, this is a problem.`);
 			}
 		}
 		
-		return new ForumPost(forum, id, category, title, url, authorId, status, content);
+		return new ForumPost(forum, id, category, title, url, authorId, hash, status, content);
 	}
 	
-	public applyNewPost(status = ForumPostStatus.Visible) {
+	public applyNewPost(status = PostStatus.Visible) {
 		this.applyTrackedValues(status, Math.floor(Date.now() / 1000));
 	}
 	
-	public applyTrackedValues(status = ForumPostStatus.Visible, timePosted = 0, timeEdited = 0, views = 0, clicks = 0, comments = 0) {
+	public applyTrackedValues(status = PostStatus.Visible, timePosted = 0, timeEdited = 0, views = 0, clicks = 0, comments = 0) {
 		this.status = status;
 		this.timePosted = timePosted;
 		this.timeEdited = timeEdited;
@@ -172,8 +178,8 @@ export class ForumPost {
 	
 	// Image Functions
 	public getImageDir() {
-		const idPage = Math.ceil(this.id/1000);
-		const dir = `images/${this.forum}/${idPage}`;
+		const imgPage = Math.ceil(this.id/1000);
+		const dir = `images/${this.forum}/${imgPage}`;
 		ensureDir(`${Deno.cwd()}/${dir}`);
 		return dir;
 	}
@@ -186,9 +192,9 @@ export class ForumPost {
 		return (await Mapp.redis.exists(`post:${forum}:${id}`)) === 0 ? false : true;
 	}
 	
-	public static async loadFromId(conn: Conn, forum: string, id: number, table: ForumPostTable): Promise<ForumPost | false> {
+	public static async loadFromId(conn: Conn, forum: string, id: number, table: PostTable): Promise<ForumPost | false> {
 		const raw = await Mapp.redis.hmget(`${table}:${forum}:${id}`,
-		
+			
 			// Fixed Content
 			"forum",			// 0
 			"id",				// 1
@@ -216,15 +222,14 @@ export class ForumPost {
 		
 		if(typeof raw[1] !== "string") { return conn.error("Entry loaded is invalid."); }
 		
-		const post = await ForumPost.buildPost(
-			conn,
+		const post = new ForumPost(
 			forum,								// forum
 			Number(raw[1] as string),			// id
 			raw[2] as string,					// category
 			raw[3] as string,					// title
 			raw[4] as string,					// url
 			Number(raw[5] as string),			// authorId
-												// hash (no need to send)
+			raw[6] as string,					// hash (no need to send)
 			Number(raw[8] as string),			// status (required for verification)
 			raw[7] as string,					// content
 		);
@@ -240,12 +245,12 @@ export class ForumPost {
 			Number(raw[13] as string)			// comments
 		);
 		
-		post.applyAwards(Number(raw[13] as string), Number(raw[14] as string), Number(raw[15] as string), Number(raw[16] as string));
+		post.applyAwards(Number(raw[14] as string), Number(raw[15] as string), Number(raw[16] as string), Number(raw[17] as string));
 		
 		return post;
 	}
 	
-	public saveToRedis(table: ForumPostTable) {
+	public saveToRedis(table: PostTable) {
 		
 		// TODO: hmset is deprecated, but hset (the supposed alternative) is not functioning. Wait until fixed.
 		return Mapp.redis.hmset(`${table}:${this.forum}:${this.id}`,

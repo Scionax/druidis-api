@@ -6,7 +6,7 @@ import ObjectStorage from "../core/ObjectStorage.ts";
 import Validate from "../core/Validate.ts";
 import Web from "../core/Web.ts";
 import { Forum } from "../model/Forum.ts";
-import { ForumPost, ForumPostStatus, ForumPostTable } from "../model/ForumPost.ts";
+import { ForumPost, PostStatus, PostTable } from "../model/ForumPost.ts";
 import WebController from "./WebController.ts";
 
 export default class PostController extends WebController {
@@ -40,7 +40,7 @@ export default class PostController extends WebController {
 			if(!Validate.isValidSlug(conn.url3)) { return await conn.sendFail("Post Request: Invalid post url."); }
 			
 			// Retrieve the post
-			const post = await ForumPost.loadFromId(conn, conn.url2, Number(conn.url3), ForumPostTable.Standard);
+			const post = await ForumPost.loadFromId(conn, conn.url2, Number(conn.url3), PostTable.Standard);
 			
 			if(post) {
 				return await conn.sendJson(post);
@@ -84,7 +84,7 @@ export default class PostController extends WebController {
 		}
 		
 		// Convert Raw Data to ForumPost
-		const post = await ForumPost.buildPost(
+		const post = await ForumPost.buildNewPost(
 			conn,
 			rawData.forum && typeof rawData.forum === "string" ? rawData.forum : "",
 			0, // Assign to 0 for new posts.
@@ -92,7 +92,7 @@ export default class PostController extends WebController {
 			rawData.title && typeof rawData.title === "string"? rawData.title : "",
 			rawData.url && typeof rawData.url === "string" ? rawData.url : "",
 			rawData.authorId && typeof rawData.authorId === "string" ? Number(rawData.authorId) : 0,
-			rawData.status && typeof rawData.status === "string" ? Number(rawData.status) : ForumPostStatus.Visible,
+			rawData.status && typeof rawData.status === "string" ? Number(rawData.status) : PostStatus.Visible,
 			rawData.content && typeof rawData.content === "string" ? rawData.content : "",
 		);
 		
@@ -102,7 +102,7 @@ export default class PostController extends WebController {
 		post.applyNewPost();							// Post Successful. Update NEW POST values.
 		
 		// TODO: author permissions should decide how this is saved.
-		post.saveToRedis(ForumPostTable.Standard);		// Save To Database
+		post.saveToRedis(PostTable.Standard);		// Save To Database
 		
 		// The post was at least partially successful. Update the author's submission data to catch recent posts.
 		Mapp.recentPosts[authorId].title = rawData.title as string;

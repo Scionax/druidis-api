@@ -1,4 +1,4 @@
-import { ForumPostStatus } from "../model/ForumPost.ts";
+import { PostStatus } from "../model/ForumPost.ts";
 import Mapp from "./Mapp.ts";
 
 export default abstract class LocalServer {
@@ -28,7 +28,7 @@ export default abstract class LocalServer {
 		LocalServer.postSimple("News", 6, "Events");
 	}
 	
-	static postSimple(forum: string, id: number, category = "", status = ForumPostStatus.Visible) {
+	static postSimple(forum: string, id: number, category = "", status = PostStatus.Visible) {
 		
 		// TODO: hmset is deprecated, but hset (the supposed alternative) is not functioning. Wait until fixed.
 		return Mapp.redis.hmset("post:" + forum + ":" + id,
