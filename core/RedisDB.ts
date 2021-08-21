@@ -13,9 +13,31 @@ export default abstract class RedisDB {
 		return obj;
 	}
 	
-	// ------ Counters, Incrementing ------ //
+	// ------ Counters, GET ------ //
 	
-	static async nextPostId(forum: string) {
+	static async getHomeFeedId() {
+		const val = await Mapp.redis.get(`count:homeFeed`) as string;
+		if(!val) { return 0; }
+		return Number(val);
+	}
+	
+	static async getForumPostId(forum: string) {
+		const val = await Mapp.redis.get(`count:post:${forum}`) as string;
+		return Number(val);
+	}
+	
+	static async getQueuedPostId(forum: string) {
+		const val = await Mapp.redis.get(`count:queue:${forum}`) as string;
+		return Number(val);
+	}
+	
+	// ------ Counters, Increment ------ //
+	
+	static async nextHomeFeedId() {
+		return await Mapp.redis.incr(`count:homeFeed`);
+	}
+	
+	static async nextForumPostId(forum: string) {
 		if(!Mapp.forums[forum]) { return 0; }
 		return await Mapp.redis.incr(`count:post:${forum}`);
 	}
@@ -25,7 +47,28 @@ export default abstract class RedisDB {
 		return await Mapp.redis.incr(`count:queue:${forum}`);
 	}
 	
-	// ------ INDEX, GET ------ //
+	// ------ INDEX, GET (BY ID) ------ //
+	// When retrieving posts, retrieve by ID. If we retrieve by index, new posts will be pushed into the results.
+	// 		Retrieving by ID, ensures that you get the exact set you're looking for.
+	
+	static async getById_Post_Primary(startId: number, count: number) {
+		return await Mapp.redis.zrevrangebyscore(`iPost:primary`, startId + count, startId);
+	}
+	
+	static async getById_Post_Forum(forum: string, startId: number, count: number) {
+		return await Mapp.redis.zrevrangebyscore(`iPost:${forum}`, startId + count, startId);
+	}
+	
+	static async getById_Post_Forum_Category(forum: string, category: string, startId: number, count: number) {
+		return await Mapp.redis.zrevrangebyscore(`iPost:${forum}:${category}`, startId + count, startId);
+	}
+	
+	static async getById_QueueForum(forum: string, startId: number, count: number) {
+		return await Mapp.redis.zrangebyscore(`iQueue:${forum}`, startId + count, startId);
+	}
+	
+	
+	// ------ INDEX, GET (BY INDEX) ------ //
 	
 	static async getIndex_Post_Primary(start: number, count: number) {
 		return await Mapp.redis.zrevrange(`iPost:primary`, start, start + count - 1);

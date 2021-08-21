@@ -131,7 +131,7 @@ export class ForumPost {
 		
 		// Determine Next Available ID (for new posts only)
 		if(id === 0) {
-			id = await RedisDB.nextPostId(forum);
+			id = await RedisDB.nextForumPostId(forum);
 			
 			// Make sure this id isn't already taken:
 			if(id === 0 || await ForumPost.checkIfPostExists(forum, id)) {

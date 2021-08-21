@@ -23,20 +23,27 @@ export default class ForumController extends WebController {
 			return await conn.sendFail("Forum Request: Forum does not exist.");
 		}
 		
-		let startIndex = 0;
+		let startId = 0;
+		const count = 10;
 		
 		// Get the user's query string parameters.
 		for(const [key, value] of conn.url.searchParams.entries()) {
 			if(key === "s") {
 				const s = Number(value);
-				if(s > 0) { startIndex = s; }
+				if(s > 0) { startId = s; }
 			}
+		}
+		
+		// If the user didn't specify a ?s= parameter (for starting pagination ID), get the newest set available.
+		if(startId === 0) {
+			startId = (await RedisDB.getForumPostId(conn.url2)) - count;
+			if(startId < 0) { startId = 0; }
 		}
 		
 		const postResults: unknown[] = [];
 		
 		// Retrieve the Index
-		const index = await RedisDB.getIndex_Post_Forum(conn.url2, startIndex, 10);
+		const index = await RedisDB.getById_Post_Forum(conn.url2, startId, count);
 		
 		// Pipelines return absolutely f*#@ing idiotic data, so I guess we loop here. Maybe someday we can optimize this.
 		for(let i = 0; i < index.length; i++) {
