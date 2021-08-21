@@ -6,7 +6,7 @@ import ObjectStorage from "../core/ObjectStorage.ts";
 import Validate from "../core/Validate.ts";
 import Web from "../core/Web.ts";
 import { Forum } from "../model/Forum.ts";
-import { ForumPost, ForumPostStatus } from "../model/ForumPost.ts";
+import { ForumPost, ForumPostStatus, ForumPostTable } from "../model/ForumPost.ts";
 import WebController from "./WebController.ts";
 
 export default class PostController extends WebController {
@@ -40,7 +40,7 @@ export default class PostController extends WebController {
 			if(!Validate.isValidSlug(conn.url3)) { return await conn.sendFail("Post Request: Invalid post url."); }
 			
 			// Retrieve the post
-			const post = await ForumPost.loadFromId(conn, conn.url2, Number(conn.url3));
+			const post = await ForumPost.loadFromId(conn, conn.url2, Number(conn.url3), ForumPostTable.Standard);
 			
 			if(post) {
 				return await conn.sendJson(post);
@@ -92,15 +92,17 @@ export default class PostController extends WebController {
 			rawData.title && typeof rawData.title === "string"? rawData.title : "",
 			rawData.url && typeof rawData.url === "string" ? rawData.url : "",
 			rawData.authorId && typeof rawData.authorId === "string" ? Number(rawData.authorId) : 0,
-			rawData.status && typeof rawData.status === "string" ? Number(rawData.status) : ForumPostStatus.Automatic,
+			rawData.status && typeof rawData.status === "string" ? Number(rawData.status) : ForumPostStatus.Visible,
 			rawData.content && typeof rawData.content === "string" ? rawData.content : "",
 		);
 		
 		// On Failure
 		if(post == false || !conn.success) { return await conn.sendFail(conn.errorReason); }
 		
-		post.applyNewPost();	// Post Successful. Update NEW POST values.
-		post.saveToRedis();		// Save To Database
+		post.applyNewPost();							// Post Successful. Update NEW POST values.
+		
+		// TODO: author permissions should decide how this is saved.
+		post.saveToRedis(ForumPostTable.Standard);		// Save To Database
 		
 		// The post was at least partially successful. Update the author's submission data to catch recent posts.
 		Mapp.recentPosts[authorId].title = rawData.title as string;

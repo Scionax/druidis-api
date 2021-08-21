@@ -1,4 +1,5 @@
 import Conn from "../core/Conn.ts";
+import { Forum } from "../model/Forum.ts";
 import WebController from "./WebController.ts";
 
 export default class ForumController extends WebController {
@@ -15,10 +16,10 @@ export default class ForumController extends WebController {
 	async getController(conn: Conn): Promise<Response> {
 		
 		// Make sure the forum exists
-		if(!conn.url2) {
-			return await conn.sendFail("No additional page data exists.");
+		if(!conn.url2 || !Forum.exists(conn.url2)) {
+			return await conn.sendFail("Forum Request: Forum does not exist.");
 		}
 		
-		return await conn.sendJson("Path successful!");
+		return await conn.sendJson(`Loaded forum: ${conn.url2}`);
 	}
 }

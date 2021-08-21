@@ -4,23 +4,27 @@ import Mapp from "../core/Mapp.ts";
 import Validate from "../core/Validate.ts";
 import { ensureDir } from "../deps.ts";
 
+// Forum Posts Types / Tables
+export const enum ForumPostTable {
+	Standard = "post",				// post:Forum:id				// A standard post. Added to the pagination set.
+	Queued = "queued",				// queued:Forum:id				// Post is awaiting moderator approval. Delete entirely if rejected.
+	Featured = "featured",			// featured:Forum:id			// A featured post. Might be historical content, interesting content to cycle in, etc.
+	Sponsored = "sponsored",		// sponsored:Forum:id			// A sponsored post. Fit into the regular posts where appropriate.
+}
+
+export const enum ForumPostStatus {
+	Hidden = 0,			// Hidden Post (was approved and entered into "Visible" at one point; closest we have to deleted)
+	Visible = 1,		// Standard Visibility
+	Featured = 4,		// Featured Post; may get boosted visibility
+	Sticky = 7,			// Sticky Post.
+	Announced = 9,		// Announcement Post. Stickied at the top.
+}
+
 export class AwardList {
 	public druid = 0;		// $5.00 for a Druid Award
 	public tree = 0;		// $1.00 for a Tree Award
 	public plant = 0;		// $0.25 for a Plant Award
 	public seed = 0;		// $0.05 for a Seed Award
-}
-
-export const enum ForumPostStatus {
-	Deleted = 0,		// Deleted Post
-	Denied = 1,			// Post was denied Moderator Approval.
-	Hidden = 2,			// Hidden Post
-	Automatic = 3,		// Posting the status automatically, system can decide what to do.
-	Approval = 4,		// Post is waiting for Moderator Approval.
-	Visible = 5,		// Standard Visibility
-	Featured = 6,		// Featured Post; may get boosted visibility
-	Stickied = 8,		// Sticky Post
-	Announced = 9,		// Announcement Post that goes above Stickies
 }
 
 export class ForumPost {
@@ -103,9 +107,6 @@ export class ForumPost {
 		if(!Mapp.forums[forum]) { return conn.error("`forum` does not exist."); }
 		if(category && !Mapp.forums[forum].hasCategory(category) ) { return conn.error("`category` is not valid."); }
 		
-		// Status Requirements
-		if(status < ForumPostStatus.Automatic) { return conn.error("`status` cannot begin in a denied state."); }
-		
 		// TODO: Make conditional based on user permissions (e.g. mods and admins can expand beyond 
 		if(status > ForumPostStatus.Visible) { return conn.error("`status` cannot start above visible state."); }
 		
@@ -137,11 +138,11 @@ export class ForumPost {
 		return new ForumPost(forum, id, category, title, url, authorId, status, content);
 	}
 	
-	public applyNewPost(status = ForumPostStatus.Automatic) {
+	public applyNewPost(status = ForumPostStatus.Visible) {
 		this.applyTrackedValues(status, Math.floor(Date.now() / 1000));
 	}
 	
-	public applyTrackedValues(status = ForumPostStatus.Automatic, timePosted = 0, timeEdited = 0, views = 0, clicks = 0, comments = 0) {
+	public applyTrackedValues(status = ForumPostStatus.Visible, timePosted = 0, timeEdited = 0, views = 0, clicks = 0, comments = 0) {
 		this.status = status;
 		this.timePosted = timePosted;
 		this.timeEdited = timeEdited;
@@ -185,8 +186,8 @@ export class ForumPost {
 		return (await Mapp.redis.exists(`post:${forum}:${id}`)) === 0 ? false : true;
 	}
 	
-	public static async loadFromId(conn: Conn, forum: string, id: number): Promise<ForumPost | false> {
-		const raw = await Mapp.redis.hmget("post:" + forum + ":" + id,
+	public static async loadFromId(conn: Conn, forum: string, id: number, table: ForumPostTable): Promise<ForumPost | false> {
+		const raw = await Mapp.redis.hmget(`${table}:${forum}:${id}`,
 		
 			// Fixed Content
 			"forum",			// 0
@@ -244,10 +245,10 @@ export class ForumPost {
 		return post;
 	}
 	
-	public saveToRedis() {
+	public saveToRedis(table: ForumPostTable) {
 		
 		// TODO: hmset is deprecated, but hset (the supposed alternative) is not functioning. Wait until fixed.
-		return Mapp.redis.hmset("post:" + this.forum + ":" + this.id,
+		return Mapp.redis.hmset(`${table}:${this.forum}:${this.id}`,
 			
 			// Fixed Content
 			["forum", this.forum],

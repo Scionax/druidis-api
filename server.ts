@@ -15,6 +15,7 @@ import DataController from "./controller/DataController.ts";
 import Conn from "./core/Conn.ts";
 import ObjectStorage from "./core/ObjectStorage.ts";
 import LocalServer from "./core/LocalServer.ts";
+import ForumController from "./controller/ForumController.ts";
 
 // Handle Setup Arguments
 // for( let i = 0; i < Deno.args.length; i++ ) {
@@ -36,7 +37,7 @@ Mapp.redis = await connectRedis(opts);
 const RouteMap: { [name: string]: WebController } = {
 	"post": new PostController(),
 	"data": new DataController(),			// API to pull important data, such as Fixed Forum Data.
-	// "forum": new ForumController(),
+	"forum": new ForumController(),
 	// "u": new UserController(),				// "u" stands for "user"
 	// "g": new GroupController(),				// "g" stands for "group"
 };
