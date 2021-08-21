@@ -2,6 +2,17 @@ import Mapp from "./Mapp.ts";
 
 export default abstract class RedisDB {
 	
+	// ------ Helper Functions ------ //
+	
+	static async getHashTable(table: string): Promise<{ [id: string]: string }> {
+		const results = await Mapp.redis.hgetall(table);
+		const obj: {[id: string]: string} = {};
+		for(let i = 0; i < results.length; i += 2) {
+			obj[results[i]] = results[i+1];
+		}
+		return obj;
+	}
+	
 	// ------ Counters, Incrementing ------ //
 	
 	static async nextPostId(forum: string) {

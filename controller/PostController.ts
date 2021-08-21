@@ -40,10 +40,12 @@ export default class PostController extends WebController {
 			if(!Validate.isValidSlug(conn.url3)) { return await conn.sendFail("Post Request: Invalid post url."); }
 			
 			// Retrieve the post
-			const post = await ForumPost.loadFromId(conn, conn.url2, Number(conn.url3), PostTable.Standard);
+			const post = await ForumPost.loadFromId(conn.url2, Number(conn.url3), PostTable.Standard);
 			
 			if(post) {
 				return await conn.sendJson(post);
+			} else {
+				conn.error("Post Request: Invalid post.");
 			}
 		}
 		

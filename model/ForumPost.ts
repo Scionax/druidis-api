@@ -1,4 +1,3 @@
-import Conn from "../core/Conn.ts";
 import Crypto from "../core/Crypto.ts";
 import Mapp from "../core/Mapp.ts";
 import RedisDB from "../core/RedisDB.ts";
@@ -87,6 +86,7 @@ export class ForumPost {
 		authorId: number,
 		status: PostStatus,
 		content = "",
+		hash = "",
 	): Promise<ForumPost | string> {
 		
 		// Verify certain values exist:
@@ -121,7 +121,7 @@ export class ForumPost {
 		}
 		
 		// Prepare Hash
-		const hash = Crypto.simpleHash(forum + id + authorId + id + category);
+		if(!hash) { hash = Crypto.simpleHash(forum + id + authorId + id + category); }
 		
 		// TODO: Make sure the author exists.
 		
@@ -190,7 +190,7 @@ export class ForumPost {
 		return (await Mapp.redis.exists(`post:${forum}:${id}`)) === 0 ? false : true;
 	}
 	
-	public static async loadFromId(conn: Conn, forum: string, id: number, table: PostTable): Promise<ForumPost | false> {
+	public static async loadFromId(forum: string, id: number, table: PostTable): Promise<ForumPost|false> {
 		const raw = await Mapp.redis.hmget(`${table}:${forum}:${id}`,
 			
 			// Fixed Content
@@ -217,8 +217,6 @@ export class ForumPost {
 			"awards.plant",
 			"awards.seed",
 		);
-		
-		if(typeof raw[1] !== "string") { return conn.error("Entry loaded is invalid."); }
 		
 		const post = new ForumPost(
 			forum,								// forum
@@ -250,7 +248,8 @@ export class ForumPost {
 	
 	public saveToRedis(table: PostTable) {
 		
-		// TODO: Add Multi / Exec (Transaction) support.
+		// TODO: Add TX Multi / Exec (Transaction) support.
+			// See https://github.com/denodrivers/redis for full details
 		// TODO: Only add indexes if the transaction succeeds.
 		
 		// TODO: hmset is deprecated, but hset (the supposed alternative) is not functioning. Wait until fixed.

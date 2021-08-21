@@ -46,6 +46,7 @@ export default abstract class LocalServer {
 			0, // authorId
 			status,
 			LocalServer.randomContent(), // content
+			"local", // hash
 		);
 		
 		// On Failure
@@ -53,11 +54,11 @@ export default abstract class LocalServer {
 		
 		post.applyTrackedValues(
 			status,
-			(Date.now() - (Math.random() * 1000 * 3600 * 24 * 365)), // timePosted
+			(Date.now() - (Math.ceil(Math.random() * 1000 * 3600 * 24 * 365))), // timePosted
 			0, // timeEdited
-			Math.random() * 100000, // views
-			Math.random() * 1000, // clicks
-			Math.random() * 10, // comments
+			Math.ceil(Math.random() * 100000), // views
+			Math.ceil(Math.random() * 1000), // clicks
+			Math.ceil(Math.random() * 10), // comments
 		);
 		
 		// Save To Database
@@ -65,7 +66,7 @@ export default abstract class LocalServer {
 	}
 	
 	static randomTitle() {
-		const rnd = Math.random() * 10;
+		const rnd = Math.ceil(Math.random() * 10);
 		switch(rnd) {
 			case 1: return "This title is pretty cool.";
 			case 2: return "The return of the title.";
@@ -83,7 +84,7 @@ export default abstract class LocalServer {
 	}
 	
 	static randomContent() {
-		const rnd = Math.random() * 10;
+		const rnd = Math.ceil(Math.random() * 10);
 		switch(rnd) {
 			case 1: return "Okay, so one day I was talking to this dog, and he was like 'WOOF'. And I was like 'OMG, a talking dog!'.";
 			case 2: return "Something tells me that this isn't the first time you've done that. Is it the second time? Because that would be cool.";
