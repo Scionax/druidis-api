@@ -1,7 +1,7 @@
 import Conn from "../core/Conn.ts";
 import WebController from "./WebController.ts";
 
-export default class ExampleController extends WebController {
+export default class ForumController extends WebController {
 	
 	async runHandler(conn: Conn): Promise<Response> {
 		

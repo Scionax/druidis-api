@@ -171,13 +171,14 @@ export class ForumPost {
 	
 	// Image Functions
 	public getImageDir() {
-		const dir = `data/${Mapp.getYYMM()}/${Mapp.getDD()}`;
+		const idPage = Math.ceil(this.id/1000);
+		const dir = `images/${this.forum}/${idPage}`;
 		ensureDir(`${Deno.cwd()}/${dir}`);
 		return dir;
 	}
 	
 	public getImagePath() {
-		return `img-${this.id}-${this.hash}.webp`;
+		return `post-${this.id}-${this.hash}.webp`;
 	}
 	
 	public static async checkIfPostExists(forum: string, id: number): Promise<boolean> {
@@ -280,4 +281,3 @@ export class ForumPost {
 		this.content = Validate.safeText(this.content);
 	}
 }
-

@@ -3,4 +3,5 @@ docs/
 tsconfig.json
 config.ts
 data/
+images/
 .env

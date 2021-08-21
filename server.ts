@@ -14,6 +14,7 @@ import PostController from "./controller/PostController.ts";
 import DataController from "./controller/DataController.ts";
 import Conn from "./core/Conn.ts";
 import ObjectStorage from "./core/ObjectStorage.ts";
+import LocalServer from "./core/LocalServer.ts";
 
 // Handle Setup Arguments
 // for( let i = 0; i < Deno.args.length; i++ ) {
@@ -35,9 +36,8 @@ Mapp.redis = await connectRedis(opts);
 const RouteMap: { [name: string]: WebController } = {
 	"post": new PostController(),
 	"data": new DataController(),			// API to pull important data, such as Fixed Forum Data.
-	// Retrieve Post Data for Forum
+	// "forum": new ForumController(),
 	// "u": new UserController(),				// "u" stands for "user"
-	// "f": new ForumController(),				// "f" stands for "forum"
 	// "g": new GroupController(),				// "g" stands for "group"
 };
 
@@ -45,6 +45,10 @@ const RouteMap: { [name: string]: WebController } = {
 Forum.initialize();
 ImageMod.initialize();
 ObjectStorage.connectToS3();		// Connect to AWS
+
+// Run Initialization for Exclusively Local Server
+if(config.local) { LocalServer.initialize(); }
+
 
 // Server Routing
 async function handle(conn: Deno.Conn) {

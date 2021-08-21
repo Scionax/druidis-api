@@ -8,9 +8,9 @@ export const config = {
 	},
 	server: {
 		// POSSIBLE: Using hostname: "localhost" rejects access because BINDING or some $#!^. Leaving it empty works.
-		port: 80,
-		certFile: "",
-		keyFile: "",
+		port: 443,
+		certFile: "/etc/letsencrypt/live/api.druidis.org/fullchain.pem",
+		keyFile: "/etc/letsencrypt/live/api.druidis.org/privkey.pem",
 	},
 	redis: {
 		hostname: "127.0.0.1", 		// "96.126.120.19", "127.0.0.1",
