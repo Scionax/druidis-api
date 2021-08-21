@@ -9,7 +9,6 @@ import { ensureDir } from "../deps.ts";
 export const enum PostTable {
 	Standard = "post",				// post:Forum:id				// A standard post. Added to the pagination set.
 	Queued = "queued",				// queued:Forum:id				// Post is awaiting moderator approval. Delete entirely if rejected.
-	Featured = "featured",			// featured:Forum:id			// A featured post. Might be historical content, interesting content to cycle in, etc.
 	Sponsored = "sponsored",		// sponsored:Forum:id			// A sponsored post. Fit into the regular posts where appropriate.
 }
 
@@ -80,7 +79,6 @@ export class ForumPost {
 	}
 	
 	public static async buildNewPost(
-		conn: Conn,
 		forum: string,
 		id: number,					// Set to 0 if you're creating a new post.
 		category: string,
@@ -89,36 +87,36 @@ export class ForumPost {
 		authorId: number,
 		status: PostStatus,
 		content = "",
-	): Promise<ForumPost | false> {
+	): Promise<ForumPost | string> {
 		
 		// Verify certain values exist:
-		if(typeof id !== "number" || id < 0) { return conn.error("Invalid `id` entry."); }
-		if(typeof forum !== "string" || !forum) { return conn.error("Must include a `forum` entry."); }
-		if(typeof title !== "string" || !title) { return conn.error("Must include a `title` entry."); }
-		if(typeof url !== "string" || !url) { return conn.error("Must include a `url` entry."); }
+		if(typeof id !== "number" || id < 0) { return "Invalid `id` entry." }
+		if(typeof forum !== "string" || !forum) { return "Must include a `forum` entry." }
+		if(typeof title !== "string" || !title) { return "Must include a `title` entry." }
+		if(typeof url !== "string" || !url) { return "Must include a `url` entry." }
 		
 		// Size Limits
-		if(title.length < 3) { return conn.error("`title` is too short."); }
-		if(title.length > 128) { return conn.error("`title` is too long."); }
-		if(content && content.length > 2048) { return conn.error("`content` is too long."); }
+		if(title.length < 3) { return "`title` is too short." }
+		if(title.length > 128) { return "`title` is too long." }
+		if(content && content.length > 2048) { return "`content` is too long." }
 		
 		// Quick pass for alphanumeric values:
-		if(!forum.match(/^[a-z0-9]+$/i)) { return conn.error("`forum` is not valid."); }
-		if(category && !category.match(/^[a-z0-9 ]+$/i)) { return conn.error("`category` is not valid."); }
+		if(!forum.match(/^[a-z0-9]+$/i)) { return "`forum` is not valid." }
+		if(category && !category.match(/^[a-z0-9 ]+$/i)) { return "`category` is not valid." }
 		
 		// Confirm that forum is valid:
-		if(!Mapp.forums[forum]) { return conn.error("`forum` does not exist."); }
-		if(category && !Mapp.forums[forum].hasCategory(category) ) { return conn.error("`category` is not valid."); }
+		if(!Mapp.forums[forum]) { return "`forum` does not exist." }
+		if(category && !Mapp.forums[forum].hasCategory(category) ) { return "`category` is not valid." }
 		
 		// TODO: Make conditional based on user permissions (e.g. mods and admins can expand beyond 
-		if(status > PostStatus.Visible) { return conn.error("`status` cannot start above visible state."); }
+		if(status > PostStatus.Visible) { return "`status` cannot start above visible state." }
 		
 		// URL Requirements
 		if(url) {
 			try {
 				new URL(url);
 			} catch {
-				return conn.error("Invalid `url` entry.");
+				return "Invalid `url` entry.";
 			}
 		}
 		
@@ -137,7 +135,7 @@ export class ForumPost {
 			
 			// Make sure this id isn't already taken:
 			if(id === 0 || await ForumPost.checkIfPostExists(forum, id)) {
-				return conn.error(`Error creating ID ${id} in forum ${forum}. Please contact the administrator, this is a problem.`);
+				return `Error creating ID ${id} in forum ${forum}. Please contact the administrator, this is a problem.`;
 			}
 		}
 		
@@ -252,8 +250,11 @@ export class ForumPost {
 	
 	public saveToRedis(table: PostTable) {
 		
+		// TODO: Add Multi / Exec (Transaction) support.
+		// TODO: Only add indexes if the transaction succeeds.
+		
 		// TODO: hmset is deprecated, but hset (the supposed alternative) is not functioning. Wait until fixed.
-		return Mapp.redis.hmset(`${table}:${this.forum}:${this.id}`,
+		Mapp.redis.hmset(`${table}:${this.forum}:${this.id}`,
 			
 			// Fixed Content
 			["forum", this.forum],
@@ -279,6 +280,13 @@ export class ForumPost {
 			["awards.plant", this.awards.plant],
 			["awards.seed", this.awards.seed],
 		);
+		
+		// Add Appropriate Indexes
+		RedisDB.addToIndex_Post_Forum(this.forum, this.id);
+		if(this.category.length > 0) { RedisDB.addToIndex_Post_Forum_Category(this.forum, this.id, this.category); }
+		RedisDB.addToIndex_Post_Primary(this.forum, this.id);
+		
+		return true;
 	}
 	
 	// Validate Post Data

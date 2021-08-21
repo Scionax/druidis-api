@@ -68,24 +68,31 @@ export class Forum {
 		// ----- News Forums ----- //
 		// ----------------------- //
 		
-		Mapp.forums["QualityJournalism"] = new Forum("QualityJournalism").addCategories();
-		Mapp.forums["Environment"] = new Forum("Environment").addCategories();
+		// General News
+		Mapp.forums["WorldNews"] = new Forum("WorldNews").addCategories("World", "US", "Canada", "MiddleEast", "Asia", "Europe", "SouthAmerica", "Africa");
+		Mapp.forums["Politics"] = new Forum("Politics").addCategories("World", "US", "Canada", "MiddleEast", "Asia", "Europe", "SouthAmerica", "Africa");
+		
+		// Entertainment News
 		Mapp.forums["Entertainment"] = new Forum("Entertainment").addCategories();
+		Mapp.forums["Gaming"] = new Forum("Gaming").addCategories();
 		Mapp.forums["Movies"] = new Forum("Movies").addCategories();
 		Mapp.forums["Shows"] = new Forum("Shows").addCategories();
 		Mapp.forums["Anime"] = new Forum("Anime").addCategories();
 		Mapp.forums["Videos"] = new Forum("Videos").addCategories();
 		Mapp.forums["Documentaries"] = new Forum("Documentaries").addCategories();
 		Mapp.forums["Music"] = new Forum("Music").addCategories();
-		Mapp.forums["Programming"] = new Forum("Programming").addCategories();
 		Mapp.forums["Sports"] = new Forum("Sports").addCategories();
-		Mapp.forums["Technology"] = new Forum("Technology").addCategories();
+		
+		// Special News
 		Mapp.forums["UpliftingNews"] = new Forum("UpliftingNews").addCategories();
+		Mapp.forums["QualityJournalism"] = new Forum("QualityJournalism").addCategories();
 		
-		Mapp.forums["Gaming"] = new Forum("Gaming").addCategories();
-		
+		// Science News
+		Mapp.forums["Environment"] = new Forum("Environment").addCategories();
+		Mapp.forums["Programming"] = new Forum("Programming").addCategories();
 		Mapp.forums["Science"] = new Forum("Science").addCategories("Astronomy", "Anthropology", "Biology", "Chemistry", "EarthScience", "Economics", "Environment", "Geology",
 		"Health", "Mathematics", "Medicine", "Neuroscience", "Physics", "Psychology", "SocialScience");
+		Mapp.forums["Technology"] = new Forum("Technology").addCategories();
 		
 		// ---------------------------- //
 		// ----- Community Forums ----- //

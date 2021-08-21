@@ -85,7 +85,6 @@ export default class PostController extends WebController {
 		
 		// Convert Raw Data to ForumPost
 		const post = await ForumPost.buildNewPost(
-			conn,
 			rawData.forum && typeof rawData.forum === "string" ? rawData.forum : "",
 			0, // Assign to 0 for new posts.
 			rawData.category && typeof rawData.category === "string" ? rawData.category : "",
@@ -97,7 +96,7 @@ export default class PostController extends WebController {
 		);
 		
 		// On Failure
-		if(post == false || !conn.success) { return await conn.sendFail(conn.errorReason); }
+		if(typeof post === "string") { return await conn.sendFail(post); }
 		
 		post.applyNewPost();							// Post Successful. Update NEW POST values.
 		

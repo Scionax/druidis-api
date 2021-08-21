@@ -1,62 +1,67 @@
-import { PostStatus } from "../model/ForumPost.ts";
+import { ForumPost, PostStatus, PostTable } from "../model/ForumPost.ts";
 import Mapp from "./Mapp.ts";
 
 export default abstract class LocalServer {
 	
-	static initialize() {
+	static async initialize() {
 		
-		LocalServer.postSimple("Gaming", 1);
-		LocalServer.postSimple("Gaming", 2);
-		LocalServer.postSimple("Gaming", 3);
-		LocalServer.postSimple("Gaming", 4);
-		LocalServer.postSimple("Gaming", 5);
-		LocalServer.postSimple("Gaming", 6);
-		LocalServer.postSimple("Gaming", 7);
-		LocalServer.postSimple("Gaming", 8);
-		LocalServer.postSimple("Gaming", 9);
-		LocalServer.postSimple("Gaming", 10);
-		LocalServer.postSimple("Gaming", 11);
-		LocalServer.postSimple("Gaming", 12);
-		LocalServer.postSimple("Gaming", 13);
-		LocalServer.postSimple("Gaming", 14);
+		await LocalServer.postSimple("Gaming", 1);
+		await LocalServer.postSimple("Gaming", 2);
+		await LocalServer.postSimple("Gaming", 3);
+		await LocalServer.postSimple("Gaming", 4);
+		await LocalServer.postSimple("Gaming", 5);
+		await LocalServer.postSimple("Gaming", 6);
+		await LocalServer.postSimple("Gaming", 7);
+		await LocalServer.postSimple("Gaming", 8);
+		await LocalServer.postSimple("Gaming", 9);
+		await LocalServer.postSimple("Gaming", 10);
+		await LocalServer.postSimple("Gaming", 11);
+		await LocalServer.postSimple("Gaming", 12);
+		await LocalServer.postSimple("Gaming", 13);
+		await LocalServer.postSimple("Gaming", 14);
 		
-		LocalServer.postSimple("News", 1, "Politics");
-		LocalServer.postSimple("News", 2, "Politics");
-		LocalServer.postSimple("News", 3, "Politics");
-		LocalServer.postSimple("News", 4, "Events");
-		LocalServer.postSimple("News", 5, "Events");
-		LocalServer.postSimple("News", 6, "Events");
+		await Mapp.redis.set(`count:post:Gaming`, 14);
+		console.log("Fabricated Local Gaming Content.");
+		
+		await LocalServer.postSimple("WorldNews", 1, "US");
+		await LocalServer.postSimple("WorldNews", 2, "US");
+		await LocalServer.postSimple("WorldNews", 3, "US");
+		await LocalServer.postSimple("WorldNews", 4, "Europe");
+		await LocalServer.postSimple("WorldNews", 5, "Europe");
+		await LocalServer.postSimple("WorldNews", 6, "Europe");
+		
+		await Mapp.redis.set(`count:post:WorldNews`, 6);
+		console.log("Fabricated Local WorldNews Content.");
 	}
 	
-	static postSimple(forum: string, id: number, category = "", status = PostStatus.Visible) {
+	static async postSimple(forum: string, id: number, category = "", status = PostStatus.Visible) {
 		
-		// TODO: hmset is deprecated, but hset (the supposed alternative) is not functioning. Wait until fixed.
-		return Mapp.redis.hmset("post:" + forum + ":" + id,
-			
-			// Fixed Content
-			["forum", forum],
-			["id", id],
-			["category", category],
-			["title", LocalServer.randomTitle()],
-			["url", "http://example.com"],
-			["authorId", 0],
-			["hash", "local"],
-			["content", LocalServer.randomContent()],
-			
-			// Tracked Values
-			["status", status],
-			["timePosted", (Date.now() - (Math.random() * 1000 * 3600 * 24 * 365))],
-			["timeEdited", 0],
-			["views", Math.random() * 100000],
-			["clicks", Math.random() * 1000],
-			["comments", Math.random() * 10],
-			
-			// Awards
-			// ["awards.druid", this.awards.druid],
-			// ["awards.tree", this.awards.tree],
-			// ["awards.plant", this.awards.plant],
-			// ["awards.seed", this.awards.seed],
+		// Convert Raw Data to ForumPost
+		const post = await ForumPost.buildNewPost(
+			forum,
+			id,
+			category,
+			LocalServer.randomTitle(), // title
+			"http://example.com", // url
+			0, // authorId
+			status,
+			LocalServer.randomContent(), // content
 		);
+		
+		// On Failure
+		if(typeof post === "string") { console.error(`Error on postSimple(${forum}, ${id}, ${category})`); return; }
+		
+		post.applyTrackedValues(
+			status,
+			(Date.now() - (Math.random() * 1000 * 3600 * 24 * 365)), // timePosted
+			0, // timeEdited
+			Math.random() * 100000, // views
+			Math.random() * 1000, // clicks
+			Math.random() * 10, // comments
+		);
+		
+		// Save To Database
+		post.saveToRedis(PostTable.Standard);
 	}
 	
 	static randomTitle() {
