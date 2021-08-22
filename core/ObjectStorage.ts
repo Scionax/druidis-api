@@ -37,4 +37,3 @@ export default abstract class ObjectStorage {
 		Buckets.forEach(bucket => console.log(bucket.Name));
 	}
 }
-

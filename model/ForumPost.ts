@@ -252,7 +252,7 @@ export class ForumPost {
 	// Image Functions
 	public getImageDir() {
 		const imgPage = Math.ceil(this.id/1000);
-		const dir = `images/${this.forum}/${imgPage}`;
+		const dir = `${this.forum}/${imgPage}`;
 		ensureDir(`${Deno.cwd()}/${dir}`);
 		return dir;
 	}
@@ -348,7 +348,7 @@ export class ForumPost {
 			["category", this.category],
 			["url", this.url],
 			["authorId", this.authorId],
-			["title", this.comment],
+			["title", this.title],
 			["content", this.content],
 			["comment", this.comment],
 			["img", this.img],

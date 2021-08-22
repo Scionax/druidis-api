@@ -131,7 +131,7 @@ export default class PostController extends WebController {
 		}
 		
 		// Crop and Resize the image as needed, convert it to webp.
-		const fullImagePath = `${Deno.cwd()}/${imageDir}/${imagePath}`;
+		const fullImagePath = `${Deno.cwd()}/images/${imageDir}/${imagePath}`;
 		await ImageMod.convert(fullImagePath, fullImagePath, rawData.imageWidth, rawData.imageHeight);
 		
 		// Save Image to Object Storage
