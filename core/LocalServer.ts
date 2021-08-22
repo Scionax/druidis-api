@@ -1,3 +1,4 @@
+import { config } from "../config.ts";
 import { ForumPost, PostStatus, PostTable } from "../model/ForumPost.ts";
 import Mapp from "./Mapp.ts";
 
@@ -5,52 +6,74 @@ export default abstract class LocalServer {
 	
 	static async initialize() {
 		
-		await LocalServer.postSimple("Gaming", 1);
-		await LocalServer.postSimple("Gaming", 2);
-		await LocalServer.postSimple("Gaming", 3);
-		await LocalServer.postSimple("Gaming", 4);
-		await LocalServer.postSimple("Gaming", 5);
-		await LocalServer.postSimple("Gaming", 6);
-		await LocalServer.postSimple("Gaming", 7);
-		await LocalServer.postSimple("Gaming", 8);
-		await LocalServer.postSimple("Gaming", 9);
-		await LocalServer.postSimple("Gaming", 10);
-		await LocalServer.postSimple("Gaming", 11);
-		await LocalServer.postSimple("Gaming", 12);
-		await LocalServer.postSimple("Gaming", 13);
-		await LocalServer.postSimple("Gaming", 14);
+		// Only initialize this data on Windows
+		if(Deno.build.os !== "windows") { return; } // NOTE: DO NOT REMOVE THIS LINE. It protects us from accidental database flush.
 		
-		await Mapp.redis.set(`count:post:Gaming`, 14);
-		console.log("Fabricated Local Gaming Content.");
+		// Flush the Database
+		// Double check config settings, and make sure we're only flushing windows data.
+		if(config.local === true && config.prod === false) {
+			await Mapp.redis.flushdb();
+		}
 		
-		await LocalServer.postSimple("WorldNews", 1, "US");
-		await LocalServer.postSimple("WorldNews", 2, "US");
-		await LocalServer.postSimple("WorldNews", 3, "US");
-		await LocalServer.postSimple("WorldNews", 4, "Europe");
-		await LocalServer.postSimple("WorldNews", 5, "Europe");
-		await LocalServer.postSimple("WorldNews", 6, "Europe");
+		// Produce Local Content
+		LocalServer.postSimple("Gaming", 1);
+		LocalServer.postSimple("Gaming", 2);
+		LocalServer.postSimple("Gaming", 3);
+		LocalServer.postSimple("Gaming", 4);
+		LocalServer.postSimple("Gaming", 5);
+		LocalServer.postSimple("Gaming", 6);
+		LocalServer.postSimple("Gaming", 7);
+		LocalServer.postSimple("Gaming", 8);
+		LocalServer.postSimple("Gaming", 9);
+		LocalServer.postSimple("Gaming", 10);
+		LocalServer.postSimple("Gaming", 11);
+		LocalServer.postSimple("Gaming", 12);
+		LocalServer.postSimple("Gaming", 13);
+		LocalServer.postSimple("Gaming", 14);
+		LocalServer.postSimple("Gaming", 15);
+		LocalServer.postSimple("Gaming", 16);
+		LocalServer.postSimple("Gaming", 17);
+		LocalServer.postSimple("Gaming", 18);
+		LocalServer.postSimple("Gaming", 19, "Events");
+		LocalServer.postSimple("Gaming", 20, "Events");
+		LocalServer.postSimple("Gaming", 21, "Events");
+		LocalServer.postSimple("Gaming", 22, "Events");
+		LocalServer.postSimple("Gaming", 23, "Events");
+		LocalServer.postSimple("Gaming", 24, "Events");
+		LocalServer.postSimple("Gaming", 25, "Events");
+		LocalServer.postSimple("Gaming", 26, "Events");
+		LocalServer.postSimple("Gaming", 27, "Events");
+		LocalServer.postSimple("Gaming", 28, "Showoff");
+		LocalServer.postSimple("Gaming", 29, "Showoff");
+		LocalServer.postSimple("Gaming", 30, "Showoff");
 		
-		await Mapp.redis.set(`count:post:WorldNews`, 6);
-		console.log("Fabricated Local WorldNews Content.");
+		await Mapp.redis.set(`count:post:Gaming`, 30);
+		console.log("Created Local Gaming Post Placeholders.");
 	}
 	
 	static async postSimple(forum: string, id: number, category = "", status = PostStatus.Visible) {
 		
 		// Convert Raw Data to ForumPost
-		const post = await ForumPost.buildCommentPost(
+		const post = await ForumPost.buildMediaPost(
 			forum,
-			id,
 			category,
-			LocalServer.randomTitle(), // title
 			"http://example.com", // url
 			0, // authorId
-			status,
+			LocalServer.randomTitle(), // title
 			LocalServer.randomContent(), // content
-			"local", // hash
+			LocalServer.randomContent(), // comment
+			600, // w
+			462, // h
+			status,
+			false, // isVideo
 		);
 		
 		// On Failure
-		if(typeof post === "string") { console.error(`Error on postSimple(${forum}, ${id}, ${category})`); return; }
+		if(typeof post === "string") { console.error(`Error on postSimple(${forum}, ${id}, ${category}): ${post}`); return; }
+		
+		// Need to provide image updates for local behavior:
+		const {imgPath, width, height} = LocalServer.randomImage();
+		post.setImage(imgPath, width, height);
 		
 		post.applyTrackedValues(
 			status,
@@ -63,6 +86,22 @@ export default abstract class LocalServer {
 		
 		// Save To Database
 		post.saveToRedis(PostTable.Standard);
+	}
+	
+	static randomImage() {
+		let imgPath, height;
+		const width = 600;
+		const rnd = Math.floor(Math.random() * 5);
+		
+		switch(rnd) {
+			case 1: imgPath = `img-local-1.webp`; height = 315; break;
+			case 2: imgPath = `img-local-2.webp`; height = 443; break;
+			case 3: imgPath = `img-local-3.webp`; height = 462; break;
+			case 4: imgPath = `img-local-4.webp`; height = 487; break;
+			default: imgPath = `img-local-5.webp`; height = 462; break;
+		}
+		
+		return {imgPath, width, height};
 	}
 	
 	static randomTitle() {

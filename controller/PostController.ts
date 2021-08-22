@@ -86,15 +86,18 @@ export default class PostController extends WebController {
 		}
 		
 		// Convert Raw Data to ForumPost
-		const post = await ForumPost.buildCommentPost(
+		const post = await ForumPost.buildMediaPost(
 			rawData.forum && typeof rawData.forum === "string" ? rawData.forum : "",
-			0, // Assign to 0 for new posts.
 			rawData.category && typeof rawData.category === "string" ? rawData.category : "",
-			rawData.title && typeof rawData.title === "string"? rawData.title : "",
 			rawData.url && typeof rawData.url === "string" ? rawData.url : "",
 			rawData.authorId && typeof rawData.authorId === "string" ? Number(rawData.authorId) : 0,
-			rawData.status && typeof rawData.status === "string" ? Number(rawData.status) : PostStatus.Visible,
+			rawData.title && typeof rawData.title === "string"? rawData.title : "",
 			rawData.content && typeof rawData.content === "string" ? rawData.content : "",
+			rawData.comment && typeof rawData.comment === "string" ? rawData.comment : "",
+			rawData.w && typeof rawData.w === "string" ? Number(rawData.w) : 0,
+			rawData.h && typeof rawData.h === "string" ? Number(rawData.h) : 0,
+			rawData.status && typeof rawData.status === "string" ? Number(rawData.status) : PostStatus.Visible,
+			false, // [isVideo] TODO: Allow video if applicable above.
 		);
 		
 		// On Failure
@@ -111,7 +114,7 @@ export default class PostController extends WebController {
 		
 		// Prepare Directory & Image Name
 		const imageDir = post.getImageDir();
-		const imagePath = post.getImagePath();
+		const imagePath = post.getImagePathName();
 		
 		// Download Image
 		if(typeof rawData.image === "string") {

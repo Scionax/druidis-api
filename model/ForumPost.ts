@@ -257,6 +257,14 @@ export class ForumPost {
 		return dir;
 	}
 	
+	public getImagePathName() { return this.img; }
+	
+	public setImage(path = "", w = 0, h = 0) {
+		if(path.length > 0) { this.img = path; }
+		if(w > 0) { this.w = w; }
+		if(h > 0) { this.h = h; }
+	}
+	
 	public static async checkIfPostExists(forum: string, id: number): Promise<boolean> {
 		return (await Mapp.redis.exists(`post:${forum}:${id}`)) === 0 ? false : true;
 	}

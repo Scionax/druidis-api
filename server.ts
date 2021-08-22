@@ -50,7 +50,6 @@ ObjectStorage.connectToS3();		// Connect to AWS
 // Run Initialization for Exclusively Local Server
 if(config.local) { LocalServer.initialize(); }
 
-
 // Server Routing
 async function handle(conn: Deno.Conn) {
 	const httpConn = Deno.serveHttp(conn);

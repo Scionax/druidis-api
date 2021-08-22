@@ -74,7 +74,7 @@ export class Forum {
 		
 		// Entertainment News
 		Mapp.forums["Entertainment"] = new Forum("Entertainment").addCategories();
-		Mapp.forums["Gaming"] = new Forum("Gaming").addCategories();
+		Mapp.forums["Gaming"] = new Forum("Gaming").addCategories("News", "Events", "Showoff", "Releases");
 		Mapp.forums["Movies"] = new Forum("Movies").addCategories();
 		Mapp.forums["Shows"] = new Forum("Shows").addCategories();
 		Mapp.forums["Anime"] = new Forum("Anime").addCategories();
@@ -112,19 +112,27 @@ export class Forum {
 		Mapp.forums["Vehicles"] = new Forum("Vehicles").addCategories();
 		Mapp.forums["Books"] = new Forum("Books").addCategories();
 		
+		// Arts & Crafts
+		Mapp.forums["Art"] = new Forum("Art").addCategories("Drawing", "DigitalArt", "Painting");
+		Mapp.forums["Textiles"] = new Forum("Textiles").addCategories("Embroidery", "Quilting");
+		Mapp.forums["Metalwork"] = new Forum("Metalwork").addCategories();
+		Mapp.forums["Woodwork"] = new Forum("Woodwork").addCategories();
+		
 		// Games
 		Mapp.forums["ActionGames"] = new Forum("ActionGames").addCategories("Arcade", "BattleRoyale", "FPS", "Horror", "Racing", "Shooter", "Sports", "Stealth", "Survival");
 		Mapp.forums["BrainGames"] = new Forum("BrainGames").addCategories("Educational", "Programming", "Puzzle", "Trivia", "WordGames");
 		Mapp.forums["CasualGames"] = new Forum("CasualGames").addCategories("Cards", "Cooking", "Farming", "LifeSim");
-		Mapp.forums["CoopGames"] = new Forum("CoopGames").addCategories();
 		Mapp.forums["StoryGames"] = new Forum("StoryGames").addCategories("Adventure", "RPG", "VisualNovel");
 		Mapp.forums["StrategyGames"] = new Forum("StrategyGames").addCategories("CCG", "Deckbuilding", "Mystery", "RTS", "Tactics", "TowerDefense", "WorldBuilder");
 		
 		Mapp.forums["GamingMemes"] = new Forum("GamingMemes").addCategories();
 		Mapp.forums["GamingAchievements"] = new Forum("GamingAchievements").addCategories();
 		
+		Mapp.forums["BoardGames"] = new Forum("BoardGames").addCategories();
+		Mapp.forums["RPG"] = new Forum("RPG").addCategories();
+		
 		// Cute
-		Mapp.forums["Cute"] = new Forum("Cute").addCategories();
+		Mapp.forums["Cute"] = new Forum("Cute").addCategories("Bird", "Canine", "Exotic", "Feline", "Wildlife");
 		Mapp.forums["Cosplay"] = new Forum("Cosplay").addCategories();
 		
 		// Humor
