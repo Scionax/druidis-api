@@ -86,7 +86,7 @@ export default class PostController extends WebController {
 		}
 		
 		// Convert Raw Data to ForumPost
-		const post = await ForumPost.buildNewPost(
+		const post = await ForumPost.buildCommentPost(
 			rawData.forum && typeof rawData.forum === "string" ? rawData.forum : "",
 			0, // Assign to 0 for new posts.
 			rawData.category && typeof rawData.category === "string" ? rawData.category : "",

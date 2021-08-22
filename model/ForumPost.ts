@@ -32,12 +32,16 @@ export class ForumPost {
 	// Fixed Content
 	private forum: string;
 	private id: number;					// Tracks the ID of the post within its parent forum.
-	private category: string;
-	private title: string;
+	private category: string;			// An optional sub-category designation within the forum.
 	private url: string;				// Link to the Source URL (External Site)
 	private authorId: number;
-	private hash: string;				// Hash (for image and object storage)
+	private title: string;				// Title of the post.
 	private content: string;			// Text content for the post.
+	private comment: string;			// An optional user comment.
+	private img: string;				// Image Path for Object Storage, e.g. img-ID-HASH.webp
+	private video: string;				// Video Path (URL or object storage).
+	private w: number;					// The width of the media object (image or video).
+	private h: number;					// The height of the media object (image or video).
 	
 	// Tracked Values
 	private status: PostStatus;			// Post Status: Deleted, Denied, Hidden, Approval, Visible, Featured, Stickied, Announced
@@ -59,46 +63,67 @@ export class ForumPost {
 		forum: string,
 		id: number,
 		category: string,
-		title: string,
 		url: string,
 		authorId: number,
-		hash: string,
+		title: string,
+		content: string,
+		comment: string,
+		img: string,
+		video: string,
+		w: number,
+		h: number,
 		status: PostStatus,
-		content: string = "",
 	) {
 		this.forum = forum;
 		this.id = id;
 		this.category = category;
-		this.title = title;
 		this.url = url;
 		this.authorId = authorId;
-		this.hash = hash;
-		this.status = status;
+		this.title = title;
 		this.content = content;
+		this.comment = comment;
+		this.img = img;
+		this.video = video;
+		this.w = w;
+		this.h = h;
+		this.status = status;
 	}
 	
-	public static async buildNewPost(
+	public static validatePostData(
 		forum: string,
-		id: number,					// Set to 0 if you're creating a new post.
 		category: string,
-		title: string,
 		url: string,
 		authorId: number,
+		title: string,
+		content: string,
+		comment: string,
 		status: PostStatus,
-		content = "",
-		hash = "",
-	): Promise<ForumPost | string> {
+		hasMedia = false,		// Indicates that other media is being used (such as image or video)
+	) {
 		
 		// Verify certain values exist:
-		if(typeof id !== "number" || id < 0) { return "Invalid `id` entry." }
 		if(typeof forum !== "string" || !forum) { return "Must include a `forum` entry." }
-		if(typeof title !== "string" || !title) { return "Must include a `title` entry." }
 		if(typeof url !== "string" || !url) { return "Must include a `url` entry." }
 		
-		// Size Limits
-		if(title.length < 3) { return "`title` is too short." }
-		if(title.length > 128) { return "`title` is too long." }
-		if(content && content.length > 2048) { return "`content` is too long." }
+		// Validate authorId is not invalid.
+		if(authorId < 0) { return "Invalid `authorId` entry."}
+		
+		// Must have one or more of the following: (1) Media, (2) Title, (3) Content, or (4) Comment
+		if(hasMedia === false && comment.length === 0 && title.length > 0 && content.length === 0) {
+			return "Must provide content for this post.";
+		}
+		
+		// Validate Title (if present)
+		if(title.length > 0) {
+			if(title.length < 3) { return "`title` is too short."; }
+			if(title.length > 128) { return "`title` is too long."; }
+		}
+		
+		// Validate Content (if present)
+		if(content.length > 256) { return "`content` is too long." }
+		
+		// Validate Comment (if present)
+		if(comment.length > 256) { return "`comment` is too long." }
 		
 		// Quick pass for alphanumeric values:
 		if(!forum.match(/^[a-z0-9]+$/i)) { return "`forum` is not valid." }
@@ -107,9 +132,6 @@ export class ForumPost {
 		// Confirm that forum is valid:
 		if(!Mapp.forums[forum]) { return "`forum` does not exist." }
 		if(category && !Mapp.forums[forum].hasCategory(category) ) { return "`category` is not valid." }
-		
-		// TODO: Make conditional based on user permissions (e.g. mods and admins can expand beyond 
-		if(status > PostStatus.Visible) { return "`status` cannot start above visible state." }
 		
 		// URL Requirements
 		if(url) {
@@ -120,26 +142,79 @@ export class ForumPost {
 			}
 		}
 		
-		// Prepare Hash
-		if(!hash) { hash = Crypto.simpleHash(forum + id + authorId + id + category); }
-		
 		// TODO: Make sure the author exists.
 		
 		// TODO: Verify user permissions.
 		
-		// TODO: Determine status (such as if the user can make it featured)
+		// TODO: Affect status based on permissions.
+		if(status > PostStatus.Visible) { return "`status` cannot start above visible state." }
 		
-		// Determine Next Available ID (for new posts only)
-		if(id === 0) {
-			id = await RedisDB.nextForumPostId(forum);
-			
-			// Make sure this id isn't already taken:
-			if(id === 0 || await ForumPost.checkIfPostExists(forum, id)) {
-				return `Error creating ID ${id} in forum ${forum}. Please contact the administrator, this is a problem.`;
-			}
+		return "";
+	}
+	
+	// Create a comment that only has comments, no media.
+	public static async buildCommentPost(
+		forum: string,
+		category: string,
+		url: string,
+		authorId: number,
+		title: string,
+		content: string,
+		comment: string,
+		status: PostStatus,
+	): Promise<ForumPost | string> {
+		
+		// Validate Generic Post Data
+		const msg = ForumPost.validatePostData(forum, category, url, authorId, title, content, comment, status);
+		if(msg.length > 0) { return msg; }
+		
+		// Assign a new ID and make sure a post isn't already using it.
+		const id = await RedisDB.nextForumPostId(forum);
+		if(await ForumPost.checkIfPostExists(forum, id)) {
+			return `Error creating ID ${id} in forum ${forum}. Please contact the administrator, this is a problem.`;
 		}
 		
-		return new ForumPost(forum, id, category, title, url, authorId, hash, status, content);
+		return new ForumPost(forum, id, category, url, authorId, title, content, comment, "", "", 0, 0, status);
+	}
+	
+	public static async buildMediaPost(
+		forum: string,
+		category: string,
+		url: string,
+		authorId: number,
+		title: string,
+		content: string,
+		comment: string,
+		w: number,
+		h: number,
+		status: PostStatus,
+		isVideo = false,
+	): Promise<ForumPost | string> {
+		
+		// Validate Generic Post Data
+		const msg = ForumPost.validatePostData(forum, category, url, authorId, title, content, comment, status, true);
+		if(msg.length > 0) { return msg; }
+		
+		// Validate Width & Height
+		if(w < 64) {  return "Posting an image with too small of a width." }
+		if(h < 32) {  return "Posting an image with too small of a height." }
+		
+		// Assign a new ID and make sure a post isn't already using it.
+		const id = await RedisDB.nextForumPostId(forum);
+		if(await ForumPost.checkIfPostExists(forum, id)) {
+			return `Error creating ID ${id} in forum ${forum}. Please contact the administrator, this is a problem.`;
+		}
+		
+		// Prepare Video
+		if(isVideo) {
+			// TODO: Add Video Media Option
+		}
+		
+		// Prepare Image
+		const hash = Crypto.simpleHash(forum + id + authorId + id + category);
+		const img = `img-${id}-${hash}.webp`;
+		
+		return new ForumPost(forum, id, category, url, authorId, title, content, comment, img, "", w, h, status);
 	}
 	
 	public applyNewPost(status = PostStatus.Visible) {
@@ -182,10 +257,6 @@ export class ForumPost {
 		return dir;
 	}
 	
-	public getImagePath() {
-		return `post-${this.id}-${this.hash}.webp`;
-	}
-	
 	public static async checkIfPostExists(forum: string, id: number): Promise<boolean> {
 		return (await Mapp.redis.exists(`post:${forum}:${id}`)) === 0 ? false : true;
 	}
@@ -197,19 +268,23 @@ export class ForumPost {
 			"forum",			// 0
 			"id",				// 1
 			"category",			// 2
-			"title",			// 3
-			"url",				// 4
-			"authorId",			// 5
-			"hash",				// 6
-			"content",			// 7
+			"url",				// 3
+			"authorId",			// 4
+			"title",			// 5
+			"content",			// 6
+			"comment",			// 7
+			"img",				// 8
+			"video",			// 9
+			"w",				// 10
+			"h",				// 11
 			
 			// Tracked Values
-			"status",			// 8
-			"timePosted",		// 9
-			"timeEdited",		// 10
-			"views",			// 11
-			"clicks",			// 12
-			"comments",			// 13
+			"status",			// 12
+			"timePosted",		// 13
+			"timeEdited",		// 14
+			"views",			// 15
+			"clicks",			// 16
+			"comments",			// 17
 			
 			// Awards
 			"awards.druid",
@@ -222,26 +297,30 @@ export class ForumPost {
 			forum,								// forum
 			Number(raw[1] as string),			// id
 			raw[2] as string,					// category
-			raw[3] as string,					// title
-			raw[4] as string,					// url
-			Number(raw[5] as string),			// authorId
-			raw[6] as string,					// hash (no need to send)
-			Number(raw[8] as string),			// status (required for verification)
-			raw[7] as string,					// content
+			raw[3] as string,					// url
+			Number(raw[4] as string),			// authorId
+			raw[5] as string,					// title
+			raw[6] as string,					// content
+			raw[7] as string,					// comment
+			raw[8] as string,					// img
+			raw[9] as string,					// video
+			Number(raw[10] as string),			// w
+			Number(raw[11] as string),			// h
+			Number(raw[12] as string),			// status (required for verification)
 		);
 		
 		if(!post) { return false; }
 		
 		post.applyTrackedValues(
-			Number(raw[8] as string),			// status
-			Number(raw[9] as string),			// timePosted
-			Number(raw[10] as string),			// timeEdited
-			Number(raw[11] as string),			// views
-			Number(raw[12] as string),			// clicks
-			Number(raw[13] as string)			// comments
+			Number(raw[12] as string),			// status
+			Number(raw[13] as string),			// timePosted
+			Number(raw[14] as string),			// timeEdited
+			Number(raw[15] as string),			// views
+			Number(raw[16] as string),			// clicks
+			Number(raw[17] as string)			// comments
 		);
 		
-		post.applyAwards(Number(raw[14] as string), Number(raw[15] as string), Number(raw[16] as string), Number(raw[17] as string));
+		post.applyAwards(Number(raw[18] as string), Number(raw[19] as string), Number(raw[20] as string), Number(raw[21] as string));
 		
 		return post;
 	}
@@ -252,18 +331,22 @@ export class ForumPost {
 			// See https://github.com/denodrivers/redis for full details
 		// TODO: Only add indexes if the transaction succeeds.
 		
-		// TODO: hmset is deprecated, but hset (the supposed alternative) is not functioning. Wait until fixed.
+		// TODO: hmset is deprecated, but hset (the designated alternative) won't function locally (probably due to Windows Redis)
 		Mapp.redis.hmset(`${table}:${this.forum}:${this.id}`,
 			
 			// Fixed Content
 			["forum", this.forum],
 			["id", this.id],
 			["category", this.category],
-			["title", this.title],
 			["url", this.url],
 			["authorId", this.authorId],
-			["hash", this.hash],
+			["title", this.comment],
 			["content", this.content],
+			["comment", this.comment],
+			["img", this.img],
+			["video", this.video],
+			["w", this.w],
+			["h", this.h],
 			
 			// Tracked Values
 			["status", this.status],
@@ -290,7 +373,7 @@ export class ForumPost {
 	
 	// Validate Post Data
 	public sanitizePostData() {
-		this.title = Validate.safeText(this.title);
+		this.comment = Validate.safeText(this.comment);
 		this.content = Validate.safeText(this.content);
 	}
 }

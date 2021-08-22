@@ -28,7 +28,10 @@ type CropRules = {
 
 export default abstract class ImageMod {
 	
-	static binFile: string;			// The file path to the `cwebp` binary.
+	static binFile: string;			// The file path to the `cwebp` binary. Gets initialized.
+	
+	static baseImageWidth: 600;
+	static baseImageHeight: 462;	// Should be equal to baseImageWidth / 1.3
 	
 	static async initialize() {
 		
@@ -133,15 +136,15 @@ export default abstract class ImageMod {
 			const cropRules = ImageMod.getWideAspectCrop(origWidth, origHeight);
 			
 			// Only crop if it is above an appropriate size to do so.
-			if(cropRules.crop && (origWidth > 680 || origHeight > 524)) {
+			if(cropRules.crop && (origWidth > ImageMod.baseImageWidth || origHeight > ImageMod.baseImageHeight)) {
 				option = `-crop ${cropRules.x} ${cropRules.y} ${cropRules.w} ${cropRules.h}`;
 			}
 			
 			// Handle Resize
 			const w = cropRules.w ? cropRules.w : origWidth;
 			
-			if(origWidth > 680 && w > 680) {
-				option += (option === "" ? "" : " ") + `-resize 680 0`;
+			if(origWidth > ImageMod.baseImageWidth && w > ImageMod.baseImageWidth) {
+				option += (option === "" ? "" : " ") + `-resize ${ImageMod.baseImageWidth} 0`;
 			}
 		}
 		

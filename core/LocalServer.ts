@@ -37,7 +37,7 @@ export default abstract class LocalServer {
 	static async postSimple(forum: string, id: number, category = "", status = PostStatus.Visible) {
 		
 		// Convert Raw Data to ForumPost
-		const post = await ForumPost.buildNewPost(
+		const post = await ForumPost.buildCommentPost(
 			forum,
 			id,
 			category,
