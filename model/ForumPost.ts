@@ -201,6 +201,7 @@ export class ForumPost {
 		
 		// Assign a new ID and make sure a post isn't already using it.
 		const id = await RedisDB.nextForumPostId(forum);
+		
 		if(await ForumPost.checkIfPostExists(forum, id)) {
 			return `Error creating ID ${id} in forum ${forum}. Please contact the administrator, this is a problem.`;
 		}
@@ -253,7 +254,7 @@ export class ForumPost {
 	public getImageDir() {
 		const imgPage = Math.ceil(this.id/1000);
 		const dir = `${this.forum}/${imgPage}`;
-		ensureDir(`${Deno.cwd()}/${dir}`);
+		ensureDir(`images/${dir}`);
 		return dir;
 	}
 	

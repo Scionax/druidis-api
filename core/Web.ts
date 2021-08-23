@@ -91,7 +91,7 @@ export default abstract class Web {
 		const fullPath = `${dir}/${file}`;
 		
 		// Make sure the directory exists.
-		await ensureDir(`${Deno.cwd()}/${dir}`);
+		await ensureDir(dir);
 		
 		try {
 			await Deno.writeFile(fullPath, unit8arr, {create: true, mode: 0o755, append: false});

@@ -78,12 +78,15 @@ export default class PostController extends WebController {
 		// If there is no image data, prevent the post.
 		// TODO: Allow video submissions (eventually).
 		if(!rawData.image) {
-			return await conn.sendFail("Must include: image, imageWidth, imageHeight.");
+			return await conn.sendFail("Must include: image, w, and h.");
 		}
 		
-		if(!rawData.imageWidth || !rawData.imageHeight || typeof rawData.imageWidth !== "number" || typeof rawData.imageHeight !== "number") {
-			return await conn.sendFail("Must include a valid `imageWidth` and `imageHeight`.");
+		if(!rawData.w || !rawData.h || typeof rawData.w !== "number" || typeof rawData.h !== "number") {
+			return await conn.sendFail("Must include a valid `w` (image width) and `h` (image height).");
 		}
+		
+		const width = Number(rawData.w as string);
+		const height = Number(rawData.h as string);
 		
 		// Convert Raw Data to ForumPost
 		const post = await ForumPost.buildMediaPost(
@@ -94,8 +97,8 @@ export default class PostController extends WebController {
 			rawData.title && typeof rawData.title === "string"? rawData.title : "",
 			rawData.content && typeof rawData.content === "string" ? rawData.content : "",
 			rawData.comment && typeof rawData.comment === "string" ? rawData.comment : "",
-			rawData.w && typeof rawData.w === "string" ? Number(rawData.w) : 0,
-			rawData.h && typeof rawData.h === "string" ? Number(rawData.h) : 0,
+			width,
+			height,
 			rawData.status && typeof rawData.status === "string" ? Number(rawData.status) : PostStatus.Visible,
 			false, // [isVideo] TODO: Allow video if applicable above.
 		);
@@ -118,7 +121,7 @@ export default class PostController extends WebController {
 		
 		// Download Image
 		if(typeof rawData.image === "string") {
-			const downloadedImage = await Web.download(imageDir, imagePath, rawData.image);
+			const downloadedImage = await Web.download(`images/${imageDir}`, imagePath, rawData.image);
 			
 			if(downloadedImage === false) {
 				return await conn.sendFail("Unable to retrieve source image.");
@@ -131,15 +134,15 @@ export default class PostController extends WebController {
 		}
 		
 		// Crop and Resize the image as needed, convert it to webp.
-		const fullImagePath = `${Deno.cwd()}/images/${imageDir}/${imagePath}`;
-		await ImageMod.convert(fullImagePath, fullImagePath, rawData.imageWidth, rawData.imageHeight);
+		const fullImagePath = `images/${imageDir}/${imagePath}`;
+		await ImageMod.convert(fullImagePath, fullImagePath, rawData.w, rawData.h);
 		
 		// Save Image to Object Storage
 		try {
 			const fileContents = await Deno.readFile(fullImagePath);
-			ObjectStorage.putObject(config.objectStore.bucket, `${imageDir}/${imagePath}`, fileContents);
-		} catch {
-			return await conn.sendFail("Server error on image transfer.");
+			ObjectStorage.putObject(config.objectStore.bucket, `${imageDir}/${imagePath}`, fileContents, "image/webp");
+		} catch(e) {
+			return await conn.sendFail(`Error on image transfer: ${(e as Error).message}`);
 		}
 		
 		// Return Success
