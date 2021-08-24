@@ -28,6 +28,20 @@ export default class DataController extends WebController {
 			return await conn.sendJson( Mapp.forums );
 		}
 		
+		// Fetch a website's HTML.
+		if(conn.url2 === "html") {
+			const url = conn.url.searchParams.get("url");
+			if(!url) { return await conn.sendFail("Must include a URL."); }
+			
+			try {
+				const textResponse = await fetch(url);
+				const textData = await textResponse.text();
+				return await conn.sendJson(textData);
+			} catch {
+				return await conn.sendFail("Error while attempting to retrieve website.");
+			}
+		}
+		
 		// Something invalid.
 		return await conn.sendFail("Invalid Request.");
 	}
