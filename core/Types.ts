@@ -1,12 +1,4 @@
 
-export const enum AwardRank {
-	None = 0,
-	Seed = 1,		// $0.05 for a Seed Award
-	Plant = 2,		// $0.25 for a Plant Award
-	Tree = 3,		// $1.00 for a Tree Award
-	Druid = 4,		// $5.00 for a Druid Award
-}
-
 export const enum UserRank {
 	Banned = -10,
 	TemporarilyBanned = -5,

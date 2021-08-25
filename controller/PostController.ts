@@ -96,7 +96,6 @@ export default class PostController extends WebController {
 			rawData.authorId && typeof rawData.authorId === "string" ? Number(rawData.authorId) : 0,
 			rawData.title && typeof rawData.title === "string"? rawData.title : "",
 			rawData.content && typeof rawData.content === "string" ? rawData.content : "",
-			rawData.comment && typeof rawData.comment === "string" ? rawData.comment : "",
 			width,
 			height,
 			rawData.status && typeof rawData.status === "string" ? Number(rawData.status) : PostStatus.Visible,

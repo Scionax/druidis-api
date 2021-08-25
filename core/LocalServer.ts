@@ -61,7 +61,6 @@ export default abstract class LocalServer {
 			0, // authorId
 			LocalServer.randomTitle(), // title
 			LocalServer.randomContent(), // content
-			LocalServer.randomContent(), // comment
 			600, // w
 			462, // h
 			status,

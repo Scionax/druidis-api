@@ -21,10 +21,10 @@ export const enum PostStatus {
 }
 
 export class AwardList {
-	public druid = 0;		// $5.00 for a Druid Award
-	public tree = 0;		// $1.00 for a Tree Award
-	public plant = 0;		// $0.25 for a Plant Award
-	public seed = 0;		// $0.05 for a Seed Award
+	public award1 = 0;		// $0.05 for a Award #1 (Seed?)
+	public award2 = 0;		// $0.25 for a Award #2 (Plant?)
+	public award3 = 0;		// $1.00 for a Award #3 (Tree?)
+	public award4 = 0;		// $5.00 for a Award #4 (Druid?)
 }
 
 export class ForumPost {
@@ -37,7 +37,6 @@ export class ForumPost {
 	private authorId: number;
 	private title: string;				// Title of the post.
 	private content: string;			// Text content for the post.
-	private comment: string;			// An optional user comment.
 	private img: string;				// Image Path for Object Storage, e.g. img-ID-HASH.webp
 	private video: string;				// Video Path (URL or object storage).
 	private w: number;					// The width of the media object (image or video).
@@ -53,10 +52,10 @@ export class ForumPost {
 	
 	// List of awards given to this post.
 	private awards: AwardList = {
-		druid: 0,
-		tree: 0,
-		plant: 0,
-		seed: 0,
+		award1: 0,
+		award2: 0,
+		award3: 0,
+		award4: 0,
 	};
 	
 	constructor(
@@ -67,7 +66,6 @@ export class ForumPost {
 		authorId: number,
 		title: string,
 		content: string,
-		comment: string,
 		img: string,
 		video: string,
 		w: number,
@@ -81,7 +79,6 @@ export class ForumPost {
 		this.authorId = authorId;
 		this.title = title;
 		this.content = content;
-		this.comment = comment;
 		this.img = img;
 		this.video = video;
 		this.w = w;
@@ -96,7 +93,6 @@ export class ForumPost {
 		authorId: number,
 		title: string,
 		content: string,
-		comment: string,
 		status: PostStatus,
 		hasMedia = false,		// Indicates that other media is being used (such as image or video)
 	) {
@@ -109,7 +105,7 @@ export class ForumPost {
 		if(authorId < 0) { return "Invalid `authorId` entry."}
 		
 		// Must have one or more of the following: (1) Media, (2) Title, (3) Content, or (4) Comment
-		if(hasMedia === false && comment.length === 0 && title.length > 0 && content.length === 0) {
+		if(hasMedia === false && title.length > 0 && content.length === 0) {
 			return "Must provide content for this post.";
 		}
 		
@@ -121,9 +117,6 @@ export class ForumPost {
 		
 		// Validate Content (if present)
 		if(content.length > 256) { return "`content` is too long." }
-		
-		// Validate Comment (if present)
-		if(comment.length > 256) { return "`comment` is too long." }
 		
 		// Quick pass for alphanumeric values:
 		if(!forum.match(/^[a-z0-9]+$/i)) { return "`forum` is not valid." }
@@ -160,12 +153,11 @@ export class ForumPost {
 		authorId: number,
 		title: string,
 		content: string,
-		comment: string,
 		status: PostStatus,
 	): Promise<ForumPost | string> {
 		
 		// Validate Generic Post Data
-		const msg = ForumPost.validatePostData(forum, category, url, authorId, title, content, comment, status);
+		const msg = ForumPost.validatePostData(forum, category, url, authorId, title, content, status);
 		if(msg.length > 0) { return msg; }
 		
 		// Assign a new ID and make sure a post isn't already using it.
@@ -174,7 +166,7 @@ export class ForumPost {
 			return `Error creating ID ${id} in forum ${forum}. Please contact the administrator, this is a problem.`;
 		}
 		
-		return new ForumPost(forum, id, category, url, authorId, title, content, comment, "", "", 0, 0, status);
+		return new ForumPost(forum, id, category, url, authorId, title, content, "", "", 0, 0, status);
 	}
 	
 	public static async buildMediaPost(
@@ -184,7 +176,6 @@ export class ForumPost {
 		authorId: number,
 		title: string,
 		content: string,
-		comment: string,
 		w: number,
 		h: number,
 		status: PostStatus,
@@ -192,7 +183,7 @@ export class ForumPost {
 	): Promise<ForumPost | string> {
 		
 		// Validate Generic Post Data
-		const msg = ForumPost.validatePostData(forum, category, url, authorId, title, content, comment, status, true);
+		const msg = ForumPost.validatePostData(forum, category, url, authorId, title, content, status, true);
 		if(msg.length > 0) { return msg; }
 		
 		// Validate Width & Height
@@ -215,7 +206,7 @@ export class ForumPost {
 		const hash = Crypto.simpleHash(forum + id + authorId + id + category);
 		const img = `img-${id}-${hash}.webp`;
 		
-		return new ForumPost(forum, id, category, url, authorId, title, content, comment, img, "", w, h, status);
+		return new ForumPost(forum, id, category, url, authorId, title, content, img, "", w, h, status);
 	}
 	
 	public applyNewPost(status = PostStatus.Visible) {
@@ -231,11 +222,11 @@ export class ForumPost {
 		this.comments = comments;
 	}
 	
-	public applyAwards(druid = 0, tree = 0, plant = 0, seed = 0) {
-		this.awards.druid = druid;
-		this.awards.tree = tree;
-		this.awards.plant = plant;
-		this.awards.seed = seed;
+	public applyAwards(award1 = 0, award2 = 0, award3 = 0, award4 = 0) {
+		this.awards.award1 = award1;
+		this.awards.award2 = award2;
+		this.awards.award3 = award3;
+		this.awards.award4 = award4;
 	}
 	
 	// Apply an Edit
@@ -281,25 +272,24 @@ export class ForumPost {
 			"authorId",			// 4
 			"title",			// 5
 			"content",			// 6
-			"comment",			// 7
-			"img",				// 8
-			"video",			// 9
-			"w",				// 10
-			"h",				// 11
+			"img",				// 7
+			"video",			// 8
+			"w",				// 9
+			"h",				// 10
 			
 			// Tracked Values
-			"status",			// 12
-			"timePosted",		// 13
-			"timeEdited",		// 14
-			"views",			// 15
-			"clicks",			// 16
-			"comments",			// 17
+			"status",			// 11
+			"timePosted",		// 12
+			"timeEdited",		// 13
+			"views",			// 14
+			"clicks",			// 15
+			"comments",			// 16
 			
 			// Awards
-			"awards.druid",
-			"awards.tree",
-			"awards.plant",
-			"awards.seed",
+			"award1",
+			"award2",
+			"award3",
+			"award4",
 		);
 		
 		const post = new ForumPost(
@@ -310,26 +300,25 @@ export class ForumPost {
 			Number(raw[4] as string),			// authorId
 			raw[5] as string,					// title
 			raw[6] as string,					// content
-			raw[7] as string,					// comment
-			raw[8] as string,					// img
-			raw[9] as string,					// video
-			Number(raw[10] as string),			// w
-			Number(raw[11] as string),			// h
-			Number(raw[12] as string),			// status (required for verification)
+			raw[7] as string,					// img
+			raw[8] as string,					// video
+			Number(raw[9] as string),			// w
+			Number(raw[10] as string),			// h
+			Number(raw[11] as string),			// status (required for verification)
 		);
 		
 		if(!post) { return false; }
 		
 		post.applyTrackedValues(
-			Number(raw[12] as string),			// status
-			Number(raw[13] as string),			// timePosted
-			Number(raw[14] as string),			// timeEdited
-			Number(raw[15] as string),			// views
-			Number(raw[16] as string),			// clicks
-			Number(raw[17] as string)			// comments
+			Number(raw[11] as string),			// status
+			Number(raw[12] as string),			// timePosted
+			Number(raw[13] as string),			// timeEdited
+			Number(raw[14] as string),			// views
+			Number(raw[15] as string),			// clicks
+			Number(raw[16] as string)			// comments
 		);
 		
-		post.applyAwards(Number(raw[18] as string), Number(raw[19] as string), Number(raw[20] as string), Number(raw[21] as string));
+		post.applyAwards(Number(raw[17] as string), Number(raw[18] as string), Number(raw[19] as string), Number(raw[20] as string));
 		
 		return post;
 	}
@@ -351,7 +340,6 @@ export class ForumPost {
 			["authorId", this.authorId],
 			["title", this.title],
 			["content", this.content],
-			["comment", this.comment],
 			["img", this.img],
 			["video", this.video],
 			["w", this.w],
@@ -366,10 +354,10 @@ export class ForumPost {
 			["comments", this.comments],
 			
 			// Awards
-			["awards.druid", this.awards.druid],
-			["awards.tree", this.awards.tree],
-			["awards.plant", this.awards.plant],
-			["awards.seed", this.awards.seed],
+			["award1", this.awards.award1],
+			["award2", this.awards.award2],
+			["award3", this.awards.award3],
+			["award4", this.awards.award4],
 		);
 		
 		// Add Appropriate Indexes
@@ -382,7 +370,6 @@ export class ForumPost {
 	
 	// Validate Post Data
 	public sanitizePostData() {
-		this.comment = Validate.safeText(this.comment);
 		this.content = Validate.safeText(this.content);
 	}
 }
