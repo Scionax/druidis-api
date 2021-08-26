@@ -3,7 +3,10 @@ import { Sha256, Md5 } from "../deps.ts";
 export default abstract class Crypto {
 	
 	static simpleHash(pass: string, length = 4): string {
-		return new Md5().update(pass).toString("base64").substring(2, length + 2);
+		let hash = new Md5().update(pass).toString("base64").substring(2, length + 2);
+		hash = hash.replace('/', "L");
+		hash = hash.replace("+", "X");
+		return hash;
 	}
 	
 	static createSha(pass: string): string {

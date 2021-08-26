@@ -1,5 +1,6 @@
 import { config } from "../config.ts";
 import { ForumPost, PostStatus, PostTable } from "../model/ForumPost.ts";
+import ImageMod from "./ImageMod.ts";
 import Mapp from "./Mapp.ts";
 
 export default abstract class LocalServer {
@@ -61,8 +62,8 @@ export default abstract class LocalServer {
 			0, // authorId
 			LocalServer.randomTitle(), // title
 			LocalServer.randomContent(), // content
-			600, // w
-			462, // h
+			ImageMod.baseImageWidth, // w
+			ImageMod.baseImageHeight, // h
 			status,
 			false, // isVideo
 		);

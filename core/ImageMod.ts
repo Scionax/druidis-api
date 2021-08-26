@@ -30,8 +30,8 @@ export default abstract class ImageMod {
 	
 	static binFile: string;			// The file path to the `cwebp` binary. Gets initialized.
 	
-	static baseImageWidth: 600;
-	static baseImageHeight: 462;	// Should be equal to baseImageWidth / 1.3
+	static baseImageWidth = 400;
+	static baseImageHeight = 308;	// Should be equal to baseImageWidth / 1.3
 	
 	static async initialize() {
 		
@@ -141,7 +141,7 @@ export default abstract class ImageMod {
 			}
 			
 			// Handle Resize
-			const w = cropRules.w ? cropRules.w : origWidth;
+			const w = (cropRules.crop && cropRules.w) ? cropRules.w : origWidth;
 			
 			if(origWidth > ImageMod.baseImageWidth && w > ImageMod.baseImageWidth) {
 				option += (option === "" ? "" : " ") + `-resize ${ImageMod.baseImageWidth} 0`;
