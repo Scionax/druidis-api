@@ -1,60 +1,87 @@
 import Mapp from "../core/Mapp.ts";
 
-const enum Curation {
+export const enum Curation {
 	Public = 0,
+	Registered = 1,			// Registered on the site.
 	TrustedUser = 2,		// Is trusted by the site.
-	VerifiedUser = 4,		// Is a VIP or verified user.
-	ApprovedUser = 6,		// Are an approved poster on this forum.
-	ModApproval = 7,		// Each post or comment must be approved individually.
-	ModsOnly = 8,			// Only mods of the forum can post.
-	Curated = 9,			// Only curated by designated owner(s).
+	VerifiedUser = 4,		// Is a verified user.
+	VIPUser = 5,			// A VIP member.
+	ApprovedUser = 6,		// An approved poster; given permission by moderator.
+	ModApproval = 7,		// Must be approved by a moderator or curator.
+	ModsOnly = 8,			// Restricted to moderators of the forum.
+	Curated = 9,			// Restricted to designated curators.
+	Admin = 10,				// Limited to admins.
 }
+
+/*
+	Druidis uses a small and simple set of categories to foster discovery, knowledge, and general browsing.
+		- To foster more specific interests, people will gravitate to specific cultures.
+*/
 
 export class Forum {
 	
 	// Forum Traits
-	private name: string;								// Forum Name: Alphanumeric, no spaces, possibly underscores or dashes.
-	private categories: { [id: string]: string };		// Sub-categories { "categoryName": "cssClass" }, where cssClass is used to display.
-	private related: { [id: string]: string };			// List of Related Forums
+	private name: string;								// Forum Name
+	private parent: string;								// Parent Forum Name
+	private children: { [id: string]: string };			// Sub-Forums
+	private related: string[];							// Related Forums
+	private communities: string[];						// Related Communities
 	private desc: string;								// Full description of the forum.
 	
-	// Rules
-	// [0] Post Curation - Restrictions for posting to the forum (e.g. Public, TrustedUsers, ModApproval, Curated).
-	// [1] Comment Curation - Restrictions for commenting on the forum.
-	// [2] Post Cost - # of seeds to post (in addition to other requirements).
-	// [3] Comment Cost - # of seeds to comment (in addition to other requirements).
-	private rules: [Curation, Curation, number, number];
+	// Curation Restrictions: Permissions for interacting with the forum (e.g. Public, TrustedUsers, ModApproval, Curated, etc).
+	private curation: {
+		view: Curation,				// Permissions to view the forum.
+		post: Curation,				// Permissions to post.
+		comment: Curation,			// Permissions to comment.
+	};
 	
-	constructor(name: string) {
+	// Custom Rules
+	private rules: string[];
+	
+	constructor(name: string, parent: string) {
 		this.name = name;
-		this.categories = {};
-		this.related = {};
+		this.parent = parent;
+		this.children = {};
+		this.related = [];
+		this.communities = [];
 		this.desc = "";
-		this.rules = [Curation.Curated, Curation.TrustedUser, 0, 0];
+		this.curation = {
+			view: Curation.Public,
+			post: Curation.Curated,
+			comment: Curation.TrustedUser,
+		};
+		this.rules = [];
 	}
 	
-	// Add categories to the forum.
-	private addCategories(...args: string[] ) {
+	private addChildren(...args: string[] ) {
 		for(let i = 0; i < args.length; i++) {
-			this.categories[args[i]] = args[i];
+			this.children[args[i]] = args[i];
 		}
 		return this;
 	}
 	
-	// Add costs for posting and commenting.
-	private setRules(postCuration: Curation, commentCuration: Curation, postCost: number, commentCost = 0) {
-		this.rules[0] = postCuration;
-		this.rules[1] = commentCuration;
-		this.rules[2] = postCost;
-		this.rules[3] = commentCost;
+	private addRelated(...args: string[] ) {
+		for(let i = 0; i < args.length; i++) {
+			this.related.push(args[i]);
+		}
+		return this;
 	}
 	
-	// Add descriptions for the forum.
-	private addDescription(desc: string) { this.desc = desc; }
+	private setPermissions(view: Curation, post: Curation, comment: Curation) {
+		this.curation.view = view;
+		this.curation.post = post;
+		this.curation.comment = comment;
+	}
+	
+	private setDescription(desc: string) { this.desc = desc; }
+	
+	private addRule(rule: string) {
+		this.rules.push(rule);
+	}
 	
 	// Validation
 	public static exists(forum: string) { return forum && Mapp.forums[forum]; }
-	public hasCategory(category: string) { return this.categories[category] ? true : false; }
+	public hasCategory(category: string) { return this.children[category] ? true : false; }
 	
 	// Routing
 	public static get(name: string): Forum {
@@ -64,82 +91,121 @@ export class Forum {
 	// Initialize Forums at Server Start
 	public static initialize() {
 		
-		// ----------------------- //
-		// ----- News Forums ----- //
-		// ----------------------- //
+		/*
+			News
+				- World News
+				- Politics
+				- Social Issues
+				- Environment
+				- Business
+				- Economic
+				- Legal
+		*/
 		
-		// General News
-		Mapp.forums["WorldNews"] = new Forum("WorldNews").addCategories("World", "US", "Canada", "MiddleEast", "Asia", "Europe", "SouthAmerica", "Africa");
-		Mapp.forums["Politics"] = new Forum("Politics").addCategories("World", "US", "Canada", "MiddleEast", "Asia", "Europe", "SouthAmerica", "Africa");
+		Mapp.forums["News"] = new Forum("News", "").addChildren("World News", "Politics", "Environment", "Social Issues", "Business", "Economic", "Legal");
 		
-		// Entertainment News
-		Mapp.forums["Entertainment"] = new Forum("Entertainment").addCategories();
-		Mapp.forums["Gaming"] = new Forum("Gaming").addCategories("News", "Events", "Showoff", "Releases");
-		Mapp.forums["Movies"] = new Forum("Movies").addCategories();
-		Mapp.forums["Shows"] = new Forum("Shows").addCategories();
-		Mapp.forums["Anime"] = new Forum("Anime").addCategories();
-		Mapp.forums["Videos"] = new Forum("Videos").addCategories();
-		Mapp.forums["Documentaries"] = new Forum("Documentaries").addCategories();
-		Mapp.forums["Music"] = new Forum("Music").addCategories();
-		Mapp.forums["Sports"] = new Forum("Sports").addCategories();
+		Mapp.forums["World News"] = new Forum("World News", "News");
+		Mapp.forums["Politics"] = new Forum("Politics", "News");
+		Mapp.forums["Environment"] = new Forum("Environment", "News");
+		Mapp.forums["Social Issues"] = new Forum("Social Issues", "News");
+		Mapp.forums["Business"] = new Forum("Business", "News");
+		Mapp.forums["Economic"] = new Forum("Economic", "News");
+		Mapp.forums["Legal"] = new Forum("Legal", "News");
 		
-		// Special News
-		Mapp.forums["UpliftingNews"] = new Forum("UpliftingNews").addCategories();
-		Mapp.forums["QualityJournalism"] = new Forum("QualityJournalism").addCategories();
+		/*
+			Tech (Science & Technology)
+				- Science
+				- Technology
+				- Companies
+				- Products
+		*/
 		
-		// Science News
-		Mapp.forums["Environment"] = new Forum("Environment").addCategories();
-		Mapp.forums["Programming"] = new Forum("Programming").addCategories();
-		Mapp.forums["Science"] = new Forum("Science").addCategories("Astronomy", "Anthropology", "Biology", "Chemistry", "EarthScience", "Economics", "Environment", "Geology",
-		"Health", "Mathematics", "Medicine", "Neuroscience", "Physics", "Psychology", "SocialScience");
-		Mapp.forums["Technology"] = new Forum("Technology").addCategories();
+		Mapp.forums["Tech"] = new Forum("Tech", "").addChildren("Science", "Technology", "Companies", "Products");
 		
-		// ---------------------------- //
-		// ----- Community Forums ----- //
-		// ---------------------------- //
+		Mapp.forums["Science"] = new Forum("Science", "Tech");
+		Mapp.forums["Technology"] = new Forum("Technology", "Tech");
+		Mapp.forums["Companies"] = new Forum("Companies", "Tech");
+		Mapp.forums["Products"] = new Forum("Products", "Tech");
 		
-		Mapp.forums["Writing"] = new Forum("Writing").addCategories();
-		Mapp.forums["WorldBuilding"] = new Forum("WorldBuilding").addCategories();
-		Mapp.forums["GameDev"] = new Forum("GameDev").addCategories();
+		/*
+			Entertainment
+				- Sports
+				- People
+				- Movies
+				- Shows
+				- Music
+				- Books
+				- Gaming
+				- Tabletop Games
+				- Virtual Reality
+		*/
 		
-		// ----------------------------- //
-		// ----- Collection Forums ----- //
-		// ----------------------------- //
+		Mapp.forums["Entertainment"] = new Forum("Entertainment", "").addChildren("Sports", "People", "Movies", "Shows", "Music", "Books", "Gaming", "Tabletop Games", "Virtual Reality");
 		
-		Mapp.forums["Travel"] = new Forum("Travel").addCategories();
-		Mapp.forums["FoodPics"] = new Forum("FoodPics").addCategories();
-		Mapp.forums["Recipes"] = new Forum("Recipes").addCategories();
-		Mapp.forums["Vehicles"] = new Forum("Vehicles").addCategories();
-		Mapp.forums["Books"] = new Forum("Books").addCategories();
+		Mapp.forums["Sports"] = new Forum("Sports", "Entertainment");
+		Mapp.forums["People"] = new Forum("People", "Entertainment");
+		Mapp.forums["Movies"] = new Forum("Movies", "Entertainment");
+		Mapp.forums["Shows"] = new Forum("Shows", "Entertainment");
+		Mapp.forums["Music"] = new Forum("Music", "Entertainment");
+		Mapp.forums["Books"] = new Forum("Books", "Entertainment");
+		Mapp.forums["Gaming"] = new Forum("Gaming", "Entertainment");
+		Mapp.forums["Tabletop Games"] = new Forum("Tabletop Games", "Entertainment");
+		Mapp.forums["Virtual Reality"] = new Forum("Virtual Reality", "Entertainment");
 		
-		// Arts & Crafts
-		Mapp.forums["Art"] = new Forum("Art").addCategories("Drawing", "DigitalArt", "Painting");
-		Mapp.forums["Textiles"] = new Forum("Textiles").addCategories("Embroidery", "Quilting");
-		Mapp.forums["Metalwork"] = new Forum("Metalwork").addCategories();
-		Mapp.forums["Woodwork"] = new Forum("Woodwork").addCategories();
+		/*
+			Lifestyle
+				- Travel
+				- Fitness
+				- Fashion
+				- Food
+				- Recipes
+				- Social Life
+				- Relationships
+				- Health
+		*/
 		
-		// Games
-		Mapp.forums["ActionGames"] = new Forum("ActionGames").addCategories("Arcade", "BattleRoyale", "FPS", "Horror", "Racing", "Shooter", "Sports", "Stealth", "Survival");
-		Mapp.forums["BrainGames"] = new Forum("BrainGames").addCategories("Educational", "Programming", "Puzzle", "Trivia", "WordGames");
-		Mapp.forums["CasualGames"] = new Forum("CasualGames").addCategories("Cards", "Cooking", "Farming", "LifeSim");
-		Mapp.forums["StoryGames"] = new Forum("StoryGames").addCategories("Adventure", "RPG", "VisualNovel");
-		Mapp.forums["StrategyGames"] = new Forum("StrategyGames").addCategories("CCG", "Deckbuilding", "Mystery", "RTS", "Tactics", "TowerDefense", "WorldBuilder");
+		Mapp.forums["Lifestyle"] = new Forum("Lifestyle", "").addChildren("Travel", "Fitness", "Fashion", "Food", "Recipes", "Social Life", "Relationships", "Health");
 		
-		Mapp.forums["GamingMemes"] = new Forum("GamingMemes").addCategories();
-		Mapp.forums["GamingAchievements"] = new Forum("GamingAchievements").addCategories();
+		Mapp.forums["Travel"] = new Forum("Travel", "Lifestyle");
+		Mapp.forums["Fitness"] = new Forum("Fitness", "Lifestyle");
+		Mapp.forums["Fashion"] = new Forum("Fashion", "Lifestyle");
+		Mapp.forums["Food"] = new Forum("Food", "Lifestyle");
+		Mapp.forums["Recipes"] = new Forum("Recipes", "Lifestyle");
+		Mapp.forums["Social Life"] = new Forum("Social Life", "Lifestyle");
+		Mapp.forums["Relationships"] = new Forum("Relationships", "Lifestyle");
+		Mapp.forums["Health"] = new Forum("Health", "Lifestyle");
 		
-		Mapp.forums["BoardGames"] = new Forum("BoardGames").addCategories();
-		Mapp.forums["RPG"] = new Forum("RPG").addCategories();
+		/*
+			Fun
+				- Funny
+				- Cute
+				- Cosplay
+				- Ask (community questions)
+				- Playful (choose X or Y)
+		*/
 		
-		// Cute
-		Mapp.forums["Cute"] = new Forum("Cute").addCategories("Bird", "Canine", "Exotic", "Feline", "Wildlife");
-		Mapp.forums["Cosplay"] = new Forum("Cosplay").addCategories();
+		Mapp.forums["Fun"] = new Forum("Fun", "").addChildren("Funny", "Cute", "Cosplay", "Ask", "Playful");
 		
-		// Humor
-		Mapp.forums["Jokes"] = new Forum("Jokes").addCategories();
-		Mapp.forums["Funny"] = new Forum("Funny").addCategories();
-		Mapp.forums["Comics"] = new Forum("Comics").addCategories();
-		Mapp.forums["ContagiousLaughter"] = new Forum("ContagiousLaughter").addCategories();
+		Mapp.forums["Funny"] = new Forum("Funny", "Fun");
+		Mapp.forums["Cute"] = new Forum("Cute", "Fun");
+		Mapp.forums["Cosplay"] = new Forum("Cosplay", "Fun");
+		Mapp.forums["Ask"] = new Forum("Ask", "Fun");
+		Mapp.forums["Playful"] = new Forum("Playful", "Fun");
+		
+		/*
+			Creative
+				- Artwork
+				- Crafts
+				- Design
+				- Writing
+		*/
+		
+		Mapp.forums["Creative"] = new Forum("Creative", "").addChildren("Artwork", "Crafts", "Design", "Writing");
+		
+		Mapp.forums["Artwork"] = new Forum("Artwork", "Creative");
+		Mapp.forums["Crafts"] = new Forum("Crafts", "Creative");
+		Mapp.forums["Design"] = new Forum("Design", "Creative");
+		Mapp.forums["Writing"] = new Forum("Writing", "Creative");
 		
 		// Console Display
 		console.log("Forums Initialized.");
