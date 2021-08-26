@@ -1,5 +1,12 @@
 import Mapp from "./Mapp.ts";
 
+const enum TableType {
+	Home = "home",
+	Post = "post",
+	Queue = "queue",
+	Sponsor = "sponsor",
+}
+
 export default abstract class RedisDB {
 	
 	// ------ Helper Functions ------ //
@@ -13,110 +20,50 @@ export default abstract class RedisDB {
 		return obj;
 	}
 	
-	// ------ Counters, GET ------ //
-	
-	static async getHomeFeedId() {
-		const val = await Mapp.redis.get(`count:homeFeed`) as string;
-		if(!val) { return 0; }
+	// ------ Counters ------ //
+	static async getCounter(forum: string, tableType = TableType.Post) {
+		const val = await Mapp.redis.get(`count:${tableType}:${forum}`) as string;
 		return Number(val);
 	}
 	
-	static async getForumPostId(forum: string) {
-		const val = await Mapp.redis.get(`count:post:${forum}`) as string;
-		return Number(val);
-	}
-	
-	static async getQueuedPostId(forum: string) {
-		const val = await Mapp.redis.get(`count:queue:${forum}`) as string;
-		return Number(val);
-	}
-	
-	// ------ Counters, Increment ------ //
-	
-	static async nextHomeFeedId() {
-		return await Mapp.redis.incr(`count:homeFeed`);
-	}
-	
-	static async nextForumPostId(forum: string) {
+	static async incrementCounter(forum: string, tableType = TableType.Post) {
 		if(!Mapp.forums[forum]) { return 0; }
-		return await Mapp.redis.incr(`count:post:${forum}`);
-	}
-	
-	static async nextQueuedPostId(forum: string) {
-		if(!Mapp.forums[forum]) { return 0; }
-		return await Mapp.redis.incr(`count:queue:${forum}`);
+		return await Mapp.redis.incr(`count:${tableType}:${forum}`);
 	}
 	
 	// ------ INDEX, GET (BY ID) ------ //
 	// When retrieving posts, retrieve by ID. If we retrieve by index, new posts will be pushed into the results.
 	// 		Retrieving by ID, ensures that you get the exact set you're looking for.
+	//		NOTE: This can be resolved by using Date.now()/1k for all scores.
 	
-	static async getById_Post_Primary(startId: number, count: number) {
-		return await Mapp.redis.zrevrangebyscore(`iPost:primary`, startId + count, startId);
-	}
-	
-	static async getById_Post_Forum(forum: string, startId: number, count: number) {
-		return await Mapp.redis.zrevrangebyscore(`iPost:${forum}`, startId + count, startId);
-	}
-	
-	static async getById_Post_Forum_Category(forum: string, category: string, startId: number, count: number) {
-		return await Mapp.redis.zrevrangebyscore(`iPost:${forum}:${category}`, startId + count, startId);
-	}
-	
-	static async getById_QueueForum(forum: string, startId: number, count: number) {
-		return await Mapp.redis.zrangebyscore(`iQueue:${forum}`, startId + count, startId);
-	}
-	
-	
-	// ------ INDEX, GET (BY INDEX) ------ //
-	
-	static async getIndex_Post_Primary(start: number, count: number) {
-		return await Mapp.redis.zrevrange(`iPost:primary`, start, start + count - 1);
-	}
-	
-	static async getIndex_Post_Forum(forum: string, start: number, count: number) {
-		return await Mapp.redis.zrevrange(`iPost:${forum}`, start, start + count - 1);
-	}
-	
-	static async getIndex_Post_Forum_Category(forum: string, category: string, start: number, count: number) {
-		return await Mapp.redis.zrevrange(`iPost:${forum}:${category}`, start, start + count - 1);
-	}
-	
-	static async getIndex_QueueForum(forum: string, start: number, count: number) {
-		return await Mapp.redis.zrange(`iQueue:${forum}`, start, start + count - 1);
+	static async getForumIndex(forum: string, startId: number, count: number, tableType = TableType.Post, reverse = false, byScore = false) {
+		if(reverse) { return await Mapp.redis.zrevrange(`i${tableType}:${forum}`, startId + count, startId, {withScore: byScore}); }
+		return await Mapp.redis.zrange(`i${tableType}:${forum}`, startId + count, startId, {withScore: byScore});
 	}
 	
 	// ------ INDEX, SET ------ //
 	/*
-		iPost:primary						// 25,000				// Home Post Feed. Combines all forum indexes.
-		iPost:{forum}						// 5000					// One index per forum. Contains last 1000 entries.
-		iPost:{forum}:{category}			// 1000					// Indexes the last 250 posts for a given category.
-		iQueue:{forum}						// Unlimited			// Queued entries for a forum. Expire after 30 days if not approved.
+		ipost:home							// 10,000 elements
+			post:News:6
+			post:News:7
+			post:World News:4
+			post:Business:1
+			post:World News:5
+			...
 	*/
 	
 	static async addToIndex_Post_Primary(forum: string, id: number) {
-		const added = await Mapp.redis.zadd(`iPost:primary`, id, `${forum}:${id}`);
-		RedisDB.purgeExcess(`iPost:primary`, id, 25000, 100);
+		const added = await Mapp.redis.zadd(`index:home`, id, `${forum}:${id}`);
+		RedisDB.purgeExcess(`index:home`, id, 25000, 100);
 		return added === 1 ? true : false;
 	}
 	
-	static async addToIndex_Post_Forum(forum: string, id: number) {
-		const added = await Mapp.redis.zadd(`iPost:${forum}`, id, `${forum}:${id}`);
-		RedisDB.purgeExcess(`iPost:${forum}`, id, 5000, 100);
-		return added === 1 ? true : false;
-	}
-	
-	static async addToIndex_Post_Forum_Category(forum: string, id: number, category:string) {
-		const added = await Mapp.redis.zadd(`iPost:${forum}:${category}`, id, `${forum}:${id}`);
-		RedisDB.purgeExcess(`iPost:${forum}:${category}`, id, 1000, 10);
-		return added === 1 ? true : false;
-	}
-	
-	static async addToIndex_Queue_Forum(forum: string, id: number) {
-		const added = await Mapp.redis.zadd(`iQueue:${forum}`, id, `${forum}:${id}`);
-		RedisDB.purgeExcess(`iQueue:${forum}`, id, 25000, 100);
-		return added === 1 ? true : false;
-	}
+	// // Old Indexing System - May need again later for sorting purposes.
+	// static async addToForumIndex(forum: string, id: number, tableType = TableType.Post) {
+	// 	const added = await Mapp.redis.zadd(`i${tableType}:${forum}`, id, `${forum}:${id}`);
+	// 	RedisDB.purgeExcess(`i${tableType}:${forum}`, id, 5000, 100);
+	// 	return added === 1 ? true : false;
+	// }
 	
 	// ------ Methods------ //
 	

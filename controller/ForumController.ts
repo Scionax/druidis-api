@@ -62,7 +62,7 @@ export default class ForumController extends WebController {
 		else if(scan === "asc") {
 			scanStartId = highId;
 		} else {
-			const newestId = await RedisDB.getForumPostId(conn.url2);
+			const newestId = await RedisDB.getCounter(conn.url2);
 			scanStartId = newestId - count;
 			
 			if(highId > scanStartId) {
@@ -76,7 +76,7 @@ export default class ForumController extends WebController {
 		if(count > 0) {
 			
 			// Retrieve the Forum Index
-			const index = await RedisDB.getById_Post_Forum(conn.url2, scanStartId, count);
+			const index = await RedisDB.getForumIndex(conn.url2, scanStartId, count);
 			
 			// Pipelines return absolutely f*#@ing idiotic data, so I guess we loop here. Maybe someday we can optimize this.
 			for(let i = 0; i < index.length; i++) {

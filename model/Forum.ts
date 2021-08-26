@@ -53,40 +53,14 @@ export class Forum {
 		this.rules = [];
 	}
 	
-	private addChildren(...args: string[] ) {
-		for(let i = 0; i < args.length; i++) {
-			this.children[args[i]] = args[i];
-		}
-		return this;
-	}
-	
-	private addRelated(...args: string[] ) {
-		for(let i = 0; i < args.length; i++) {
-			this.related.push(args[i]);
-		}
-		return this;
-	}
-	
-	private setPermissions(view: Curation, post: Curation, comment: Curation) {
-		this.curation.view = view;
-		this.curation.post = post;
-		this.curation.comment = comment;
-	}
-	
-	private setDescription(desc: string) { this.desc = desc; }
-	
-	private addRule(rule: string) {
-		this.rules.push(rule);
-	}
+	public static getPostRow(forum: string, postId: number) { return `post:${forum}:${postId}`; }
 	
 	// Validation
 	public static exists(forum: string) { return forum && Mapp.forums[forum]; }
-	public hasCategory(category: string) { return this.children[category] ? true : false; }
+	public hasChildForum(childForum: string) { return this.children[childForum] ? true : false; }
 	
 	// Routing
-	public static get(name: string): Forum {
-		return Mapp.forums[name];
-	}
+	public static get(name: string): Forum { return Mapp.forums[name]; }
 	
 	// Initialize Forums at Server Start
 	public static initialize() {
@@ -113,19 +87,12 @@ export class Forum {
 		Mapp.forums["Legal"] = new Forum("Legal", "News");
 		
 		/*
-			Tech (Science & Technology)
-				- Science
-				- Technology
-				- Companies
-				- Products
+			Science
+			Technology
 		*/
 		
-		Mapp.forums["Tech"] = new Forum("Tech", "").addChildren("Science", "Technology", "Companies", "Products");
-		
-		Mapp.forums["Science"] = new Forum("Science", "Tech");
-		Mapp.forums["Technology"] = new Forum("Technology", "Tech");
-		Mapp.forums["Companies"] = new Forum("Companies", "Tech");
-		Mapp.forums["Products"] = new Forum("Products", "Tech");
+		Mapp.forums["Science"] = new Forum("Science", "");
+		Mapp.forums["Technology"] = new Forum("Technology", "");
 		
 		/*
 			Entertainment
@@ -138,6 +105,7 @@ export class Forum {
 				- Gaming
 				- Tabletop Games
 				- Virtual Reality
+				- Products
 		*/
 		
 		Mapp.forums["Entertainment"] = new Forum("Entertainment", "").addChildren("Sports", "People", "Movies", "Shows", "Music", "Books", "Gaming", "Tabletop Games", "Virtual Reality");
@@ -151,6 +119,7 @@ export class Forum {
 		Mapp.forums["Gaming"] = new Forum("Gaming", "Entertainment");
 		Mapp.forums["Tabletop Games"] = new Forum("Tabletop Games", "Entertainment");
 		Mapp.forums["Virtual Reality"] = new Forum("Virtual Reality", "Entertainment");
+		Mapp.forums["Products"] = new Forum("Virtual Reality", "Entertainment");
 		
 		/*
 			Lifestyle
@@ -209,5 +178,33 @@ export class Forum {
 		
 		// Console Display
 		console.log("Forums Initialized.");
+	}
+	
+	// ----- Initialize Forums ----- //
+	
+	private addChildren(...args: string[] ) {
+		for(let i = 0; i < args.length; i++) {
+			this.children[args[i]] = args[i];
+		}
+		return this;
+	}
+	
+	private addRelated(...args: string[] ) {
+		for(let i = 0; i < args.length; i++) {
+			this.related.push(args[i]);
+		}
+		return this;
+	}
+	
+	private setPermissions(view: Curation, post: Curation, comment: Curation) {
+		this.curation.view = view;
+		this.curation.post = post;
+		this.curation.comment = comment;
+	}
+	
+	private setDescription(desc: string) { this.desc = desc; }
+	
+	private addRule(rule: string) {
+		this.rules.push(rule);
 	}
 }

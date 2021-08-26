@@ -124,7 +124,7 @@ export class ForumPost {
 		
 		// Confirm that forum is valid:
 		if(!Mapp.forums[forum]) { return "`forum` does not exist." }
-		if(category && !Mapp.forums[forum].hasCategory(category) ) { return "`category` is not valid." }
+		if(category && !Mapp.forums[forum].hasChildForum(category) ) { return "`category` is not valid." }
 		
 		// URL Requirements
 		if(url) {
@@ -161,7 +161,7 @@ export class ForumPost {
 		if(msg.length > 0) { return msg; }
 		
 		// Assign a new ID and make sure a post isn't already using it.
-		const id = await RedisDB.nextForumPostId(forum);
+		const id = await RedisDB.incrementCounter(forum);
 		if(await ForumPost.checkIfPostExists(forum, id)) {
 			return `Error creating ID ${id} in forum ${forum}. Please contact the administrator, this is a problem.`;
 		}
@@ -191,7 +191,7 @@ export class ForumPost {
 		if(h < 32) {  return "Posting an image with too small of a height." }
 		
 		// Assign a new ID and make sure a post isn't already using it.
-		const id = await RedisDB.nextForumPostId(forum);
+		const id = await RedisDB.incrementCounter(forum);
 		
 		if(await ForumPost.checkIfPostExists(forum, id)) {
 			return `Error creating ID ${id} in forum ${forum}. Please contact the administrator, this is a problem.`;
@@ -261,6 +261,9 @@ export class ForumPost {
 		return (await Mapp.redis.exists(`post:${forum}:${id}`)) === 0 ? false : true;
 	}
 	
+	// post:{forum}:{id}			// Uses count:post:{forum}.
+	// sponsored:{forum}:{id}		// Uses count:sponsored:{forum}.
+	// queued:{forum}:{id}			// Uses count:queue:{forum}.
 	public static async loadFromId(forum: string, id: number, table: PostTable): Promise<ForumPost|false> {
 		const raw = await Mapp.redis.hmget(`${table}:${forum}:${id}`,
 			
@@ -323,6 +326,9 @@ export class ForumPost {
 		return post;
 	}
 	
+	// post:{forum}:{id}			// Uses count:post:{forum}.
+	// sponsored:{forum}:{id}		// Uses count:sponsored:{forum}.
+	// queued:{forum}:{id}			// Uses count:queue:{forum}.
 	public saveToRedis(table: PostTable) {
 		
 		// TODO: Add TX Multi / Exec (Transaction) support.
@@ -361,7 +367,7 @@ export class ForumPost {
 		);
 		
 		// Add Appropriate Indexes
-		RedisDB.addToIndex_Post_Forum(this.forum, this.id);
+		RedisDB.addToForumIndex(this.forum, this.id);
 		if(this.category.length > 0) { RedisDB.addToIndex_Post_Forum_Category(this.forum, this.id, this.category); }
 		RedisDB.addToIndex_Post_Primary(this.forum, this.id);
 		
