@@ -8,13 +8,11 @@
 
 export class FeedIndexer {
 	
-	private name: string;
+	constructor() {}
 	
-	constructor(name: string) {
-		this.name = name;
-	}
+	public buildForumIndex() {}
 	
-	public runAlgorithm() {
+	public buildHomeIndex() {
 		
 		/*
 			Algorithm:

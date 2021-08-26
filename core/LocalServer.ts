@@ -36,29 +36,27 @@ export default abstract class LocalServer {
 		LocalServer.postSimple("Gaming", 16);
 		LocalServer.postSimple("Gaming", 17);
 		LocalServer.postSimple("Gaming", 18);
-		LocalServer.postSimple("Gaming", 19, "Events");
-		LocalServer.postSimple("Gaming", 20, "Events");
-		LocalServer.postSimple("Gaming", 21, "Events");
-		LocalServer.postSimple("Gaming", 22, "Events");
-		LocalServer.postSimple("Gaming", 23, "Events");
-		LocalServer.postSimple("Gaming", 24, "Events");
-		LocalServer.postSimple("Gaming", 25, "Events");
-		LocalServer.postSimple("Gaming", 26, "Events");
-		LocalServer.postSimple("Gaming", 27, "Events");
-		LocalServer.postSimple("Gaming", 28, "Showoff");
-		LocalServer.postSimple("Gaming", 29, "Showoff");
-		LocalServer.postSimple("Gaming", 30, "Showoff");
+		LocalServer.postSimple("Gaming", 19);
+		LocalServer.postSimple("Gaming", 20);
+		LocalServer.postSimple("Gaming", 21);
+		LocalServer.postSimple("Gaming", 22);
+		LocalServer.postSimple("Gaming", 23);
+		LocalServer.postSimple("Gaming", 24);
+		LocalServer.postSimple("Gaming", 25);
+		LocalServer.postSimple("Gaming", 26);
+		LocalServer.postSimple("Gaming", 27);
+		LocalServer.postSimple("Gaming", 28);
+		LocalServer.postSimple("Gaming", 29);
+		LocalServer.postSimple("Gaming", 30);
 		
-		await Mapp.redis.set(`count:post:Gaming`, 30);
 		console.log("Created Local Gaming Post Placeholders.");
 	}
 	
-	static async postSimple(forum: string, id: number, category = "", status = PostStatus.Visible) {
+	static async postSimple(forum: string, id: number, status = PostStatus.Visible) {
 		
 		// Convert Raw Data to ForumPost
 		const post = await ForumPost.buildMediaPost(
 			forum,
-			category,
 			"http://example.com", // url
 			0, // authorId
 			LocalServer.randomTitle(), // title
@@ -70,7 +68,7 @@ export default abstract class LocalServer {
 		);
 		
 		// On Failure
-		if(typeof post === "string") { console.error(`Error on postSimple(${forum}, ${id}, ${category}): ${post}`); return; }
+		if(typeof post === "string") { console.error(`Error on postSimple(${forum}, ${id}): ${post}`); return; }
 		
 		// Need to provide image updates for local behavior:
 		const {imgPath, width, height} = LocalServer.randomImage();
@@ -109,15 +107,15 @@ export default abstract class LocalServer {
 		const rnd = Math.ceil(Math.random() * 10);
 		switch(rnd) {
 			case 1: return "This title is pretty cool.";
-			case 2: return "The return of the title.";
+			case 2: return "The return of the title. Let's make some of these longer so we can get some reference points available to us.";
 			case 3: return "Headlines beware! We're coming for you.";
 			case 4: return "This is a longer headline than usual. It's mostly for testing purposes.";
-			case 5: return "Are you paying attention to this?";
-			case 6: return "You won't believe what happens next!";
+			case 5: return "Are you paying attention to this? You should. It's the best thing since sliced bread.";
+			case 6: return "You won't believe what happens next! Or maybe you will. I don't know.";
 			case 7: return "Please click on this. It's pure clickbait.";
 			case 8: return "Sometimes things just go well. And it's nice.";
 			case 9: return "A short headline.";
-			case 10: return "Have you met the muffin man?";
+			case 10: return "Have you met the muffin man? Come buy a muffin for $50.";
 		}
 		
 		return "In theory, this headline should not appear. But if it does, that's fine."

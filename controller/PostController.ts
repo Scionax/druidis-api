@@ -92,7 +92,6 @@ export default class PostController extends WebController {
 		// Convert Raw Data to ForumPost
 		const post = await ForumPost.buildMediaPost(
 			rawData.forum && typeof rawData.forum === "string" ? rawData.forum : "",
-			rawData.category && typeof rawData.category === "string" ? rawData.category : "",
 			rawData.url && typeof rawData.url === "string" ? rawData.url : "",
 			rawData.authorId && typeof rawData.authorId === "string" ? Number(rawData.authorId) : 0,
 			rawData.title && typeof rawData.title === "string"? rawData.title : "",

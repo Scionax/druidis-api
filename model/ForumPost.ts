@@ -26,7 +26,6 @@ export class ForumPost {
 	// Fixed Content
 	private forum: string;
 	private id: number;					// Tracks the ID of the post within its parent forum.
-	private category: string;			// An optional sub-category designation within the forum.
 	private url: string;				// Link to the Source URL (External Site)
 	private authorId: number;
 	private title: string;				// Title of the post.
@@ -55,7 +54,6 @@ export class ForumPost {
 	constructor(
 		forum: string,
 		id: number,
-		category: string,
 		url: string,
 		authorId: number,
 		title: string,
@@ -68,7 +66,6 @@ export class ForumPost {
 	) {
 		this.forum = forum;
 		this.id = id;
-		this.category = category;
 		this.url = url;
 		this.authorId = authorId;
 		this.title = title;
@@ -82,7 +79,6 @@ export class ForumPost {
 	
 	public static validatePostData(
 		forum: string,
-		category: string,
 		url: string,
 		authorId: number,
 		title: string,
@@ -112,13 +108,9 @@ export class ForumPost {
 		// Validate Content (if present)
 		if(content.length > 256) { return "`content` is too long." }
 		
-		// Quick pass for alphanumeric values:
-		if(!forum.match(/^[a-z0-9]+$/i)) { return "`forum` is not valid." }
-		if(category && !category.match(/^[a-z0-9 ]+$/i)) { return "`category` is not valid." }
-		
 		// Confirm that forum is valid:
+		if(!forum.match(/^[a-z0-9]+$/i)) { return "`forum` is not valid." }
 		if(!Mapp.forums[forum]) { return "`forum` does not exist." }
-		if(category && !Mapp.forums[forum].hasChildForum(category) ) { return "`category` is not valid." }
 		
 		// URL Requirements
 		if(url) {
@@ -142,7 +134,6 @@ export class ForumPost {
 	// Create a comment that only has comments, no media.
 	public static async buildCommentPost(
 		forum: string,
-		category: string,
 		url: string,
 		authorId: number,
 		title: string,
@@ -151,7 +142,7 @@ export class ForumPost {
 	): Promise<ForumPost | string> {
 		
 		// Validate Generic Post Data
-		const msg = ForumPost.validatePostData(forum, category, url, authorId, title, content, status);
+		const msg = ForumPost.validatePostData(forum, url, authorId, title, content, status);
 		if(msg.length > 0) { return msg; }
 		
 		// Assign a new ID and make sure a post isn't already using it.
@@ -160,12 +151,11 @@ export class ForumPost {
 			return `Error creating ID ${id} in forum ${forum}. Please contact the administrator, this is a problem.`;
 		}
 		
-		return new ForumPost(forum, id, category, url, authorId, title, content, "", "", 0, 0, status);
+		return new ForumPost(forum, id, url, authorId, title, content, "", "", 0, 0, status);
 	}
 	
 	public static async buildMediaPost(
 		forum: string,
-		category: string,
 		url: string,
 		authorId: number,
 		title: string,
@@ -177,7 +167,7 @@ export class ForumPost {
 	): Promise<ForumPost | string> {
 		
 		// Validate Generic Post Data
-		const msg = ForumPost.validatePostData(forum, category, url, authorId, title, content, status, true);
+		const msg = ForumPost.validatePostData(forum, url, authorId, title, content, status, true);
 		if(msg.length > 0) { return msg; }
 		
 		// Validate Width & Height
@@ -197,10 +187,10 @@ export class ForumPost {
 		}
 		
 		// Prepare Image
-		const hash = Crypto.simpleHash(forum + id + authorId + id + category);
+		const hash = Crypto.simpleHash(forum + id + authorId + id);
 		const img = `img-${id}-${hash}.webp`;
 		
-		return new ForumPost(forum, id, category, url, authorId, title, content, img, "", w, h, status);
+		return new ForumPost(forum, id, url, authorId, title, content, img, "", w, h, status);
 	}
 	
 	public applyNewPost(status = PostStatus.Visible) {
@@ -264,23 +254,22 @@ export class ForumPost {
 			// Fixed Content
 			"forum",			// 0
 			"id",				// 1
-			"category",			// 2
-			"url",				// 3
-			"authorId",			// 4
-			"title",			// 5
-			"content",			// 6
-			"img",				// 7
-			"video",			// 8
-			"w",				// 9
-			"h",				// 10
+			"url",				// 2
+			"authorId",			// 3
+			"title",			// 4
+			"content",			// 5
+			"img",				// 6
+			"video",			// 7
+			"w",				// 8
+			"h",				// 9
 			
 			// Tracked Values
-			"status",			// 11
-			"timePosted",		// 12
-			"timeEdited",		// 13
-			"views",			// 14
-			"clicks",			// 15
-			"comments",			// 16
+			"status",			// 10
+			"timePosted",		// 11
+			"timeEdited",		// 12
+			"views",			// 13
+			"clicks",			// 14
+			"comments",			// 15
 			
 			// Awards
 			"award1",
@@ -292,30 +281,29 @@ export class ForumPost {
 		const post = new ForumPost(
 			forum,								// forum
 			Number(raw[1] as string),			// id
-			raw[2] as string,					// category
-			raw[3] as string,					// url
-			Number(raw[4] as string),			// authorId
-			raw[5] as string,					// title
-			raw[6] as string,					// content
-			raw[7] as string,					// img
-			raw[8] as string,					// video
-			Number(raw[9] as string),			// w
-			Number(raw[10] as string),			// h
-			Number(raw[11] as string),			// status (required for verification)
+			raw[2] as string,					// url
+			Number(raw[3] as string),			// authorId
+			raw[4] as string,					// title
+			raw[5] as string,					// content
+			raw[6] as string,					// img
+			raw[7] as string,					// video
+			Number(raw[8] as string),			// w
+			Number(raw[9] as string),			// h
+			Number(raw[10] as string),			// status (required for verification)
 		);
 		
 		if(!post) { return false; }
 		
 		post.applyTrackedValues(
-			Number(raw[11] as string),			// status
-			Number(raw[12] as string),			// timePosted
-			Number(raw[13] as string),			// timeEdited
-			Number(raw[14] as string),			// views
-			Number(raw[15] as string),			// clicks
-			Number(raw[16] as string)			// comments
+			Number(raw[10] as string),			// status
+			Number(raw[11] as string),			// timePosted
+			Number(raw[12] as string),			// timeEdited
+			Number(raw[13] as string),			// views
+			Number(raw[14] as string),			// clicks
+			Number(raw[15] as string)			// comments
 		);
 		
-		post.applyAwards(Number(raw[17] as string), Number(raw[18] as string), Number(raw[19] as string), Number(raw[20] as string));
+		post.applyAwards(Number(raw[16] as string), Number(raw[17] as string), Number(raw[18] as string), Number(raw[19] as string));
 		
 		return post;
 	}
@@ -335,7 +323,6 @@ export class ForumPost {
 			// Fixed Content
 			["forum", this.forum],
 			["id", this.id],
-			["category", this.category],
 			["url", this.url],
 			["authorId", this.authorId],
 			["title", this.title],
