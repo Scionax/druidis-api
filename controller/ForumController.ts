@@ -14,7 +14,7 @@ export default class ForumController extends WebController {
 		return await conn.sendFail("Method Not Allowed", 405);
 	}
 	
-	// GET /forum/:forum?h=10
+	// GET /forum/{forum}?h=10
 	//		- h: Refers to High ID limit, to identify posts the user has cached. So h=10 indicates the user's highest cached ID is 10.
 	//		- l: Refers to Low ID limit, to identify posts the user has cached. So l=5 indicates the user's lowest cached ID is 5.
 	//		- s: Refers to 'Scan' type: new (default), asc (ascending), or desc (descending).
@@ -23,51 +23,46 @@ export default class ForumController extends WebController {
 	//			- 'desc' scan means we're searching downward from the Low ID.
 	async getController(conn: Conn): Promise<Response> {
 		
+		const forum = conn.url2;
+		
 		// Make sure the forum exists
-		if(!conn.url2 || !Forum.exists(conn.url2)) {
+		if(!forum || !Forum.exists(forum)) {
 			return await conn.sendFail("Forum Request: Forum does not exist.");
 		}
 		
-		let highId = 0;
-		let lowId = 0;
-		let scan = 'new';
-		let count = 25;
-		let scanStartId = 0;
-		
 		// Get the user's query string parameters.
-		for(const [key, value] of conn.url.searchParams.entries()) {
-			if(key === "h") {
-				const h = Number(value);
-				if(h > 0) { highId = h; }
-			}
-			else if(key === "l") {
-				const l = Number(value);
-				if(l > 0) { lowId = l; }
-			}
-			else if(key === "s") {
-				if(value === "desc") { scan = "desc"; }
-				else if(value === "asc") { scan = "asc"; }
-			}
-		}
+		const params = conn.url.searchParams;
 		
-		// Get the Starting ID and the Count (the number of indexes to scan above the Starting ID)
+		const highId = Number(params.get("h")) || 0;
+		const lowId = Number(params.get("l")) || 0;
+		const s = params.get("s");
+		
+		let scan = 'new';
+		if(s === "desc") { scan = "desc"; }
+		else if(s === "asc") { scan = "asc"; }
+		
+		const count = 25;
+		let scanHigh = 0;
+		let scanLow = 0;
+		
+		// Scan "Descending" (starting from one below the "l" (lowId) provided)
 		if(scan === "desc") {
-			scanStartId = lowId - count;
-			
-			if(scanStartId < 0) {
-				scanStartId = 0;
-				count = lowId;
-			}
+			scanHigh = lowId - 1;
+			scanLow = Math.max(0, scanHigh - count + 1);
 		}
-		else if(scan === "asc") {
-			scanStartId = highId;
-		} else {
-			const newestId = await RedisDB.getCounter(conn.url2);
-			scanStartId = newestId - count;
+		else {
+			const newestId = await RedisDB.getCounter(forum);
 			
-			if(highId > scanStartId) {
-				scanStartId = highId + 1;
-				count = newestId - scanStartId;
+			// Scan "Ascending" (starting from one above the "h" (highId) provided)
+			if(scan === "asc") {
+				scanLow = highId + 1;
+				scanHigh = Math.min(newestId, scanLow + count - 1);
+			}
+			
+			// Scan "Newest"
+			else {
+				scanHigh = newestId;
+				scanLow = Math.max(newestId - count + 1, highId + 1);
 			}
 		}
 		
@@ -75,12 +70,9 @@ export default class ForumController extends WebController {
 		
 		if(count > 0) {
 			
-			// Retrieve the Forum Index
-			const index = await RedisDB.getForumIndex(conn.url2, scanStartId, count);
-			
 			// Pipelines return absolutely f*#@ing idiotic data, so I guess we loop here. Maybe someday we can optimize this.
-			for(let i = 0; i < index.length; i++) {
-				const obj = await RedisDB.getHashTable(`post:${index[i]}`);
+			for(let id = scanHigh; id >= scanLow; id--) {
+				const obj = await RedisDB.getHashTable(`post:${forum}:${id}`);
 				postResults.push(obj);
 			}
 		}

@@ -311,14 +311,14 @@ export class ForumPost {
 	// post:{forum}:{id}			// Uses count:post:{forum}.
 	// sponsor:{forum}:{id}			// Uses count:sponsor:{forum}.
 	// queue:{forum}:{id}			// Uses count:queue:{forum}.
-	public saveToRedis(tableType: TableType) {
+	public async saveToRedis(tableType: TableType) {
 		
 		// TODO: Add TX Multi / Exec (Transaction) support.
 			// See https://github.com/denodrivers/redis for full details
 		// TODO: Only add indexes if the transaction succeeds.
 		
 		// TODO: hmset is deprecated, but hset (the designated alternative) won't function locally (probably due to Windows Redis)
-		Mapp.redis.hmset(`${tableType}:${this.forum}:${this.id}`,
+		await Mapp.redis.hmset(`${tableType}:${this.forum}:${this.id}`,
 			
 			// Fixed Content
 			["forum", this.forum],
@@ -346,9 +346,6 @@ export class ForumPost {
 			["award3", this.awards.award3],
 			["award4", this.awards.award4],
 		);
-		
-		// Update Counter
-		RedisDB.incrementCounter(this.forum, tableType)
 		
 		return true;
 	}

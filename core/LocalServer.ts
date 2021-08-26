@@ -18,36 +18,36 @@ export default abstract class LocalServer {
 		}
 		
 		// Produce Local Content
-		LocalServer.postSimple("Gaming", 1);
-		LocalServer.postSimple("Gaming", 2);
-		LocalServer.postSimple("Gaming", 3);
-		LocalServer.postSimple("Gaming", 4);
-		LocalServer.postSimple("Gaming", 5);
-		LocalServer.postSimple("Gaming", 6);
-		LocalServer.postSimple("Gaming", 7);
-		LocalServer.postSimple("Gaming", 8);
-		LocalServer.postSimple("Gaming", 9);
-		LocalServer.postSimple("Gaming", 10);
-		LocalServer.postSimple("Gaming", 11);
-		LocalServer.postSimple("Gaming", 12);
-		LocalServer.postSimple("Gaming", 13);
-		LocalServer.postSimple("Gaming", 14);
-		LocalServer.postSimple("Gaming", 15);
-		LocalServer.postSimple("Gaming", 16);
-		LocalServer.postSimple("Gaming", 17);
-		LocalServer.postSimple("Gaming", 18);
-		LocalServer.postSimple("Gaming", 19);
-		LocalServer.postSimple("Gaming", 20);
-		LocalServer.postSimple("Gaming", 21);
-		LocalServer.postSimple("Gaming", 22);
-		LocalServer.postSimple("Gaming", 23);
-		LocalServer.postSimple("Gaming", 24);
-		LocalServer.postSimple("Gaming", 25);
-		LocalServer.postSimple("Gaming", 26);
-		LocalServer.postSimple("Gaming", 27);
-		LocalServer.postSimple("Gaming", 28);
-		LocalServer.postSimple("Gaming", 29);
-		LocalServer.postSimple("Gaming", 30);
+		await LocalServer.postSimple("Gaming", 1);
+		await LocalServer.postSimple("Gaming", 2);
+		await LocalServer.postSimple("Gaming", 3);
+		await LocalServer.postSimple("Gaming", 4);
+		await LocalServer.postSimple("Gaming", 5);
+		await LocalServer.postSimple("Gaming", 6);
+		await LocalServer.postSimple("Gaming", 7);
+		await LocalServer.postSimple("Gaming", 8);
+		await LocalServer.postSimple("Gaming", 9);
+		await LocalServer.postSimple("Gaming", 10);
+		await LocalServer.postSimple("Gaming", 11);
+		await LocalServer.postSimple("Gaming", 12);
+		await LocalServer.postSimple("Gaming", 13);
+		await LocalServer.postSimple("Gaming", 14);
+		await LocalServer.postSimple("Gaming", 15);
+		await LocalServer.postSimple("Gaming", 16);
+		await LocalServer.postSimple("Gaming", 17);
+		await LocalServer.postSimple("Gaming", 18);
+		await LocalServer.postSimple("Gaming", 19);
+		await LocalServer.postSimple("Gaming", 20);
+		await LocalServer.postSimple("Gaming", 21);
+		await LocalServer.postSimple("Gaming", 22);
+		await LocalServer.postSimple("Gaming", 23);
+		await LocalServer.postSimple("Gaming", 24);
+		await LocalServer.postSimple("Gaming", 25);
+		await LocalServer.postSimple("Gaming", 26);
+		await LocalServer.postSimple("Gaming", 27);
+		await LocalServer.postSimple("Gaming", 28);
+		await LocalServer.postSimple("Gaming", 29);
+		await LocalServer.postSimple("Gaming", 30);
 		
 		console.log("Created Local Gaming Post Placeholders.");
 	}
@@ -84,7 +84,7 @@ export default abstract class LocalServer {
 		);
 		
 		// Save To Database
-		post.saveToRedis(TableType.Post);
+		await post.saveToRedis(TableType.Post);
 	}
 	
 	static randomImage() {
