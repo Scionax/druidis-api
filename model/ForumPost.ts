@@ -1,15 +1,9 @@
 import Crypto from "../core/Crypto.ts";
 import Mapp from "../core/Mapp.ts";
 import RedisDB from "../core/RedisDB.ts";
+import { TableType } from "../core/Types.ts";
 import Validate from "../core/Validate.ts";
 import { ensureDir } from "../deps.ts";
-
-// Forum Posts Types / Tables
-export const enum PostTable {
-	Standard = "post",				// post:Forum:id				// A standard post. Added to the pagination set.
-	Queued = "queued",				// queued:Forum:id				// Post is awaiting moderator approval. Delete entirely if rejected.
-	Sponsored = "sponsored",		// sponsored:Forum:id			// A sponsored post. Fit into the regular posts where appropriate.
-}
 
 export const enum PostStatus {
 	Hidden = 0,			// Hidden Post (was approved and entered into "Visible" at one point; closest we have to deleted)
@@ -262,10 +256,10 @@ export class ForumPost {
 	}
 	
 	// post:{forum}:{id}			// Uses count:post:{forum}.
-	// sponsored:{forum}:{id}		// Uses count:sponsored:{forum}.
-	// queued:{forum}:{id}			// Uses count:queue:{forum}.
-	public static async loadFromId(forum: string, id: number, table: PostTable): Promise<ForumPost|false> {
-		const raw = await Mapp.redis.hmget(`${table}:${forum}:${id}`,
+	// sponsor:{forum}:{id}			// Uses count:sponsor:{forum}.
+	// queue:{forum}:{id}			// Uses count:queue:{forum}.
+	public static async loadFromId(forum: string, id: number, tableType: TableType): Promise<ForumPost|false> {
+		const raw = await Mapp.redis.hmget(`${tableType}:${forum}:${id}`,
 			
 			// Fixed Content
 			"forum",			// 0
@@ -327,16 +321,16 @@ export class ForumPost {
 	}
 	
 	// post:{forum}:{id}			// Uses count:post:{forum}.
-	// sponsored:{forum}:{id}		// Uses count:sponsored:{forum}.
-	// queued:{forum}:{id}			// Uses count:queue:{forum}.
-	public saveToRedis(table: PostTable) {
+	// sponsor:{forum}:{id}			// Uses count:sponsor:{forum}.
+	// queue:{forum}:{id}			// Uses count:queue:{forum}.
+	public saveToRedis(tableType: TableType) {
 		
 		// TODO: Add TX Multi / Exec (Transaction) support.
 			// See https://github.com/denodrivers/redis for full details
 		// TODO: Only add indexes if the transaction succeeds.
 		
 		// TODO: hmset is deprecated, but hset (the designated alternative) won't function locally (probably due to Windows Redis)
-		Mapp.redis.hmset(`${table}:${this.forum}:${this.id}`,
+		Mapp.redis.hmset(`${tableType}:${this.forum}:${this.id}`,
 			
 			// Fixed Content
 			["forum", this.forum],
@@ -366,10 +360,8 @@ export class ForumPost {
 			["award4", this.awards.award4],
 		);
 		
-		// Add Appropriate Indexes
-		RedisDB.addToForumIndex(this.forum, this.id);
-		if(this.category.length > 0) { RedisDB.addToIndex_Post_Forum_Category(this.forum, this.id, this.category); }
-		RedisDB.addToIndex_Post_Primary(this.forum, this.id);
+		// Update Counter
+		RedisDB.incrementCounter(this.forum, tableType)
 		
 		return true;
 	}

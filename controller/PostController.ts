@@ -3,10 +3,11 @@ import Conn from "../core/Conn.ts";
 import ImageMod from "../core/ImageMod.ts";
 import Mapp from "../core/Mapp.ts";
 import ObjectStorage from "../core/ObjectStorage.ts";
+import { TableType } from "../core/Types.ts";
 import Validate from "../core/Validate.ts";
 import Web from "../core/Web.ts";
 import { Forum } from "../model/Forum.ts";
-import { ForumPost, PostStatus, PostTable } from "../model/ForumPost.ts";
+import { ForumPost, PostStatus } from "../model/ForumPost.ts";
 import WebController from "./WebController.ts";
 
 export default class PostController extends WebController {
@@ -40,7 +41,7 @@ export default class PostController extends WebController {
 			if(!Validate.isValidSlug(conn.url3)) { return await conn.sendFail("Post Request: Invalid post url."); }
 			
 			// Retrieve the post
-			const post = await ForumPost.loadFromId(conn.url2, Number(conn.url3), PostTable.Standard);
+			const post = await ForumPost.loadFromId(conn.url2, Number(conn.url3), TableType.Post);
 			
 			if(post) {
 				return await conn.sendJson(post);
@@ -108,7 +109,7 @@ export default class PostController extends WebController {
 		post.applyNewPost();							// Post Successful. Update NEW POST values.
 		
 		// TODO: author permissions should decide how this is saved.
-		post.saveToRedis(PostTable.Standard);		// Save To Database
+		post.saveToRedis(TableType.Post);		// Save To Database
 		
 		// The post was at least partially successful. Update the author's submission data to catch recent posts.
 		Mapp.recentPosts[authorId].title = rawData.title as string;

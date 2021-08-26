@@ -1,11 +1,5 @@
 import Mapp from "./Mapp.ts";
-
-const enum TableType {
-	Home = "home",
-	Post = "post",
-	Queue = "queue",
-	Sponsor = "sponsor",
-}
+import { TableType } from "./Types.ts";
 
 export default abstract class RedisDB {
 	

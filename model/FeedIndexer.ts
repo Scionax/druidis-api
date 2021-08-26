@@ -1,5 +1,12 @@
 
-export class PopularFeed {
+/*
+	// Forum Indexing Process
+	1. Check if there are any cached results from the last 15 minutes.
+		- If so, return the cached results.
+	2. If results are stale, run the algorithm and cache new results. Return to step #1.
+*/
+
+export class FeedIndexer {
 	
 	private name: string;
 	

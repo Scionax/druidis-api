@@ -1,7 +1,8 @@
 import { config } from "../config.ts";
-import { ForumPost, PostStatus, PostTable } from "../model/ForumPost.ts";
+import { ForumPost, PostStatus } from "../model/ForumPost.ts";
 import ImageMod from "./ImageMod.ts";
 import Mapp from "./Mapp.ts";
+import { TableType } from "./Types.ts";
 
 export default abstract class LocalServer {
 	
@@ -85,7 +86,7 @@ export default abstract class LocalServer {
 		);
 		
 		// Save To Database
-		post.saveToRedis(PostTable.Standard);
+		post.saveToRedis(TableType.Post);
 	}
 	
 	static randomImage() {
