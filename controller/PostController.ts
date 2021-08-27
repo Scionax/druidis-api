@@ -109,15 +109,6 @@ export default class PostController extends WebController {
 		// On Failure
 		if(typeof post === "string") { return await conn.sendFail(post); }
 		
-		post.applyNewPost();							// Post Successful. Update NEW POST values.
-		
-		// TODO: author permissions should decide how this is saved.
-		post.saveToRedis(TableType.Post);		// Save To Database
-		
-		// The post was at least partially successful. Update the author's submission data to catch recent posts.
-		Mapp.recentPosts[authorId].title = rawData.title as string;
-		Mapp.recentPosts[authorId].url = rawData.url as string;
-		
 		// Prepare Directory & Image Name
 		const imageDir = post.getImageDir();
 		const imagePath = post.getImagePathName();
@@ -136,9 +127,25 @@ export default class PostController extends WebController {
 			return await conn.sendFail("Must provide an image source URL.");
 		}
 		
+		post.applyNewPost();							// Post Successful. Update NEW POST values.
+		
+		// We need to identify the crop rules to determine resizes, regardless of whether or not we crop.
+		const cropRules = ImageMod.getWideAspectCrop(width, height);
+		const resizeRules = ImageMod.getResizeRules(cropRules);
+		
+		post.setImageSize(resizeRules.w, resizeRules.h);
+		
+		// TODO: author permissions should decide how this is saved.
+		post.saveToRedis(TableType.Post);		// Save To Database
+		
+		// The post was at least partially successful. Update the author's submission data to catch recent posts.
+		Mapp.recentPosts[authorId].title = rawData.title as string;
+		Mapp.recentPosts[authorId].url = rawData.url as string;
+		
 		// Crop and Resize the image as needed, convert it to webp.
 		const fullImagePath = `images/${imageDir}/${imagePath}`;
-		await ImageMod.convert(fullImagePath, fullImagePath, rawData.w, rawData.h);
+		
+		await ImageMod.convert(fullImagePath, fullImagePath, cropRules, width, height);
 		
 		// Save Image to Object Storage
 		try {

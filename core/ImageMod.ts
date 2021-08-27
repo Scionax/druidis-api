@@ -20,10 +20,10 @@ import VerboseLog from "./VerboseLog.ts";
 
 type CropRules = {
 	crop: boolean;
-	x?: number;
-	y?: number;
-	w?: number;
-	h?: number;
+	x: number;
+	y: number;
+	w: number;
+	h: number;
 }
 
 export default abstract class ImageMod {
@@ -68,19 +68,15 @@ export default abstract class ImageMod {
 	// Crop to 1.3:1 Aspect Ratios (Wide). If too short, can center on a background.
 	static getWideAspectCrop(origWidth: number, origHeight: number): CropRules {
 		
-		let crop = true;
-		let x, y, w, h = 0;
+		let crop = false;
+		let x = 0, y = 0, w = 0, h = 0;
 		
 		const xRatio = origWidth > origHeight ? Math.round(origWidth / origHeight * 100) / 100 : 1;
 		const yRatio = origHeight > origWidth ? Math.round(origHeight / origWidth * 100) / 100 : 1;
 		
-		// For Wide Images (Between 1.3:1 and 4:1)
-		if(xRatio >= 1.3 && xRatio <= 4) {
-			crop = false; // No Crop Necessary. Already a usable aspect ratio.
-		}
-		
 		// For Extreme Wide Images (above 4:1), reduce to 4:1 ratio
-		else if(xRatio > 4) {
+		if(xRatio > 4) {
+			crop = true;
 			
 			// Determine crop sizes for a 4:1 ratio.
 			w = origHeight * 4;
@@ -91,64 +87,54 @@ export default abstract class ImageMod {
 			y = 0;
 		}
 		
-		// For Minor-Wide Images (Between 1:1 and 1.3:1)
-		else if(xRatio <= 1.3 && yRatio == 1) {
-			
-			// Determine crop sizes for a 1.3:1 ratio.
-			w = origWidth;
-			h = Math.round(origWidth / 1.3);
-			
-			// Determine crop coordinates (to center the image).
-			x = 0;
-			y = Math.round((origHeight - h) / 2);
-		}
-		
-		// For Semi-Tall Images (Between 1:1 and 1:1.2)
-		else if(yRatio >= 1 && yRatio <= 1.2) {
-			
-			// Determine crop sizes for a 1.3:1 ratio.
-			w = origWidth;
-			h = Math.round(origWidth / 1.3);
-			
-			// Determine crop coordinates (to center the image).
-			x = 0;
-			y = Math.round((origHeight - h) / 2);
-		}
-		
 		// For Tall Images (Above 1:1.2)
 		else if(yRatio >= 1.2) {
+			crop = true;
 			
-			// Instead of cropping these verticals, we'll probably need to shrink and put them on a background.
-			crop = false;
+			// Determine crop sizes for a 1.2:1 ratio.
+			w = origWidth;
+			h = Math.round(origWidth * 1.2);
+			
+			// Determine crop coordinates (to center the image).
+			x = 0;
+			y = Math.round((origHeight - h) / 2);
 		}
 		
-		return { crop, x, y, w, h };
+		// Only crop if it is above an appropriate size to do so.
+		if(crop && w && h && (origWidth > ImageMod.baseImageWidth || origHeight > ImageMod.baseImageHeight)) {
+			return { crop, x, y, w, h };
+		}
+		
+		return { crop: false, x: 0, y: 0, w: origWidth, h: origHeight };
 	}
 	
-	static async convert(inputImage: string, outputImage: string, origWidth = 0, origHeight = 0) {
+	static getResizeRules(cropRules: CropRules): CropRules {
+		
+		if(ImageMod.baseImageWidth > cropRules.w) {
+			return { crop: cropRules.crop, x: cropRules.x, y: cropRules.y, w: cropRules.w, h: cropRules.h };
+		}
+		
+		const div = ImageMod.baseImageWidth / cropRules.w;
+		const newHeight = cropRules.h * div;
+		
+		return { crop: cropRules.crop, x: cropRules.x, y: cropRules.y, w: ImageMod.baseImageWidth, h: newHeight };
+	}
+	
+	static async convert(inputPath: string, outputPath: string, cropRules: CropRules, origWidth: number, _origHeight: number) {
 		
 		let option = "";
 		
-		// Check if a crop needs to be added.
-		if(origWidth && origHeight) {
-			
-			// We need to identify the crop rules to determine resizes, regardless of whether or not we crop.
-			const cropRules = ImageMod.getWideAspectCrop(origWidth, origHeight);
-			
-			// Only crop if it is above an appropriate size to do so.
-			if(cropRules.crop && (origWidth > ImageMod.baseImageWidth || origHeight > ImageMod.baseImageHeight)) {
-				option = `-crop ${cropRules.x} ${cropRules.y} ${cropRules.w} ${cropRules.h}`;
-			}
-			
-			// Handle Resize
-			const w = (cropRules.crop && cropRules.w) ? cropRules.w : origWidth;
-			
-			if(origWidth > ImageMod.baseImageWidth && w > ImageMod.baseImageWidth) {
-				option += (option === "" ? "" : " ") + `-resize ${ImageMod.baseImageWidth} 0`;
-			}
+		// Crop
+		if(cropRules.crop) {
+			option = `-crop ${cropRules.x} ${cropRules.y} ${cropRules.w} ${cropRules.h}`;
 		}
 		
-		await ImageMod.convertFormal(inputImage, outputImage, option);
+		// Resize
+		if(origWidth > ImageMod.baseImageWidth && cropRules.w > ImageMod.baseImageWidth) {
+			option += (option === "" ? "" : " ") + `-resize ${ImageMod.baseImageWidth} 0`;
+		}
+		
+		await ImageMod.convertFormal(inputPath, outputPath, option);
 	}
 	
 	// Usage: cwebp [options] -q quality input.png -o output.webp
@@ -161,12 +147,12 @@ export default abstract class ImageMod {
 	//	-noalpha				Discards the alpha channel.
 	//	-metadata opt			Comma separated list of metadata to copy. Options: all, none, exif, icc, xmp, etc. Defaults to none.
 	//	-lossless				Encode the image without any loss.
-	static async convertFormal(inputImage: string, outputImage: string, option = "") {
+	static async convertFormal(inputPath: string, outputPath: string, option = "") {
 		
 		if(!ImageMod.binFile) { console.error("Cannot find `cwebp` binary. See ImageMod class for details."); return; }
 		
 		// Make sure the input image exists:
-		if(!(await exists(inputImage))) {
+		if(!(await exists(inputPath))) {
 			VerboseLog.log("Error with ImageMod.convert(). Image does not exist.");
 			return;
 		}
@@ -178,9 +164,9 @@ export default abstract class ImageMod {
 		// Convert the Image
 		const params: string[] = [
 			ImageMod.binFile,
-			path.resolve(Deno.cwd(), inputImage),
+			path.resolve(Deno.cwd(), inputPath),
 			"-o",
-			path.resolve(Deno.cwd(), outputImage),
+			path.resolve(Deno.cwd(), outputPath),
 			...option.split(" ")
 		];
 		

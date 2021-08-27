@@ -49,7 +49,7 @@ export default class Conn {
 	
 	// return await WebController.sendBadRequest("So that error just happened.");
 	async sendFail( reason = "Bad Request", status = 400 ): Promise<Response> {
-		VerboseLog.verbose( "WebRouter.sendBadRequest() Error: " + reason );
+		VerboseLog.verbose(`/${this.url.pathname} :: sendFail(): ` + reason );
 		return await new Response(reason, {
 			status: status,
 			statusText: "Bad Request",

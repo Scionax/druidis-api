@@ -239,6 +239,11 @@ export class ForumPost {
 		if(h > 0) { this.h = h; }
 	}
 	
+	public setImageSize(width: number, height: number) {
+		this.w = width;
+		this.h = height;
+	}
+	
 	public static async checkIfPostExists(forum: string, id: number): Promise<boolean> {
 		return (await Mapp.redis.exists(`post:${forum}:${id}`)) === 0 ? false : true;
 	}
