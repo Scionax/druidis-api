@@ -43,6 +43,7 @@ export default class Conn {
 		return await new Response(JSON.stringify({ u: this.userObj, d: jsonObj }), { status: 200, headers: {
 			"Access-Control-Allow-Origin": "*",
 			"Content-Type": "application/json; charset=utf-8",
+			"Access-Control-Allow-Headers": "Content-Type",
 		}});
 	}
 	
@@ -54,7 +55,7 @@ export default class Conn {
 			statusText: "Bad Request",
 			headers: {
 				"Access-Control-Allow-Origin": "*",
-				"Content-Type": "application/json; charset=utf-8",
+				"Content-Type": "plain/html; charset=utf-8",
 		}});
 	}
 }

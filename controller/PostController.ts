@@ -14,12 +14,16 @@ export default class PostController extends WebController {
 	
 	async runHandler(conn: Conn): Promise<Response> {
 		
-		if(conn.request.method == "GET") {
+		if(conn.request.method === "GET") {
 			return await this.getController(conn);
 		}
 		
-		else if(conn.request.method == "POST") {
+		else if(conn.request.method === "POST") {
 			return await this.postController(conn);
+		}
+		
+		else if(conn.request.method === "OPTIONS") {
+			return await conn.sendJson("SUCCESS");
 		}
 		
 		return await conn.sendFail("Method Not Allowed", 405);
