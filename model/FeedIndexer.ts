@@ -23,8 +23,8 @@ export class FeedIndexer {
 				
 			??? (Should we have this integrate into other sets?)
 				Educational
-					- Useful Information
-					- Interesting Tidbit
+					- Useful Information (Did You Know)
+					- Interesting Tidbit (Did You Know)
 				
 				Quality Journalism (Expose Corruption)
 					- Investigative Journalism

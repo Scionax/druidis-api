@@ -100,10 +100,8 @@ export class ForumPost {
 		}
 		
 		// Validate Title (if present)
-		if(title.length > 0) {
-			if(title.length < 3) { return "`title` is too short."; }
-			if(title.length > 128) { return "`title` is too long."; }
-		}
+		if(title.length < 3) { return "`title` is too short."; }
+		if(title.length > 128) { return "`title` is too long."; }
 		
 		// Validate Content (if present)
 		if(content.length > 256) { return "`content` is too long." }

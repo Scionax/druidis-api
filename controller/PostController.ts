@@ -78,8 +78,8 @@ export default class PostController extends WebController {
 		
 		// If there is no image data, prevent the post.
 		// TODO: Allow video submissions (eventually).
-		if(!rawData.image) {
-			return await conn.sendFail("Must include: image, w, and h.");
+		if(!rawData.origImg) {
+			return await conn.sendFail("Must include: origImg, w, and h.");
 		}
 		
 		if(!rawData.w || !rawData.h || typeof rawData.w !== "number" || typeof rawData.h !== "number") {
@@ -93,7 +93,7 @@ export default class PostController extends WebController {
 		const post = await ForumPost.buildMediaPost(
 			rawData.forum && typeof rawData.forum === "string" ? rawData.forum : "",
 			rawData.url && typeof rawData.url === "string" ? rawData.url : "",
-			rawData.authorId && typeof rawData.authorId === "string" ? Number(rawData.authorId) : 0,
+			authorId,
 			rawData.title && typeof rawData.title === "string"? rawData.title : "",
 			rawData.content && typeof rawData.content === "string" ? rawData.content : "",
 			width,
@@ -119,15 +119,15 @@ export default class PostController extends WebController {
 		const imagePath = post.getImagePathName();
 		
 		// Download Image
-		if(typeof rawData.image === "string") {
-			const downloadedImage = await Web.download(`images/${imageDir}`, imagePath, rawData.image);
+		if(typeof rawData.origImg === "string") {
+			const downloadedImage = await Web.download(`images/${imageDir}`, imagePath, rawData.origImg);
 			
 			if(downloadedImage === false) {
 				return await conn.sendFail("Unable to retrieve source image.");
 			}
 		}
 		
-		// TODO: if(typeof rawData.image === "File") // No need to download from an external page.
+		// TODO: if(typeof rawData.origImg === "File") // No need to download from an external page.
 		else {
 			return await conn.sendFail("Must provide an image source URL.");
 		}
