@@ -52,7 +52,7 @@ export default class DataController extends WebController {
 			const cropRules = ImageMod.getWideAspectCrop(width, height);
 			const resizeRules = ImageMod.getResizeRules(cropRules);
 			
-			return await conn.sendJson(cropRules);
+			return await conn.sendJson(resizeRules);
 		}
 		
 		// Something invalid.

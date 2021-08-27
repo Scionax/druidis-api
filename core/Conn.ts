@@ -25,7 +25,7 @@ export default class Conn {
 		this.url = new URL(requestEvent.request.url);
 		
 		// Prepare URL Segments
-		const seg = this.url.pathname.split("/");		// e.g. ["", "api", "post"]
+		const seg = decodeURI(this.url.pathname).split("/");		// e.g. ["", "api", "post"]
 		this.url1 = seg.length >= 2 ? seg[1] : "";
 		this.url2 = seg.length >= 3 ? seg[2] : "";
 		this.url3 = seg.length >= 4 ? seg[3] : "";
@@ -49,13 +49,13 @@ export default class Conn {
 	
 	// return await WebController.sendBadRequest("So that error just happened.");
 	async sendFail( reason = "Bad Request", status = 400 ): Promise<Response> {
-		VerboseLog.verbose(`/${this.url.pathname} :: sendFail(): ` + reason );
-		return await new Response(reason, {
+		VerboseLog.verbose(`${this.url.pathname} :: sendFail(): ` + reason );
+		return await new Response(`{"error": "${reason}"}`, {
 			status: status,
 			statusText: "Bad Request",
 			headers: {
 				"Access-Control-Allow-Origin": "*",
-				"Content-Type": "plain/html; charset=utf-8",
+				"Content-Type": "application/json; charset=utf-8",
 		}});
 	}
 }

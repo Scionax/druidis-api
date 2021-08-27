@@ -27,7 +27,7 @@ export default class ForumController extends WebController {
 		
 		// Make sure the forum exists
 		if(!forum || !Forum.exists(forum)) {
-			return await conn.sendFail("Forum Request: Forum does not exist.");
+			return await conn.sendFail(`Forum Request: ${forum} does not exist.`);
 		}
 		
 		// Get the user's query string parameters.

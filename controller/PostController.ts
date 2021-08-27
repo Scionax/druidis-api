@@ -129,7 +129,7 @@ export default class PostController extends WebController {
 		
 		post.applyNewPost();							// Post Successful. Update NEW POST values.
 		
-		// We need to identify the crop rules to determine resizes, regardless of whether or not we crop.
+		// We need to identify the final resize so the web displays sizes correctly.
 		const cropRules = ImageMod.getWideAspectCrop(width, height);
 		const resizeRules = ImageMod.getResizeRules(cropRules);
 		

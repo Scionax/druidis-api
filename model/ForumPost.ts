@@ -107,7 +107,7 @@ export class ForumPost {
 		if(content.length > 256) { return "`content` is too long." }
 		
 		// Confirm that forum is valid:
-		if(!forum.match(/^[a-z0-9]+$/i)) { return "`forum` is not valid." }
+		if(!forum.match(/^[a-z0-9 ]+$/i)) { return "`forum` is not valid." }
 		if(!Mapp.forums[forum]) { return "`forum` does not exist." }
 		
 		// URL Requirements
