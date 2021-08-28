@@ -31,7 +31,12 @@ const opts: { hostname: string, port: number, password?: string, tls?: boolean, 
 };
 
 if(config.redis.password) { opts.password = config.redis.password; }
-Mapp.redis = await connectRedis(opts);
+
+try {
+	Mapp.redis = await connectRedis(opts);
+} catch (error) {
+	console.error(error);
+}
 
 // Custom Routing Map
 const RouteMap: { [name: string]: WebController } = {

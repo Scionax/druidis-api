@@ -15,7 +15,7 @@ export const config = {
 	redis: {
 		hostname: "127.0.0.1", 		// "96.126.120.19", "127.0.0.1",
 		port: 6379,
-		password: "",				// "ac7DIqxXjOdwWNh2n9By41",			// Leave empty if we're not using one.
+		password: "",				// See "server-setup" document for password.
 	},
 	local: false,
 	prod: true,
