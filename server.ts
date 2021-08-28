@@ -63,6 +63,7 @@ async function handle(conn: Deno.Conn) {
 				await requestEvent.respondWith(RouteMap[conn.url1].runHandler(conn));
 			} catch (error) {
 				console.error(error);
+				await requestEvent.respondWith( new Response("Internal issue with service.", { status: 400 }) );
 			}
 		}
 		
