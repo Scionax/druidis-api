@@ -62,6 +62,28 @@ export class Forum {
 	// Routing
 	public static get(name: string): Forum { return Mapp.forums[name]; }
 	
+	public static getCompactForumData() {
+		const response: {[id: string]: { parent?: string, children?: Array<string>}} = {};
+		
+		for (const [key, value] of Object.entries(Mapp.forums)) {
+			response[key] = {};
+			
+			if(Mapp.forums[key].parent) { response[key].parent = value.parent; }
+			
+			const children = [];
+			
+			for(const [k, _v] of Object.entries(Mapp.forums[key].children)) {
+				children.push(k);
+			}
+			
+			if(children.length > 0) {
+				response[key].children = children;
+			}
+		}
+		
+		return response;
+	}
+	
 	// Initialize Forums at Server Start
 	public static initialize() {
 		

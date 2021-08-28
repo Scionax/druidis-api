@@ -16,6 +16,11 @@ export default class DataController extends WebController {
 		// /data/forums API (Fixed Forum Data)
 		if(conn.url2 === "forums") {
 			
+			// Full Forum Data
+			if(conn.url3 === "expanded") {
+				return await conn.sendJson( Mapp.forums );
+			}
+			
 			// Specific Forum
 			if(conn.url3) {
 				if(Forum.exists(conn.url3)) {
@@ -25,8 +30,8 @@ export default class DataController extends WebController {
 				}
 			}
 			
-			// Full Forum Data
-			return await conn.sendJson( Mapp.forums );
+			// Return Compact Forum Data
+			return await conn.sendJson( Forum.getCompactForumData());
 		}
 		
 		// Fetch a website's HTML.
