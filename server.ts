@@ -16,6 +16,7 @@ import Conn from "./core/Conn.ts";
 import ObjectStorage from "./core/ObjectStorage.ts";
 import LocalServer from "./core/LocalServer.ts";
 import ForumController from "./controller/ForumController.ts";
+import Playground from "./playground.ts";
 
 // Handle Setup Arguments
 // for( let i = 0; i < Deno.args.length; i++ ) {
@@ -78,6 +79,9 @@ async function handle(conn: Deno.Conn) {
 		}
 	}
 }
+
+// Run Playground
+Playground.runOnServerLoad();
 
 // Run Server
 const serv = config.local ? config.serverLocal : config.server;
