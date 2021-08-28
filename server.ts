@@ -59,7 +59,11 @@ async function handle(conn: Deno.Conn) {
 		
 		// Launch an associated Route Map, if found (such as 'api')
 		if(RouteMap[conn.url1]) {
-			await requestEvent.respondWith(RouteMap[conn.url1].runHandler(conn));
+			try {
+				await requestEvent.respondWith(RouteMap[conn.url1].runHandler(conn));
+			} catch (error) {
+				console.error(error);
+			}
 		}
 		
 		// No API Found
