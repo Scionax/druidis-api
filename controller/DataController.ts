@@ -8,6 +8,19 @@ export default class DataController extends WebController {
 	
 	async runHandler(conn: Conn): Promise<Response> {
 		
+		if(conn.request.method === "GET") {
+			return await this.getController(conn);
+		}
+		
+		else if(conn.request.method === "POST") {
+			return await this.postController(conn);
+		}
+		
+		return await conn.sendFail("Method Not Allowed", 405);
+	}
+	
+	async getController(conn: Conn): Promise<Response> {
+		
 		// Viewing /data
 		if(!conn.url2) {
 			return await conn.sendJson("No Data Type Selected");
@@ -62,5 +75,20 @@ export default class DataController extends WebController {
 		
 		// Something invalid.
 		return await conn.sendFail("Invalid Request.");
+	}
+	
+	async postController(conn: Conn): Promise<Response> {
+		
+		// Retrieve Post Data
+		const rawData = await WebController.getPostValues(conn);
+		
+		// Run POST Test
+		if(conn.url2 === "test") {
+			console.log(rawData);
+			return await conn.sendJson(rawData);
+		}
+		
+		// Return Success
+		return await conn.sendJson(rawData);
 	}
 }

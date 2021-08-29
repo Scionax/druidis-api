@@ -1,4 +1,9 @@
 
+Deno.env.set("AWS_ACCESS_KEY_ID", "WWLE1X0S4AYDF2169E2F");
+// Deno.env.set("AWS_SECRET_ACCESS_KEY", "SECRET_HERE");
+Deno.env.set("AWS_DEFAULT_REGION", "us-east-1");
+Deno.env.set("AWS_REGION", "us-east-1");
+
 export const config = {
 	serverLocal: {
 		// POSSIBLE: Using hostname: "localhost" rejects access because BINDING or some $#!^. Leaving it empty works.
