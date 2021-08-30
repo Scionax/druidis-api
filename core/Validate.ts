@@ -22,17 +22,23 @@ export default abstract class Validate {
 		});
 	}
 	
-	static isSafeWord(word: string) {
-		return word.match(/[a-z0-9_]/gi) ? true : false;
+	// Valid Numbers
+	static isPositiveNumber(number: number | string, max = 0, min = 0) {
+		if(typeof number === "string") { number = Number(number) || 0; }
+		if(max > 0) { return (number > min && number < max); }
+		return (number > min);
 	}
 	
-	static isAlphaNumeric(word: string) {
-		return word.match(/[a-z0-9]/gi) ? true : false;
+	// Valid Strings
+	static isSafeWord(word: string) { return word.match(/[a-z0-9_]/gi) ? true : false; }
+	static isAlphaNumeric(word: string) { return word.match(/[a-z0-9]/gi) ? true : false; }
+	
+	static isName(word: string, maxLen = 0) {
+		if(word.length > maxLen) { return false; }
+		return word.match(/[a-z ]/gi) ? true : false;
 	}
 	
-	static isValidSlug(slug: string) {
-		return slug.match(/[a-z0-9-]{1,128}/gi) ? true : false;
-	}
+	static isValidSlug(slug: string) { return slug.match(/[a-z0-9-]{1,128}/gi) ? true : false; }
 	
 	// Note: Valid URLs are actually really tricky (:::::: is technically a valid URL), so don't rely on any bulletproof options.
 	static isValidURL(url: string): boolean {

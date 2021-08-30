@@ -11,6 +11,8 @@ import Validate from "../core/Validate.ts";
 	u:{id}:last = lastTimeUpdate
 	u:{id}:time = timeSpentOnSite
 	u:{id}:profile = profileData						// First Name, Last Name, Country, State/Province, Postal Code, DOB, Email, Website, etc.
+	
+	// Planned for, or considered, but not yet implemented:
 	u:{id}:comm = [Community1, Community2]				// List of communities the user is subscribed to.
 	u:{id}:subs = [Sub1, Sub2]							// List of forums the user is subscribed to.
 	u:{id}:allowComment = 1
@@ -21,14 +23,19 @@ import Validate from "../core/Validate.ts";
 	r:{id}:{id} = relationshipEnum						// The "Relationship" table. First {id} is user, second {id} is related user.
 	
 	u:{id}:ip = ipAddress								// Not sure how I want to handle IP's yet. Maybe in a fingerprint/cookie object.
+	
+	// Related Tables
+	count:users					// User Index. Tracks the number of users and returns the next User ID.
 */
 
+// Can use User.convertToUserProfile(email, firstName, lastName, ...) to convert to UserProfile type.
 type UserProfile = {
 	email?: string;
 	firstName?: string,
 	lastName?: string;
 	country?: string;
 	state?: string;
+	city?: string;
 	zip?: string;
 	dobYear?: number;
 	dobMonth?: number;
@@ -69,20 +76,7 @@ export abstract class User implements User {
 		return true;
 	}
 	
-	static async setProfile(
-		id: number,
-		email: string,
-		firstName: string,
-		lastName: string,
-		country: string,
-		state: string,
-		zip: string,
-		dobYear: string,
-		dobMonth: string,
-		dobDay: string,
-		website: string,
-	): Promise<boolean> {
-		const profile = {email, firstName, lastName, country, state, zip, dobYear, dobMonth, dobDay, website};
+	static async setProfile(id: number, profile: UserProfile): Promise<boolean> {
 		await Mapp.redis.set(`u:${id}:profile`, JSON.stringify(profile));
 		return true;
 	}
@@ -143,12 +137,68 @@ export abstract class User implements User {
 	
 	// ----- Validation for User Creation ----- //
 	
+	static async createUser(username: string, password: string, email: string, profile: UserProfile) {
+		
+		// Verify Username
+		const usernameIssue = User.verifyUsername(username);
+		if(usernameIssue !== "") { return usernameIssue; }
+		
+		// Verify Password
+		const passwordIssue = User.verifyPassword(password);
+		if(passwordIssue !== "") { return passwordIssue; }
+		
+		// Verify Email
+		const emailIssue = User.verifyEmail(email);
+		if(emailIssue !== "") { return emailIssue; }
+		
+		// Verify Profile (Optional Submissions)
+		const profileIssue = User.verifyProfileData(profile);
+		if(profileIssue !== "") { return profileIssue; }
+		
+		// Creation Tests Passed. Create User.
+		
+		// Get a new User ID
+		// TODO: Redis Transaction (tx)
+		const id = await RedisDB.incrementCounter(`users`);
+		
+		// Create the user
+		// TODO: These can all be activated at once with transaction.
+		await Mapp.redis.set(`u:${id}`, username);
+		await Mapp.redis.set(`u:${username}`, id);
+		await User.setPassword(id, password);
+		await User.setProfile(id, profile);
+		await Mapp.redis.set(`u:${id}:time`, 0);
+	}
+	
+	// ----- Conversions ----- //
+	
+	static convertToProfileData(
+		email: string,
+		firstName: string,
+		lastName: string,
+		country: string,
+		state: string,
+		zip: string,
+		dobYear: string | number,
+		dobMonth: string | number,
+		dobDay: string | number,
+		website: string,
+		
+	): UserProfile {
+		if(typeof dobYear === "string") { dobYear = Number(dobYear) || 0; }
+		if(typeof dobMonth === "string") { dobMonth = Number(dobMonth) || 0; }
+		if(typeof dobDay === "string") { dobDay = Number(dobDay) || 0; }
+		return {email, firstName, lastName, country, state, zip, dobYear, dobMonth, dobDay, website};
+	}
+	
+	// ----- Validation for User Creation ----- //
+	
 	static verifyUsername(username: string) {
 		if(!username || typeof username !== "string" || username.length === 0) { return "Must provide a valid username."; }
 		if(username.length < User._userMin) { return `Username must have at least ${User._userMin} characters.`; }
 		if(username.length > User._userMax) { return `Username cannot exceed ${User._userMax} characters.`; }
 		if(!Validate.isSafeWord(username)) { return `Username may only contain letters, numbers, and underscores.`; }
-		// TODO: Username Taken
+		if(User.usernameExists(username)) { return `Username is already taken.`; }
 		return "";
 	}
 	
@@ -161,7 +211,69 @@ export abstract class User implements User {
 	static verifyEmail(email: string) {
 		if(!email || typeof email !== "string" || email.length === 0) { return "Must provide a valid password."; }
 		if(!Validate.isEmailFormatted(email)) { return "Email is not in the correct format."; }
-		// TODO: Email Taken.
+		return "";
+	}
+	
+	static verifyProfileData(profile: UserProfile, requireName = false, requireBirth = false, requireLocation = false) {
+		
+		// Verify Birth Date
+		if(requireBirth) {
+			if(!profile.dobYear) { return `A birth year is required.`; }
+			if(!profile.dobMonth) { return `A birth month is required.`; }
+			if(!profile.dobDay) { return `A birth day is required.`; }
+		}
+		
+		if(profile.dobYear) {
+			const curYear = new Date().getFullYear();
+			if(!Validate.isPositiveNumber(profile.dobYear, curYear, 1900)) { return `An invalid birth year was provided.`; }
+		}
+		
+		if(profile.dobMonth) {
+			if(!Validate.isPositiveNumber(profile.dobMonth, 1, 12)) { return `Birth month must be between 1 and 12.`; }
+		}
+		
+		if(profile.dobDay) {
+			if(!Validate.isPositiveNumber(profile.dobDay, 1, 31)) { return `Birth day must be between 1 and 31.`; }
+		}
+		
+		// Verify Name
+		if(requireName) {
+			if(!profile.firstName) { return `Must provide a name.`; }
+			if(!profile.lastName) { return `Must provide a last name.`; }
+		}
+		
+		if(profile.firstName) {
+			if(!Validate.isName(profile.firstName, 32)) { return `First Name must be letters only, up to 32 characters.`; }
+		}
+		
+		if(profile.lastName) {
+			if(!Validate.isName(profile.lastName, 32)) { return `Last Name must be letters only, up to 32 characters.`; }
+		}
+		
+		// Verify Location
+		if(requireLocation) {
+			if(!profile.country) { return `Must provide your country of residence.`; }
+			if(!profile.state) { return `Must provide your state or province of residence.`; }
+			if(!profile.city) { return `Must provide your city of residence.`; }
+			if(!profile.zip) { return `Must provide your postal code.`; }
+		}
+		
+		if(profile.country) {
+			if(!Validate.isName(profile.country, 32)) { return `Country names must be letters only, up to 32 characters.`; }
+		}
+		
+		if(profile.state) {
+			if(!Validate.isName(profile.state, 32)) { return `State names must be letters only, up to 32 characters.`; }
+		}
+		
+		if(profile.city) {
+			if(!Validate.isName(profile.city, 32)) { return `City names must be letters only, up to 32 characters.`; }
+		}
+		
+		if(profile.zip) {
+			if(!(profile.zip.match(/[a-z0-9-]/gi))) { return `Postal code must be alphanumeric (dashes allowed).`; }
+		}
+		
 		return "";
 	}
 }

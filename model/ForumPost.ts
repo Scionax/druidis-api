@@ -143,8 +143,11 @@ export class ForumPost {
 		const msg = ForumPost.validatePostData(forum, url, authorId, title, content, status);
 		if(msg.length > 0) { return msg; }
 		
+		// Make sure the forum exists:
+		if(!Mapp.forums[forum]) { return `Error: The submitted forum does not exist.`; }
+		
 		// Assign a new ID and make sure a post isn't already using it.
-		const id = await RedisDB.incrementCounter(forum);
+		const id = await RedisDB.incrementCounter(`post:${forum}`);
 		if(await ForumPost.checkIfPostExists(forum, id)) {
 			return `Error creating ID ${id} in forum ${forum}. Please contact the administrator, this is a problem.`;
 		}
@@ -172,8 +175,11 @@ export class ForumPost {
 		if(w < 64) {  return "Posting an image with too small of a width." }
 		if(h < 32) {  return "Posting an image with too small of a height." }
 		
+		// Make sure the forum exists:
+		if(!Mapp.forums[forum]) { return `Error: The submitted forum does not exist.`; }
+		
 		// Assign a new ID and make sure a post isn't already using it.
-		const id = await RedisDB.incrementCounter(forum);
+		const id = await RedisDB.incrementCounter(`post:${forum}`);
 		
 		if(await ForumPost.checkIfPostExists(forum, id)) {
 			return `Error creating ID ${id} in forum ${forum}. Please contact the administrator, this is a problem.`;

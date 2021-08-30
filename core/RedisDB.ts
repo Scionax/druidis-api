@@ -15,14 +15,13 @@ export default abstract class RedisDB {
 	}
 	
 	// ------ Counters ------ //
-	static async getCounter(forum: string, tableType = TableType.Post) {
-		const val = await Mapp.redis.get(`count:${tableType}:${forum}`) as string;
+	static async getCounter(table: string) {
+		const val = await Mapp.redis.get(`count:${table}`) as string;
 		return Number(val);
 	}
 	
-	static async incrementCounter(forum: string, tableType = TableType.Post) {
-		if(!Mapp.forums[forum]) { return 0; }
-		return await Mapp.redis.incr(`count:${tableType}:${forum}`);
+	static async incrementCounter(table: string) {
+		return await Mapp.redis.incr(`count:${table}`);
 	}
 	
 	// ------ INDEX, GET (BY ID) ------ //
