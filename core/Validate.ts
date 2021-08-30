@@ -38,4 +38,9 @@ export default abstract class Validate {
 	static isValidURL(url: string): boolean {
 		return url.match(/[-a-zA-Z0-9@:%._\+~#=]{1,256}\.[a-zA-Z0-9()]{1,6}\b([-a-zA-Z0-9()@:%_\+.~#?&//=]*)?/gi) ? true : false;
 	}
+	
+	// Note: Technically, a "valid" email check would require pages of regex. We're only checking for basic errors, because it's impractical to exceed that.
+	static isEmailFormatted(email: string): boolean {
+		return email.match(/^\S+@\S+\.\S+$/) ? true : false;
+	}
 }

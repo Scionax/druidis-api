@@ -2,7 +2,7 @@ import { createHash } from "../deps.ts";
 
 export default abstract class Crypto {
 	
-	static safeHash(pass: string, length = 16): string {
+	static safeHash(pass: string, length = 32): string {
 		return createHash("sha3-512").update(pass).toString("base64").substring(0, length);
 	}
 	
