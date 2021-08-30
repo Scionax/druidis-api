@@ -22,8 +22,16 @@ export default abstract class Validate {
 		});
 	}
 	
+	static isSafeWord(word: string) {
+		return word.match(/[a-z0-9_]/gi) ? true : false;
+	}
+	
+	static isAlphaNumeric(word: string) {
+		return word.match(/[a-z0-9]/gi) ? true : false;
+	}
+	
 	static isValidSlug(slug: string) {
-		return slug.match(/[-a-z0-9-]{1,128}/gi) ? true : false;
+		return slug.match(/[a-z0-9-]{1,128}/gi) ? true : false;
 	}
 	
 	// Note: Valid URLs are actually really tricky (:::::: is technically a valid URL), so don't rely on any bulletproof options.

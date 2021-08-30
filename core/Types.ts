@@ -7,28 +7,6 @@ export const enum TableType {
 	Sponsor = "sponsor",		// sponsor:{forum}:{id}				// Sponsored Post. Fit into the regular posts where appropriate.
 }
 
-export const enum UserRank {
-	Banned = -10,
-	TemporarilyBanned = -5,
-	Distrusted = -2,
-	Unregistered = 0,
-	Guest = 1,				// Unconfirmed Email
-	User = 2,				// Confirmed Email
-	PaidUser = 3,
-	VIP = 4,
-	Moderator = 6,
-	Creator = 7,
-	Admin = 8,
-	Superuser = 10,
-}
-
-export const enum EmailList {
-	None = 0,
-	TwoPerYear = 1,
-	SixPerYear = 2,
-	Unlimited = 3,
-}
-
 export const enum AccountValidation {
 	Valid = 0,
 	

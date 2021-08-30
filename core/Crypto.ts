@@ -1,26 +1,16 @@
-import { Sha256, Md5 } from "../deps.ts";
+import { createHash } from "../deps.ts";
 
 export default abstract class Crypto {
 	
+	static safeHash(pass: string, length = 16): string {
+		return createHash("sha3-512").update(pass).toString("base64").substring(0, length);
+	}
+	
 	static simpleHash(pass: string, length = 4): string {
-		let hash = new Md5().update(pass).toString("base64").substring(2, length + 2);
+		let hash = createHash("md5").update(pass).toString("base64").substring(2, length + 2);
 		hash = hash.replace('/', "L");
 		hash = hash.replace("+", "X");
 		return hash;
-	}
-	
-	static createSha(pass: string): string {
-		return new Sha256().update(pass).toString();
-	}
-	
-	static getUserHash( username: string ): string {
-		const md5 = new Md5();
-		const hash = md5.update(username).toString("base64").substring(0, 7);
-		return Crypto.convertToReadableHash(hash);
-	}
-	
-	static verifyUserHash( levelHash: string, username: string ): boolean {
-		return levelHash.substring(0, 7) === Crypto.getUserHash( username );
 	}
 	
 	private static convertToReadableHash( hash: string ): string {
