@@ -15,11 +15,12 @@ export default class Conn {
 	public url3: string;
 	
 	// Response
-	public success = true;
-	public errorReason = "";
+	public errorMessage = "";
 	public headers = new Headers({
 		"Access-Control-Allow-Origin": "*",
 		"Content-Type": "application/json; charset=utf-8",
+		"Access-Control-Allow-Headers": "Content-Type",			// Required for CORS Pre-Flight
+		"Access-Control-Allow-Credentials": "true",				// Required for CORS Pre-Flight (but is insecure, so need to update)
 	});
 	
 	// User Object
@@ -38,18 +39,12 @@ export default class Conn {
 	}
 	
 	public error(reason = ""): false {
-		this.success = false;
-		this.errorReason = reason;
+		this.errorMessage = reason;
 		return false;
 	}
 	
 	// return await WebController.sendJson("Path successful!");
 	sendJson( jsonObj: unknown ): Response {
-		
-		// Probably don't need these, but were used when I was having issues with production. Commented out 8/31/2021.
-		// "Access-Control-Allow-Headers": "Content-Type",
-		// "Access-Control-Allow-Credentials": "true",
-		
 		return new Response(JSON.stringify({ u: this.userObj, d: jsonObj }), { status: 200, headers: this.headers });
 	}
 	
@@ -57,6 +52,48 @@ export default class Conn {
 	async sendFail( reason = "Bad Request", status = 400 ): Promise<Response> {
 		VerboseLog.verbose(`${this.url.pathname} :: sendFail(): ` + reason );
 		return await new Response(`{"error": "${reason}"}`, { status: status, statusText: "Bad Request", headers: this.headers});
+	}
+	
+	// ------------------------- //
+	// ----- API Post Data ----- //
+	// ------------------------- //
+	
+	async getPostData(): Promise<{ [id: string]: FormDataEntryValue }> {
+		
+		// Verify Correct Content-Type
+		const contentType = this.request.headers.get("content-type");
+		
+		if(!contentType) {
+			this.error("Invalid 'Content-Type' Header");
+			return {};
+		}
+		
+		// Handle JSON data.
+		if(contentType.includes("application/json")) {
+			try {
+				return await this.request.json();
+			} catch {
+				this.error("Improperly Formatted JSON Object");
+				return {};
+			}
+		}
+		
+		// Handle Form Data
+		else if(contentType.includes("application/x-www-form-urlencoded") || contentType.includes("multipart/form-data")) {
+			try {
+				const reqData = await this.request.formData();
+				const formData: { [id: string]: FormDataEntryValue } = {};
+				for (const [key, value] of reqData.entries()) {
+					formData[key] = value;
+				}
+				return formData;
+			} catch {
+				this.error("Invalid Form Data");
+				return {};
+			}
+		}
+		
+		return {};
 	}
 	
 	// ----- Cookie Handling ----- //

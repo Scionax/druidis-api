@@ -27,47 +27,4 @@ export default class WebController {
 		
 		return true;
 	}
-	
-	
-	// ------------------------- //
-	// ----- API Post Data ----- //
-	// ------------------------- //
-	
-	static async getPostValues(conn: Conn): Promise<{ [id: string]: FormDataEntryValue }> {
-		
-		// Verify Correct Content-Type
-		const contentType = conn.request.headers.get("content-type");
-		
-		if(!contentType) {
-			conn.error("Invalid 'Content-Type' Header");
-			return {};
-		}
-		
-		// Handle JSON data.
-		if(contentType.includes("application/json")) {
-			try {
-				return await conn.request.json();
-			} catch {
-				conn.error("Improperly Formatted JSON Object");
-				return {};
-			}
-		}
-		
-		// Handle Form Data
-		else if(contentType.includes("application/x-www-form-urlencoded") || contentType.includes("multipart/form-data")) {
-			try {
-				const reqData = await conn.request.formData();
-				const formData: { [id: string]: FormDataEntryValue } = {};
-				for (const [key, value] of reqData.entries()) {
-					formData[key] = value;
-				}
-				return formData;
-			} catch {
-				conn.error("Invalid Form Data");
-				return {};
-			}
-		}
-		
-		return {};
-	}
 }

@@ -54,14 +54,14 @@ export default class PostController extends WebController {
 			}
 		}
 		
-		return await conn.sendFail(conn.errorReason);
+		return await conn.sendFail(conn.errorMessage);
 	}
 	
 	async postController(conn: Conn): Promise<Response> {
 		
 		// Retrieve Post Data
-		const rawData = await WebController.getPostValues(conn);
-		if(!conn.success) { return await conn.sendFail(conn.errorReason); }
+		const rawData = await conn.getPostData();
+		if(conn.errorMessage) { return await conn.sendFail(conn.errorMessage); }
 		
 		// Make sure the author hasn't re-submitted the same content (such as accidentally clicking twice).
 		const authorId = 0; // TODO: Change authorID based on the Connection.

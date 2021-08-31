@@ -15,6 +15,10 @@ export default class DataController extends WebController {
 			return await this.postController(conn);
 		}
 		
+		else if(conn.request.method === "OPTIONS") {
+			return await conn.sendJson("SUCCESS");
+		}
+		
 		return await conn.sendFail("Method Not Allowed", 405);
 	}
 	
@@ -63,6 +67,8 @@ export default class DataController extends WebController {
 		// Run a Test
 		if(conn.url2 === "test") {
 			
+			
+			
 			return await conn.sendJson("Let's try this");
 		}
 		
@@ -73,7 +79,7 @@ export default class DataController extends WebController {
 	async postController(conn: Conn): Promise<Response> {
 		
 		// Retrieve Post Data
-		const rawData = await WebController.getPostValues(conn);
+		const rawData = await conn.getPostData();
 		
 		// Run POST Test
 		if(conn.url2 === "test") {
