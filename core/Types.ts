@@ -1,4 +1,7 @@
 
+export const MonthInSeconds = 86400;
+export const YearInSeconds = 31536000;
+
 // RedisDB / Schema uses this extensively.
 export const enum TableType {
 	Home = "home",

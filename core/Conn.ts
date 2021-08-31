@@ -1,5 +1,5 @@
 import VerboseLog from "./VerboseLog.ts";
-import { getCookies, setCookie, deleteCookie } from "../deps.ts";
+import { getCookies } from "../deps.ts";
 import { config } from "../config.ts";
 
 export default class Conn {
@@ -17,6 +17,10 @@ export default class Conn {
 	// Response
 	public success = true;
 	public errorReason = "";
+	public headers = new Headers({
+		"Access-Control-Allow-Origin": "*",
+		"Content-Type": "application/json; charset=utf-8",
+	});
 	
 	// User Object
 	public userObj = {};
@@ -41,34 +45,29 @@ export default class Conn {
 	
 	// return await WebController.sendJson("Path successful!");
 	sendJson( jsonObj: unknown ): Response {
-		return new Response(JSON.stringify({ u: this.userObj, d: jsonObj }), { status: 200, headers: {
-			"Access-Control-Allow-Origin": "*",
-			"Content-Type": "application/json; charset=utf-8",
-			"Access-Control-Allow-Headers": "Content-Type",
-			"Access-Control-Allow-Credentials": "true",
-		}});
+		
+		// Probably don't need these, but were used when I was having issues with production. Commented out 8/31/2021.
+		// "Access-Control-Allow-Headers": "Content-Type",
+		// "Access-Control-Allow-Credentials": "true",
+		
+		return new Response(JSON.stringify({ u: this.userObj, d: jsonObj }), { status: 200, headers: this.headers });
 	}
 	
 	// return await WebController.sendBadRequest("So that error just happened.");
 	async sendFail( reason = "Bad Request", status = 400 ): Promise<Response> {
 		VerboseLog.verbose(`${this.url.pathname} :: sendFail(): ` + reason );
-		return await new Response(`{"error": "${reason}"}`, {
-			status: status,
-			statusText: "Bad Request",
-			headers: {
-				"Access-Control-Allow-Origin": "*",
-				"Content-Type": "application/json; charset=utf-8",
-		}});
+		return await new Response(`{"error": "${reason}"}`, { status: status, statusText: "Bad Request", headers: this.headers});
 	}
 	
 	// ----- Cookie Handling ----- //
 	
-	cookieSet(cookieName: string, value: string) {
-		// setCookie(response, {name: cookieName, value: value, httpOnly: true, secure: config.prod, maxAge: 1000 * 3600 * 24 * 365 });
+	// maxAge is seconds to expire
+	cookieSet(name: string, value: string, maxAge: number, httpOnly = true, secure = config.prod) {
+		this.headers.append("Set-Cookie", `${name}=${value}; Max-Age=${maxAge};` + (httpOnly ? " HttpOnly;" : "") + (secure ? " Secure;" : ""));
 	}
 	
-	cookieDelete(cookieName: string) {
-		// deleteCookie(response, cookieName);
+	cookieDelete(name: string) {
+		this.headers.append("Set-Cookie", `${name}=deleted; expires=Thu, 01 Jan 1970 00:00:00 GMT;`);
 	}
 	
 	cookieGetAll() {

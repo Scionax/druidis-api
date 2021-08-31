@@ -6,8 +6,6 @@ export { connect as connectRedis } from "https://deno.land/x/redis@v0.23.1/mod.t
 export type { Redis } from "https://deno.land/x/redis@v0.23.1/mod.ts";
 
 // Crypto
-// export { Sha256 } from "https://deno.land/std@0.103.0/hash/sha256.ts";		// Remove these once we prove createHash works.
-// export { Md5 } from "https://deno.land/std@0.103.0/hash/md5.ts";				// Remove these once we prove createHash works.
 export { createHash } from "https://deno.land/std@0.106.0/hash/mod.ts";
 
 // File Systems
