@@ -1,5 +1,6 @@
 import { config } from "../config.ts";
 import { ForumPost, PostStatus } from "../model/ForumPost.ts";
+import { User } from "../model/User.ts";
 import ImageMod from "./ImageMod.ts";
 import Mapp from "./Mapp.ts";
 import { TableType } from "./Types.ts";
@@ -50,6 +51,10 @@ export default abstract class LocalServer {
 		await LocalServer.postSimple("Gaming", 30);
 		
 		console.log("Created Local Gaming Post Placeholders.");
+		
+		// Add Druidis User
+		const result = await User.createUser("Druidis", "password", "info@druidis.org", {});
+		if(result) { console.log("Error when Creating Druidis User."); console.error(result); } else { console.log("Created Druidis User."); }
 	}
 	
 	static async postSimple(forum: string, id: number, status = PostStatus.Visible) {

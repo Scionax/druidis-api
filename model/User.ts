@@ -137,10 +137,10 @@ export abstract class User implements User {
 	
 	// ----- Validation for User Creation ----- //
 	
-	static async createUser(username: string, password: string, email: string, profile: UserProfile) {
+	static async createUser(username: string, password: string, email: string, profile: UserProfile): Promise<string> {
 		
 		// Verify Username
-		const usernameIssue = User.verifyUsername(username);
+		const usernameIssue = await User.verifyUsername(username);
 		if(usernameIssue !== "") { return usernameIssue; }
 		
 		// Verify Password
@@ -168,6 +168,8 @@ export abstract class User implements User {
 		await User.setPassword(id, password);
 		await User.setProfile(id, profile);
 		await Mapp.redis.set(`u:${id}:time`, 0);
+		
+		return "";
 	}
 	
 	// ----- Conversions ----- //
@@ -193,12 +195,12 @@ export abstract class User implements User {
 	
 	// ----- Validation for User Creation ----- //
 	
-	static verifyUsername(username: string) {
+	static async verifyUsername(username: string) {
 		if(!username || typeof username !== "string" || username.length === 0) { return "Must provide a valid username."; }
 		if(username.length < User._userMin) { return `Username must have at least ${User._userMin} characters.`; }
 		if(username.length > User._userMax) { return `Username cannot exceed ${User._userMax} characters.`; }
 		if(!Validate.isSafeWord(username)) { return `Username may only contain letters, numbers, and underscores.`; }
-		if(User.usernameExists(username)) { return `Username is already taken.`; }
+		if(await User.usernameExists(username)) { return `Username is already taken.`; }
 		return "";
 	}
 	
