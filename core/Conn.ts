@@ -1,4 +1,6 @@
 import VerboseLog from "./VerboseLog.ts";
+import { getCookies, setCookie, deleteCookie } from "../deps.ts";
+import { config } from "../config.ts";
 
 export default class Conn {
 	
@@ -38,9 +40,8 @@ export default class Conn {
 	}
 	
 	// return await WebController.sendJson("Path successful!");
-	async sendJson( jsonObj: unknown ): Promise<Response> {
-		
-		return await new Response(JSON.stringify({ u: this.userObj, d: jsonObj }), { status: 200, headers: {
+	sendJson( jsonObj: unknown ): Response {
+		return new Response(JSON.stringify({ u: this.userObj, d: jsonObj }), { status: 200, headers: {
 			"Access-Control-Allow-Origin": "*",
 			"Content-Type": "application/json; charset=utf-8",
 			"Access-Control-Allow-Headers": "Content-Type",
@@ -58,5 +59,19 @@ export default class Conn {
 				"Access-Control-Allow-Origin": "*",
 				"Content-Type": "application/json; charset=utf-8",
 		}});
+	}
+	
+	// ----- Cookie Handling ----- //
+	
+	cookieSet(cookieName: string, value: string) {
+		// setCookie(response, {name: cookieName, value: value, httpOnly: true, secure: config.prod, maxAge: 1000 * 3600 * 24 * 365 });
+	}
+	
+	cookieDelete(cookieName: string) {
+		// deleteCookie(response, cookieName);
+	}
+	
+	cookieGetAll() {
+		getCookies(this.request);
 	}
 }
