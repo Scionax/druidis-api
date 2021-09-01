@@ -17,10 +17,10 @@ export default class Conn {
 	// Response
 	public errorMessage = "";
 	public headers = new Headers({
-		"Access-Control-Allow-Origin": "*",
+		// "Access-Control-Allow-Origin": "*",
 		"Content-Type": "application/json; charset=utf-8",
-		"Access-Control-Allow-Headers": "Content-Type",			// Required for CORS Pre-Flight
-		"Access-Control-Allow-Credentials": "true",				// Required for CORS Pre-Flight (but is insecure, so need to update)
+		// "Access-Control-Allow-Headers": "Content-Type",			// Required for CORS Pre-Flight
+		// "Access-Control-Allow-Credentials": "true",				// Required for CORS Pre-Flight (but is insecure, so need to update)
 	});
 	
 	// User Object
@@ -101,7 +101,7 @@ export default class Conn {
 	
 	// maxAge is seconds to expire
 	cookieSet(name: string, value: string, maxAge: number, httpOnly = true, secure = config.prod) {
-		this.headers.append("Set-Cookie", `${name}="${value}"; Max-Age=${maxAge};` + (httpOnly ? " HttpOnly;" : "") + (secure ? " Secure;" : ""));
+		this.headers.append("Set-Cookie", `${name}=${value}; Max-Age=${maxAge}; SameSite=Lax;` + (httpOnly ? " HttpOnly;" : "") + (secure ? " Secure;" : ""));
 	}
 	
 	cookieDelete(name: string) {

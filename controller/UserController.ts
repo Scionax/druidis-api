@@ -73,7 +73,7 @@ export default class UserController extends WebController {
 		const token = Crypto.safeHash(`${rand}.${passHash}`, 20);
 		
 		// Return login cookie.
-		conn.cookieSet("login", `${id}.${rand}.${token}`, MonthInSeconds, false);
+		conn.cookieSet("login", `${id}.${rand}.${token}`, MonthInSeconds);
 		
 		return await conn.sendJson(`${id}.${rand}.${token}`);
 		// return await conn.sendJson(`${id}.${rand}.${token}`);
