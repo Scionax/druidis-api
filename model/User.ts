@@ -11,6 +11,7 @@ import Validate from "../core/Validate.ts";
 	u:{id}:last = lastTimeUpdate
 	u:{id}:time = timeSpentOnSite
 	u:{id}:profile = profileData						// First Name, Last Name, Country, State/Province, Postal Code, DOB, Email, Website, etc.
+	u:{id}:token = tokenHash							// The current token. If a cookie uses this token for the user, it can log in.
 	
 	// Planned for, or considered, but not yet implemented:
 	u:{id}:comm = [Community1, Community2]				// List of communities the user is subscribed to.
@@ -24,10 +25,9 @@ import Validate from "../core/Validate.ts";
 	
 	u:{id}:ip = ipAddress								// Not sure how I want to handle IP's yet. Maybe in a fingerprint/cookie object.
 	
-	// Cookie: ${id}.${rand}.${token}
+	// Cookie: ${id}.${token}
 	id - the id of the user
-	rand - a random value, assigned when the cookie is set
-	token - Crypto.safeHash(`${rand}.${passHash}`, 20);
+	token - some random token, saved into user table
 	
 	// Related Tables
 	count:users					// User Index. Tracks the number of users and returns the next User ID.
@@ -144,6 +144,38 @@ export abstract class User implements User {
 		User.getTimeSpent(id).then((value: number) => {
 			Mapp.redis.set(`u:${id}:time`, value + addSeconds)
 		});
+	}
+	
+	// ----- Cookie Tokens ----- //
+	
+	private static async updateToken(id: number): Promise<string> {
+		const token = Crypto.safeHash(Math.random().toString(16), 20);
+		await Mapp.redis.set(`u:${id}:token`, token);
+		return token;
+	}
+	
+	// Retrieves the current Cookie token, or generates a new one if not available.
+	static async getToken(id: number, autoGenerate: boolean): Promise<string> {
+		let token = (await Mapp.redis.get(`u:${id}:token`)) as string || "";
+		
+		// If we don't have an existing token, create oone.
+		if(!token && autoGenerate) {
+			token = await this.updateToken(id);
+		}
+		
+		return token;
+	}
+	
+	// Purges the token, such as when logging out.
+	static async clearToken(id: number): Promise<true> {
+		await Mapp.redis.set(`u:${id}:token`, "");
+		return true;
+	}
+	
+	static async verifyToken(id: number, tokenSent: string) {
+		const token = await User.getToken(id, false);
+		if(!token || !tokenSent) { return false; }
+		return token === tokenSent;
 	}
 	
 	// ----- Validation for User Creation ----- //
