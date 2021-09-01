@@ -112,7 +112,17 @@ export default class UserController extends WebController {
 		if(!cookies.login) { return await conn.sendJson("Already logged out."); }
 		
 		const id = await User.verifyLoginCookie(cookies.login);
+		if(!id) { return await conn.sendJson("Already logged out."); }
 		
-		return await conn.sendJson({ id, cookies });
+		// Log the user out of this session (expire the cookie).
+		conn.cookieDelete("login");
+		
+		// If the user wants to log out of ALL instances, we must also remove the login token.
+		if(rawData.logOutFull) {
+			User.clearToken(id);
+		}
+		
+		return await conn.sendJson("Logged out.");
 	}
 }
+
