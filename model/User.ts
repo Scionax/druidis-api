@@ -180,7 +180,7 @@ export abstract class User implements User {
 	
 	// ----- Validation for User Creation ----- //
 	
-	static async createUser(username: string, password: string, email: string, profile: UserProfile): Promise<string> {
+	static async canCreateUser(username: string, password: string, email: string, profile: UserProfile): Promise<string> {
 		
 		// Verify Username
 		const usernameIssue = await User.verifyUsername(username);
@@ -198,7 +198,14 @@ export abstract class User implements User {
 		const profileIssue = User.verifyProfileData(profile);
 		if(profileIssue !== "") { return profileIssue; }
 		
-		// Creation Tests Passed. Create User.
+		// Creation Tests Passed. User creation is allowed.
+		return "";
+	}
+	
+	static async createUser(username: string, password: string, email: string, profile: UserProfile): Promise<number> {
+		
+		// Current method for storing email:
+		profile.email = email;
 		
 		// Get a new User ID
 		// TODO: Redis Transaction (tx)
@@ -212,7 +219,7 @@ export abstract class User implements User {
 		await User.setProfile(id, profile);
 		await Mapp.redis.set(`u:${id}:time`, 0);
 		
-		return "";
+		return id;
 	}
 	
 	// ----- Conversions ----- //

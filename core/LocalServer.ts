@@ -53,8 +53,8 @@ export default abstract class LocalServer {
 		console.log("Created Local Gaming Post Placeholders.");
 		
 		// Add Druidis User
-		const result = await User.createUser("Druidis", "password", "info@druidis.org", {});
-		if(result) { console.log("Error when Creating Druidis User."); console.error(result); } else { console.log("Created Druidis User."); }
+		const id = await User.createUser("Druidis", "password", "info@druidis.org", {});
+		if(!id) { console.log("Error when Creating Druidis User."); } else { console.log("Created Druidis User."); }
 	}
 	
 	static async postSimple(forum: string, id: number, status = PostStatus.Visible) {
