@@ -24,6 +24,11 @@ import Validate from "../core/Validate.ts";
 	
 	u:{id}:ip = ipAddress								// Not sure how I want to handle IP's yet. Maybe in a fingerprint/cookie object.
 	
+	// Cookie: ${id}.${rand}.${token}
+	id - the id of the user
+	rand - a random value, assigned when the cookie is set
+	token - Crypto.safeHash(`${rand}.${passHash}`, 20);
+	
 	// Related Tables
 	count:users					// User Index. Tracks the number of users and returns the next User ID.
 */
@@ -94,13 +99,19 @@ export abstract class User implements User {
 	// ----- Checks ----- //
 	
 	static async idExists(id: number): Promise<boolean> {
-		const someUser = (await Mapp.redis.get(`u:${id}`)) || "";
-		return (someUser && typeof someUser === "string" && someUser.length > 0) ? true : false;
+		const userId = (await Mapp.redis.get(`u:${id}`)) || "";
+		return (userId && typeof userId === "string" && userId.length > 0) ? true : false;
 	}
 	
 	static async usernameExists(username: string): Promise<boolean> {
-		const someUser = Number(await Mapp.redis.get(`u:${username}`)) || 0;
-		return (someUser && typeof someUser === "number" && someUser > 0) ? true : false;
+		const userId = await User.getId(username);
+		return userId > 0;
+	}
+	
+	static async isCorrectPassword(username: string, password: string): Promise<boolean> {
+		const userId = await User.getId(username);
+		const hash = await User.getPassword(userId);
+		return hash === Crypto.safeHash(password);
 	}
 	
 	// ----- Time Updatees ----- //

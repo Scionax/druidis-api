@@ -1,5 +1,6 @@
 
-export const MonthInSeconds = 86400;
+export const DayInSeconds = 86400;
+export const MonthInSeconds = 2592000;
 export const YearInSeconds = 31536000;
 
 // RedisDB / Schema uses this extensively.

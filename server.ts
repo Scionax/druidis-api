@@ -17,6 +17,7 @@ import ObjectStorage from "./core/ObjectStorage.ts";
 import LocalServer from "./core/LocalServer.ts";
 import ForumController from "./controller/ForumController.ts";
 import Playground from "./playground.ts";
+import UserController from "./controller/UserController.ts";
 
 // Handle Setup Arguments
 // for( let i = 0; i < Deno.args.length; i++ ) {
@@ -44,8 +45,7 @@ const RouteMap: { [name: string]: WebController } = {
 	"post": new PostController(),
 	"data": new DataController(),			// API to pull important data, such as Fixed Forum Data.
 	"forum": new ForumController(),
-	// "u": new UserController(),				// "u" stands for "user"
-	// "g": new GroupController(),				// "g" stands for "group"
+	"user": new UserController(),
 };
 
 // Initializations
@@ -62,6 +62,8 @@ async function handle(conn: Deno.Conn) {
 	
 	for await (const requestEvent of httpConn) {
 		const conn = new Conn(requestEvent);
+		
+		console.log("Made a connection", Math.random());
 		
 		// Launch an associated Route Map, if found (such as 'api')
 		if(RouteMap[conn.url1]) {

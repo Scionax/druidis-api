@@ -2,6 +2,7 @@ import Mapp from "../core/Mapp.ts";
 import WebController from "./WebController.ts";
 import { Forum } from "../model/Forum.ts";
 import Conn from "../core/Conn.ts";
+import { getCookies } from "../deps.ts";
 
 export default class DataController extends WebController {
 	
@@ -67,7 +68,10 @@ export default class DataController extends WebController {
 		// Run a Test
 		if(conn.url2 === "test") {
 			
+			console.log("wtf");
 			
+			const cookies = getCookies(conn.request);
+			console.log(cookies);
 			
 			return await conn.sendJson("Let's try this");
 		}

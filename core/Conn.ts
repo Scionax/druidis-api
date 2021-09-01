@@ -45,6 +45,7 @@ export default class Conn {
 	
 	// return await WebController.sendJson("Path successful!");
 	sendJson( jsonObj: unknown ): Response {
+		console.log(this.headers);
 		return new Response(JSON.stringify({ u: this.userObj, d: jsonObj }), { status: 200, headers: this.headers });
 	}
 	
@@ -100,7 +101,7 @@ export default class Conn {
 	
 	// maxAge is seconds to expire
 	cookieSet(name: string, value: string, maxAge: number, httpOnly = true, secure = config.prod) {
-		this.headers.append("Set-Cookie", `${name}=${value}; Max-Age=${maxAge};` + (httpOnly ? " HttpOnly;" : "") + (secure ? " Secure;" : ""));
+		this.headers.append("Set-Cookie", `${name}="${value}"; Max-Age=${maxAge};` + (httpOnly ? " HttpOnly;" : "") + (secure ? " Secure;" : ""));
 	}
 	
 	cookieDelete(name: string) {
