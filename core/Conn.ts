@@ -119,12 +119,12 @@ export default class Conn {
 	// ----- Cookie Handling ----- //
 	
 	// maxAge is seconds to expire
-	cookieSet(name: string, value: string, maxAge: number, httpOnly = true, secure = config.prod) {
-		this.headers.append("Set-Cookie", `${name}=${value}; Max-Age=${maxAge}; SameSite=Lax;` + (httpOnly ? " HttpOnly;" : "") + (secure ? " Secure;" : ""));
+	cookieSet(name: string, value: string, maxAge: number, httpOnly = true, secure = config.prod, path = "/") {
+		this.headers.append("Set-Cookie", `${name}=${value}; Max-Age=${maxAge}; Path=${path}; SameSite=Lax;` + (httpOnly ? " HttpOnly;" : "") + (secure ? " Secure;" : ""));
 	}
 	
-	cookieDelete(name: string) {
-		this.headers.append("Set-Cookie", `${name}=deleted; expires=Thu, 01 Jan 1970 00:00:00 GMT;`);
+	cookieDelete(name: string, path = "/") {
+		this.headers.append("Set-Cookie", `${name}=deleted; Path=${path}; Expires=Thu, 01 Jan 1970 00:00:00 GMT;`);
 	}
 	
 	cookieGet(): Record<string, string> {
