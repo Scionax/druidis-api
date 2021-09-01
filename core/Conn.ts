@@ -1,5 +1,4 @@
 import VerboseLog from "./VerboseLog.ts";
-import { getCookies } from "../deps.ts";
 import { config } from "../config.ts";
 
 export default class Conn {
@@ -17,8 +16,8 @@ export default class Conn {
 	// Response
 	public errorMessage = "";
 	public headers = new Headers({
-		// "Access-Control-Allow-Origin": "*",
 		"Content-Type": "application/json; charset=utf-8",
+		// "Access-Control-Allow-Origin": "*",						// Required for CORS (but is insecure, so need to update)
 		// "Access-Control-Allow-Headers": "Content-Type",			// Required for CORS Pre-Flight
 		// "Access-Control-Allow-Credentials": "true",				// Required for CORS Pre-Flight (but is insecure, so need to update)
 	});
@@ -45,7 +44,6 @@ export default class Conn {
 	
 	// return await WebController.sendJson("Path successful!");
 	sendJson( jsonObj: unknown ): Response {
-		console.log(this.headers);
 		return new Response(JSON.stringify({ u: this.userObj, d: jsonObj }), { status: 200, headers: this.headers });
 	}
 	
@@ -108,7 +106,20 @@ export default class Conn {
 		this.headers.append("Set-Cookie", `${name}=deleted; expires=Thu, 01 Jan 1970 00:00:00 GMT;`);
 	}
 	
-	cookieGetAll() {
-		getCookies(this.request);
+	cookieGet(): Record<string, string> {
+		const cookie = this.request.headers.get("cookie");
+		if (cookie != null) {
+			const out: Record<string, string> = {};
+			const c = cookie.split(";");
+			for (const kv of c) {
+				const [cookieKey, ...cookieVal] = kv.split("=");
+				if(cookieKey != null) {
+					const key = cookieKey.trim();
+					out[key] = cookieVal.join("=");
+				}
+			}
+			return out;
+		}
+		return {};
 	}
 }

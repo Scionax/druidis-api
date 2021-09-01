@@ -1,5 +1,4 @@
 export { assert, assertEquals } from "https://deno.land/std@0.103.0/testing/asserts.ts";
-export { getCookies, setCookie, deleteCookie } from "https://deno.land/std@0.106.0/http/cookie.ts";
 
 // Redis
 export { connect as connectRedis } from "https://deno.land/x/redis@v0.23.1/mod.ts";

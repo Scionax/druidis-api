@@ -63,8 +63,6 @@ async function handle(conn: Deno.Conn) {
 	for await (const requestEvent of httpConn) {
 		const conn = new Conn(requestEvent);
 		
-		console.log("Made a connection", Math.random());
-		
 		// Launch an associated Route Map, if found (such as 'api')
 		if(RouteMap[conn.url1]) {
 			try {

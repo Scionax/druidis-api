@@ -1,7 +1,6 @@
 import Conn from "../core/Conn.ts";
 import Crypto from "../core/Crypto.ts";
 import { MonthInSeconds } from "../core/Types.ts";
-import { getCookies } from "../deps.ts";
 import { User } from "../model/User.ts";
 import WebController from "./WebController.ts";
 
@@ -39,6 +38,7 @@ export default class UserController extends WebController {
 		
 		if(conn.url2 === "login") { return await this.runLogin(conn, rawData); }
 		if(conn.url2 === "sign-up") { return await this.runSignUp(conn, rawData); }
+		if(conn.url2 === "logout") { return await this.runLogOut(conn, rawData); }
 		
 		return await conn.sendFail("Invalid API.");
 	}
@@ -102,5 +102,17 @@ export default class UserController extends WebController {
 		
 		// Respond with success.
 		return await conn.sendJson({ id: id, success: true });
+	}
+	
+	async runLogOut(conn: Conn, rawData: { [id: string]: FormDataEntryValue} ) {
+		
+		// Check if the user is logged in.
+		const cookies = conn.cookieGet();
+		
+		if(!cookies.login) { return await conn.sendJson("Already logged out."); }
+		
+		const id = await User.verifyLoginCookie(cookies.login);
+		
+		return await conn.sendJson({ id, cookies });
 	}
 }

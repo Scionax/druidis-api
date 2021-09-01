@@ -146,7 +146,24 @@ export abstract class User implements User {
 		});
 	}
 	
-	// ----- Cookie Tokens ----- //
+	// ----- Cookies & Tokens ----- //
+	
+	// Returns an ID if the cookie is valid, or 0 if the cookie is invalid.
+	// const id = User.verifyLoginCookie(cookies.login);
+	static async verifyLoginCookie(loginCookie: string): Promise<number> {
+		if(!loginCookie || loginCookie.indexOf(".") < 0) { return 0; }
+		
+		// Recover the ID and the Token
+		const log = loginCookie.split(".");
+		const id = Number(log[0]) || 0;
+		if(!id || !log[1]) { return 0; }
+		
+		// Verify if the user has the relevant cookie token:
+		const verify = await User.verifyToken(id, log[1]);
+		
+		// If successful, return the user ID. Otherwise, return 0.
+		return verify ? id : 0;
+	}
 	
 	private static async updateToken(id: number): Promise<string> {
 		const token = Crypto.safeHash(Math.random().toString(16), 20);
