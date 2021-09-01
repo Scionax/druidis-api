@@ -1,5 +1,6 @@
 import VerboseLog from "./VerboseLog.ts";
 import { config } from "../config.ts";
+import { User } from "../model/User.ts";
 
 export default class Conn {
 	
@@ -12,6 +13,9 @@ export default class Conn {
 	public url1: string;
 	public url2: string;
 	public url3: string;
+	
+	// Login Data
+	public id = 0;			// The user's ID
 	
 	// Response
 	public errorMessage = "";
@@ -37,10 +41,27 @@ export default class Conn {
 		this.url3 = seg.length >= 4 ? seg[3] : "";
 	}
 	
-	public error(reason = ""): false {
+	error(reason = ""): false {
 		this.errorMessage = reason;
 		return false;
 	}
+	
+	// ----- Process Active Users ----- //
+	
+	async processActiveUser() {
+		
+		// Get the 'login' cookie from User, if applicable.
+		const cookies = this.cookieGet();
+		if(!cookies.login) { return; }
+		
+		// Verify that the 'login' cookie is valid. Assign an ID if so.
+		this.id = await User.verifyLoginCookie(cookies.login);
+		if(!this.id) { return; }
+	}
+	
+	// ------------------------ //
+	// ----- API Response ----- //
+	// ------------------------ //
 	
 	// return await WebController.sendJson("Path successful!");
 	sendJson( jsonObj: unknown ): Response {
@@ -48,9 +69,9 @@ export default class Conn {
 	}
 	
 	// return await WebController.sendBadRequest("So that error just happened.");
-	async sendFail( reason = "Bad Request", status = 400 ): Promise<Response> {
+	sendFail( reason = "Bad Request", status = 400 ): Response {
 		VerboseLog.verbose(`${this.url.pathname} :: sendFail(): ` + reason );
-		return await new Response(`{"error": "${reason}"}`, { status: status, statusText: "Bad Request", headers: this.headers});
+		return new Response(`{"error": "${reason}"}`, { status: status, statusText: "Bad Request", headers: this.headers});
 	}
 	
 	// ------------------------- //

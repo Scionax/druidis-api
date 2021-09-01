@@ -63,6 +63,9 @@ async function handle(conn: Deno.Conn) {
 	for await (const requestEvent of httpConn) {
 		const conn = new Conn(requestEvent);
 		
+		// Run the login / processing user step:
+		await conn.processActiveUser();
+		
 		// Launch an associated Route Map, if found (such as 'api')
 		if(RouteMap[conn.url1]) {
 			try {
