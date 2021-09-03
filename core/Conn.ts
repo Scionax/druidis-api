@@ -26,9 +26,6 @@ export default class Conn {
 		// "Access-Control-Allow-Credentials": "true",				// Required for CORS Pre-Flight (but is insecure, so need to update)
 	});
 	
-	// User Object
-	public userObj = {};
-	
 	constructor(requestEvent: Deno.RequestEvent) {
 		this.requestEvent = requestEvent;
 		this.request = this.requestEvent.request;
@@ -65,7 +62,7 @@ export default class Conn {
 	
 	// return await WebController.sendJson("Path successful!");
 	sendJson( jsonObj: unknown ): Response {
-		return new Response(JSON.stringify({ u: this.userObj, d: jsonObj }), { status: 200, headers: this.headers });
+		return new Response(JSON.stringify(jsonObj), { status: 200, headers: this.headers });
 	}
 	
 	// return await WebController.sendBadRequest("So that error just happened.");
