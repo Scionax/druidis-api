@@ -34,7 +34,7 @@ export default class DataController extends WebController {
 			
 			// Full Forum Data
 			if(conn.url3 === "expanded") {
-				return await conn.sendJson( Mapp.forums );
+				return await conn.sendJson( Forum.schema );
 			}
 			
 			// Specific Forum

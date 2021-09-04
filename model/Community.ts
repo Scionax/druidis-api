@@ -1,5 +1,4 @@
-import Mapp from "../core/Mapp.ts";
-import { Curation } from "./Forum.ts";
+import { Curation, Forum } from "./Forum.ts";
 
 /*
 	Only Druidis can create communities. Must have an official curator in charge of it.
@@ -54,74 +53,74 @@ export class Community {
 	private addDescription(desc: string) { this.desc = desc; }
 	
 	// Validation
-	public static exists(forum: string) { return forum && Mapp.forums[forum]; }
+	public static exists(forum: string) { return forum && Forum.schema[forum]; }
 	
 	// Initialize Forums at Server Start
 	public static initialize() {
 		
 		// // Entertainment News
-		// Mapp.forums["Gaming"] = new Community("Gaming").addCategories("News", "Events", "Showoff", "Releases");
-		// Mapp.forums["Anime"] = new Community("Anime").addCategories();
-		// Mapp.forums["Music"] = new Community("Music").addCategories();
-		// Mapp.forums["Sports"] = new Community("Sports").addCategories();
+		// Forum.schema["Gaming"] = new Community("Gaming").addCategories("News", "Events", "Showoff", "Releases");
+		// Forum.schema["Anime"] = new Community("Anime").addCategories();
+		// Forum.schema["Music"] = new Community("Music").addCategories();
+		// Forum.schema["Sports"] = new Community("Sports").addCategories();
 		
 		// // Special News
-		// Mapp.forums["UpliftingNews"] = new Community("UpliftingNews").addCategories();
-		// Mapp.forums["QualityJournalism"] = new Community("QualityJournalism").addCategories();
+		// Forum.schema["UpliftingNews"] = new Community("UpliftingNews").addCategories();
+		// Forum.schema["QualityJournalism"] = new Community("QualityJournalism").addCategories();
 		
 		// // Science News
-		// Mapp.forums["Environment"] = new Community("Environment").addCategories();
-		// Mapp.forums["Programming"] = new Community("Programming").addCategories();
-		// Mapp.forums["Science"] = new Community("Science").addCategories("Astronomy", "Anthropology", "Biology", "Chemistry", "EarthScience", "Economics", "Environment", "Geology",
+		// Forum.schema["Environment"] = new Community("Environment").addCategories();
+		// Forum.schema["Programming"] = new Community("Programming").addCategories();
+		// Forum.schema["Science"] = new Community("Science").addCategories("Astronomy", "Anthropology", "Biology", "Chemistry", "EarthScience", "Economics", "Environment", "Geology",
 		// "Health", "Mathematics", "Medicine", "Neuroscience", "Physics", "Psychology", "SocialScience");
-		// Mapp.forums["Technology"] = new Community("Technology").addCategories();
+		// Forum.schema["Technology"] = new Community("Technology").addCategories();
 		
 		// // ---------------------------- //
 		// // ----- Community Forums ----- //
 		// // ---------------------------- //
 		
-		// Mapp.forums["Writing"] = new Community("Writing").addCategories();
-		// Mapp.forums["WorldBuilding"] = new Community("WorldBuilding").addCategories();
-		// Mapp.forums["GameDev"] = new Community("GameDev").addCategories();
+		// Forum.schema["Writing"] = new Community("Writing").addCategories();
+		// Forum.schema["WorldBuilding"] = new Community("WorldBuilding").addCategories();
+		// Forum.schema["GameDev"] = new Community("GameDev").addCategories();
 		
 		// // ----------------------------- //
 		// // ----- Collection Forums ----- //
 		// // ----------------------------- //
 		
-		// Mapp.forums["Travel"] = new Community("Travel").addCategories();
-		// Mapp.forums["FoodPics"] = new Community("FoodPics").addCategories();
-		// Mapp.forums["Recipes"] = new Community("Recipes").addCategories();
-		// Mapp.forums["Vehicles"] = new Community("Vehicles").addCategories();
-		// Mapp.forums["Books"] = new Community("Books").addCategories();
+		// Forum.schema["Travel"] = new Community("Travel").addCategories();
+		// Forum.schema["FoodPics"] = new Community("FoodPics").addCategories();
+		// Forum.schema["Recipes"] = new Community("Recipes").addCategories();
+		// Forum.schema["Vehicles"] = new Community("Vehicles").addCategories();
+		// Forum.schema["Books"] = new Community("Books").addCategories();
 		
 		// // Arts & Crafts
-		// Mapp.forums["Art"] = new Community("Art").addCategories("Drawing", "DigitalArt", "Painting");
-		// Mapp.forums["Textiles"] = new Community("Textiles").addCategories("Embroidery", "Quilting");
-		// Mapp.forums["Metalwork"] = new Community("Metalwork").addCategories();
-		// Mapp.forums["Woodwork"] = new Community("Woodwork").addCategories();
+		// Forum.schema["Art"] = new Community("Art").addCategories("Drawing", "DigitalArt", "Painting");
+		// Forum.schema["Textiles"] = new Community("Textiles").addCategories("Embroidery", "Quilting");
+		// Forum.schema["Metalwork"] = new Community("Metalwork").addCategories();
+		// Forum.schema["Woodwork"] = new Community("Woodwork").addCategories();
 		
 		// // Games
-		// Mapp.forums["ActionGames"] = new Community("ActionGames").addCategories("Arcade", "BattleRoyale", "FPS", "Horror", "Racing", "Shooter", "Sports", "Stealth", "Survival");
-		// Mapp.forums["BrainGames"] = new Community("BrainGames").addCategories("Educational", "Programming", "Puzzle", "Trivia", "WordGames");
-		// Mapp.forums["CasualGames"] = new Community("CasualGames").addCategories("Cards", "Cooking", "Farming", "LifeSim");
-		// Mapp.forums["StoryGames"] = new Community("StoryGames").addCategories("Adventure", "RPG", "VisualNovel");
-		// Mapp.forums["StrategyGames"] = new Community("StrategyGames").addCategories("CCG", "Deckbuilding", "Mystery", "RTS", "Tactics", "TowerDefense", "WorldBuilder");
+		// Forum.schema["ActionGames"] = new Community("ActionGames").addCategories("Arcade", "BattleRoyale", "FPS", "Horror", "Racing", "Shooter", "Sports", "Stealth", "Survival");
+		// Forum.schema["BrainGames"] = new Community("BrainGames").addCategories("Educational", "Programming", "Puzzle", "Trivia", "WordGames");
+		// Forum.schema["CasualGames"] = new Community("CasualGames").addCategories("Cards", "Cooking", "Farming", "LifeSim");
+		// Forum.schema["StoryGames"] = new Community("StoryGames").addCategories("Adventure", "RPG", "VisualNovel");
+		// Forum.schema["StrategyGames"] = new Community("StrategyGames").addCategories("CCG", "Deckbuilding", "Mystery", "RTS", "Tactics", "TowerDefense", "WorldBuilder");
 		
-		// Mapp.forums["GamingMemes"] = new Community("GamingMemes").addCategories();
-		// Mapp.forums["GamingAchievements"] = new Community("GamingAchievements").addCategories();
+		// Forum.schema["GamingMemes"] = new Community("GamingMemes").addCategories();
+		// Forum.schema["GamingAchievements"] = new Community("GamingAchievements").addCategories();
 		
-		// Mapp.forums["BoardGames"] = new Community("BoardGames").addCategories();
-		// Mapp.forums["RPG"] = new Community("RPG").addCategories();
+		// Forum.schema["BoardGames"] = new Community("BoardGames").addCategories();
+		// Forum.schema["RPG"] = new Community("RPG").addCategories();
 		
 		// // Cute
-		// Mapp.forums["Cute"] = new Community("Cute").addCategories("Bird", "Canine", "Exotic", "Feline", "Wildlife");
-		// Mapp.forums["Cosplay"] = new Community("Cosplay").addCategories();
+		// Forum.schema["Cute"] = new Community("Cute").addCategories("Bird", "Canine", "Exotic", "Feline", "Wildlife");
+		// Forum.schema["Cosplay"] = new Community("Cosplay").addCategories();
 		
 		// // Humor
-		// Mapp.forums["Jokes"] = new Community("Jokes").addCategories();
-		// Mapp.forums["Funny"] = new Community("Funny").addCategories();
-		// Mapp.forums["Comics"] = new Community("Comics").addCategories();
-		// Mapp.forums["ContagiousLaughter"] = new Community("ContagiousLaughter").addCategories();
+		// Forum.schema["Jokes"] = new Community("Jokes").addCategories();
+		// Forum.schema["Funny"] = new Community("Funny").addCategories();
+		// Forum.schema["Comics"] = new Community("Comics").addCategories();
+		// Forum.schema["ContagiousLaughter"] = new Community("ContagiousLaughter").addCategories();
 		
 		// // Console Display
 		// console.log("Forums Initialized.");

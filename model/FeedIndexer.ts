@@ -1,5 +1,4 @@
-import Mapp from "../core/Mapp.ts";
-import { ForumType } from "./Forum.ts";
+import { Forum, ForumType } from "./Forum.ts";
 
 /*
 	// Forum Indexing Process
@@ -88,7 +87,7 @@ export class FeedIndexer {
 	
 	public getEntriesFromForum(index: IndexList, forum: string, num: number) {
 		const weight = FeedIndexer.indexDetails[index][forum].weight;
-		const type = Mapp.forums[forum].type;
+		const type = Forum.schema[forum].type;
 		
 		// TODO:
 		// const highestId = !!!; // Must set this value to proceed. Identify the highest ID for 

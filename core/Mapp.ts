@@ -1,5 +1,4 @@
 import { Redis } from "../deps.ts";
-import { Forum } from "../model/Forum.ts";
 
 /*
 	This class tracks important MAPPING DATA
@@ -18,7 +17,6 @@ export default abstract class Mapp {
 	
 	// --------------------------- //
 	// ---------- CACHE ---------- //
-	static forums: { [id: string]: Forum } = {};
 	static recentPosts: { [authorId: number]: TrackRecentPost } = {};		// Used to prevent re-submitting same material.
 }
 

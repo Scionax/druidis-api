@@ -26,6 +26,8 @@ export const enum ForumType {
 
 export class Forum {
 	
+	static schema: { [id: string]: Forum } = {};
+	
 	// Forum Traits
 	readonly name: string;								// Forum Name
 	readonly type: string;								// Forum Type (News, Collect, Mixed)
@@ -64,23 +66,23 @@ export class Forum {
 	public static getPostRow(forum: string, postId: number) { return `post:${forum}:${postId}`; }
 	
 	// Validation
-	public static exists(forum: string) { return forum && Mapp.forums[forum]; }
+	public static exists(forum: string) { return forum && Forum.schema[forum]; }
 	public hasChildForum(childForum: string) { return this.children[childForum] ? true : false; }
 	
 	// Routing
-	public static get(name: string): Forum { return Mapp.forums[name]; }
+	public static get(name: string): Forum { return Forum.schema[name]; }
 	
 	public static getCompactForumData() {
 		const response: {[id: string]: { parent?: string, children?: Array<string>}} = {};
 		
-		for (const [key, value] of Object.entries(Mapp.forums)) {
+		for (const [key, value] of Object.entries(Forum.schema)) {
 			response[key] = {};
 			
-			if(Mapp.forums[key].parent) { response[key].parent = value.parent; }
+			if(Forum.schema[key].parent) { response[key].parent = value.parent; }
 			
 			const children = [];
 			
-			for(const [k, _v] of Object.entries(Mapp.forums[key].children)) {
+			for(const [k, _v] of Object.entries(Forum.schema[key].children)) {
 				children.push(k);
 			}
 			
@@ -106,15 +108,15 @@ export class Forum {
 				- World News
 		*/
 		
-		Mapp.forums["News"] = new Forum("News", "", ForumType.News).addChildren("Business", "Economic", "Environment", "Legal", "Politics", "Social Issues", "World News");
+		Forum.schema["News"] = new Forum("News", "", ForumType.News).addChildren("Business", "Economic", "Environment", "Legal", "Politics", "Social Issues", "World News");
 		
-		Mapp.forums["Business"] = new Forum("Business", "News", ForumType.News);
-		Mapp.forums["Economic"] = new Forum("Economic", "News", ForumType.News);
-		Mapp.forums["Environment"] = new Forum("Environment", "News", ForumType.News);
-		Mapp.forums["Legal"] = new Forum("Legal", "News", ForumType.News);
-		Mapp.forums["Politics"] = new Forum("Politics", "News", ForumType.News);
-		Mapp.forums["Social Issues"] = new Forum("Social Issues", "News", ForumType.News);
-		Mapp.forums["World News"] = new Forum("World News", "News", ForumType.News);
+		Forum.schema["Business"] = new Forum("Business", "News", ForumType.News);
+		Forum.schema["Economic"] = new Forum("Economic", "News", ForumType.News);
+		Forum.schema["Environment"] = new Forum("Environment", "News", ForumType.News);
+		Forum.schema["Legal"] = new Forum("Legal", "News", ForumType.News);
+		Forum.schema["Politics"] = new Forum("Politics", "News", ForumType.News);
+		Forum.schema["Social Issues"] = new Forum("Social Issues", "News", ForumType.News);
+		Forum.schema["World News"] = new Forum("World News", "News", ForumType.News);
 		
 		/*
 			Informative
@@ -124,12 +126,12 @@ export class Forum {
 				- Technology
 		*/
 		
-		Mapp.forums["Informative"] = new Forum("Informative", "", ForumType.News).addChildren("Education", "History", "Science", "Technology");
+		Forum.schema["Informative"] = new Forum("Informative", "", ForumType.News).addChildren("Education", "History", "Science", "Technology");
 		
-		Mapp.forums["Education"] = new Forum("Education", "Informative", ForumType.Collect);
-		Mapp.forums["History"] = new Forum("History", "Informative", ForumType.Collect);
-		Mapp.forums["Science"] = new Forum("Science", "Informative", ForumType.News);
-		Mapp.forums["Technology"] = new Forum("Technology", "Informative", ForumType.News);
+		Forum.schema["Education"] = new Forum("Education", "Informative", ForumType.Collect);
+		Forum.schema["History"] = new Forum("History", "Informative", ForumType.Collect);
+		Forum.schema["Science"] = new Forum("Science", "Informative", ForumType.News);
+		Forum.schema["Technology"] = new Forum("Technology", "Informative", ForumType.News);
 		
 		/*
 			Entertainment
@@ -144,17 +146,17 @@ export class Forum {
 				- Virtual Reality
 		*/
 		
-		Mapp.forums["Entertainment"] = new Forum("Entertainment", "", ForumType.News).addChildren("Books", "Gaming", "Movies", "Music", "People", "Shows", "Sports", "Tabletop Games", "Virtual Reality");
+		Forum.schema["Entertainment"] = new Forum("Entertainment", "", ForumType.News).addChildren("Books", "Gaming", "Movies", "Music", "People", "Shows", "Sports", "Tabletop Games", "Virtual Reality");
 		
-		Mapp.forums["Books"] = new Forum("Books", "Entertainment", ForumType.Mixed);
-		Mapp.forums["Gaming"] = new Forum("Gaming", "Entertainment", ForumType.News);
-		Mapp.forums["Movies"] = new Forum("Movies", "Entertainment", ForumType.News);
-		Mapp.forums["Music"] = new Forum("Music", "Entertainment", ForumType.News);
-		Mapp.forums["People"] = new Forum("People", "Entertainment", ForumType.News);
-		Mapp.forums["Shows"] = new Forum("Shows", "Entertainment", ForumType.News);
-		Mapp.forums["Sports"] = new Forum("Sports", "Entertainment", ForumType.News);
-		Mapp.forums["Tabletop Games"] = new Forum("Tabletop Games", "Entertainment", ForumType.Mixed);
-		Mapp.forums["Virtual Reality"] = new Forum("Virtual Reality", "Entertainment", ForumType.Mixed);
+		Forum.schema["Books"] = new Forum("Books", "Entertainment", ForumType.Mixed);
+		Forum.schema["Gaming"] = new Forum("Gaming", "Entertainment", ForumType.News);
+		Forum.schema["Movies"] = new Forum("Movies", "Entertainment", ForumType.News);
+		Forum.schema["Music"] = new Forum("Music", "Entertainment", ForumType.News);
+		Forum.schema["People"] = new Forum("People", "Entertainment", ForumType.News);
+		Forum.schema["Shows"] = new Forum("Shows", "Entertainment", ForumType.News);
+		Forum.schema["Sports"] = new Forum("Sports", "Entertainment", ForumType.News);
+		Forum.schema["Tabletop Games"] = new Forum("Tabletop Games", "Entertainment", ForumType.Mixed);
+		Forum.schema["Virtual Reality"] = new Forum("Virtual Reality", "Entertainment", ForumType.Mixed);
 		
 		/*
 			Lifestyle
@@ -168,16 +170,16 @@ export class Forum {
 				- Travel
 		*/
 		
-		Mapp.forums["Lifestyle"] = new Forum("Lifestyle", "", ForumType.Collect).addChildren("Fashion", "Fitness", "Food", "Health", "Recipes", "Social Life", "Relationships", "Travel");
+		Forum.schema["Lifestyle"] = new Forum("Lifestyle", "", ForumType.Collect).addChildren("Fashion", "Fitness", "Food", "Health", "Recipes", "Social Life", "Relationships", "Travel");
 		
-		Mapp.forums["Fashion"] = new Forum("Fashion", "Lifestyle", ForumType.Mixed);
-		Mapp.forums["Fitness"] = new Forum("Fitness", "Lifestyle", ForumType.Collect);
-		Mapp.forums["Food"] = new Forum("Food", "Lifestyle", ForumType.Collect);
-		Mapp.forums["Health"] = new Forum("Health", "Lifestyle", ForumType.Collect);
-		Mapp.forums["Recipes"] = new Forum("Recipes", "Lifestyle", ForumType.Collect);
-		Mapp.forums["Relationships"] = new Forum("Relationships", "Lifestyle", ForumType.Collect);
-		Mapp.forums["Social Life"] = new Forum("Social Life", "Lifestyle", ForumType.Collect);
-		Mapp.forums["Travel"] = new Forum("Travel", "Lifestyle", ForumType.Mixed);
+		Forum.schema["Fashion"] = new Forum("Fashion", "Lifestyle", ForumType.Mixed);
+		Forum.schema["Fitness"] = new Forum("Fitness", "Lifestyle", ForumType.Collect);
+		Forum.schema["Food"] = new Forum("Food", "Lifestyle", ForumType.Collect);
+		Forum.schema["Health"] = new Forum("Health", "Lifestyle", ForumType.Collect);
+		Forum.schema["Recipes"] = new Forum("Recipes", "Lifestyle", ForumType.Collect);
+		Forum.schema["Relationships"] = new Forum("Relationships", "Lifestyle", ForumType.Collect);
+		Forum.schema["Social Life"] = new Forum("Social Life", "Lifestyle", ForumType.Collect);
+		Forum.schema["Travel"] = new Forum("Travel", "Lifestyle", ForumType.Mixed);
 		
 		/*
 			Fun
@@ -188,13 +190,13 @@ export class Forum {
 				- Funny
 		*/
 		
-		Mapp.forums["Fun"] = new Forum("Fun", "", ForumType.Collect).addChildren("Ask", "Cosplay", "Cute", "Forum Games", "Funny", );
+		Forum.schema["Fun"] = new Forum("Fun", "", ForumType.Collect).addChildren("Ask", "Cosplay", "Cute", "Forum Games", "Funny", );
 		
-		Mapp.forums["Ask"] = new Forum("Ask", "Fun", ForumType.Collect);
-		Mapp.forums["Cosplay"] = new Forum("Cosplay", "Fun", ForumType.Collect);
-		Mapp.forums["Cute"] = new Forum("Cute", "Fun", ForumType.Collect);
-		Mapp.forums["Forum Games"] = new Forum("Forum Games", "Fun", ForumType.Collect);
-		Mapp.forums["Funny"] = new Forum("Funny", "Fun", ForumType.Collect);
+		Forum.schema["Ask"] = new Forum("Ask", "Fun", ForumType.Collect);
+		Forum.schema["Cosplay"] = new Forum("Cosplay", "Fun", ForumType.Collect);
+		Forum.schema["Cute"] = new Forum("Cute", "Fun", ForumType.Collect);
+		Forum.schema["Forum Games"] = new Forum("Forum Games", "Fun", ForumType.Collect);
+		Forum.schema["Funny"] = new Forum("Funny", "Fun", ForumType.Collect);
 		
 		/*
 			Creative
@@ -204,12 +206,12 @@ export class Forum {
 				- Writing
 		*/
 		
-		Mapp.forums["Creative"] = new Forum("Creative", "", ForumType.Collect).addChildren("Artwork", "Crafts", "Design", "Writing");
+		Forum.schema["Creative"] = new Forum("Creative", "", ForumType.Collect).addChildren("Artwork", "Crafts", "Design", "Writing");
 		
-		Mapp.forums["Artwork"] = new Forum("Artwork", "Creative", ForumType.Collect);
-		Mapp.forums["Crafts"] = new Forum("Crafts", "Creative", ForumType.Collect);
-		Mapp.forums["Design"] = new Forum("Design", "Creative", ForumType.Collect);
-		Mapp.forums["Writing"] = new Forum("Writing", "Creative", ForumType.Collect);
+		Forum.schema["Artwork"] = new Forum("Artwork", "Creative", ForumType.Collect);
+		Forum.schema["Crafts"] = new Forum("Crafts", "Creative", ForumType.Collect);
+		Forum.schema["Design"] = new Forum("Design", "Creative", ForumType.Collect);
+		Forum.schema["Writing"] = new Forum("Writing", "Creative", ForumType.Collect);
 		
 		// Console Display
 		console.log("Forums Initialized.");

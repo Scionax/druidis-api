@@ -4,6 +4,7 @@ import RedisDB from "../core/RedisDB.ts";
 import { TableType } from "../core/Types.ts";
 import Validate from "../core/Validate.ts";
 import { ensureDir } from "../deps.ts";
+import { Forum } from "./Forum.ts";
 
 export const enum PostStatus {
 	Hidden = 0,			// Hidden Post (was approved and entered into "Visible" at one point; closest we have to deleted)
@@ -108,7 +109,7 @@ export class ForumPost {
 		
 		// Confirm that forum is valid:
 		if(!forum.match(/^[a-z0-9 ]+$/i)) { return "`forum` is not valid." }
-		if(!Mapp.forums[forum]) { return "`forum` does not exist." }
+		if(!Forum.schema[forum]) { return "`forum` does not exist." }
 		
 		// URL Requirements
 		if(url) {
@@ -144,7 +145,7 @@ export class ForumPost {
 		if(msg.length > 0) { return msg; }
 		
 		// Make sure the forum exists:
-		if(!Mapp.forums[forum]) { return `Error: The submitted forum does not exist.`; }
+		if(!Forum.schema[forum]) { return `Error: The submitted forum does not exist.`; }
 		
 		// Assign a new ID and make sure a post isn't already using it.
 		const id = await RedisDB.incrementCounter(`post:${forum}`);
@@ -176,7 +177,7 @@ export class ForumPost {
 		if(h < 32) {  return "Posting an image with too small of a height." }
 		
 		// Make sure the forum exists:
-		if(!Mapp.forums[forum]) { return `Error: The submitted forum does not exist.`; }
+		if(!Forum.schema[forum]) { return `Error: The submitted forum does not exist.`; }
 		
 		// Assign a new ID and make sure a post isn't already using it.
 		const id = await RedisDB.incrementCounter(`post:${forum}`);
