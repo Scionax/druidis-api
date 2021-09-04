@@ -14,8 +14,8 @@ import Validate from "../core/Validate.ts";
 	u:{id}:token = tokenHash							// The current token. If a cookie uses this token for the user, it can log in.
 	
 	// Planned for, or considered, but not yet implemented:
-	u:{id}:comm = [Community1, Community2]				// List of communities the user is subscribed to.
-	u:{id}:subs = [Sub1, Sub2]							// List of forums the user is subscribed to.
+	u:{id}:comm = [Community1, Community2] or Sorted Set		// List of communities the user is subscribed to.
+	u:{id}:subs = [Sub1, Sub2] or Sorted Set					// List of forums the user is subscribed to.
 	u:{id}:allowComment = 1
 	u:{id}:allowPost = 1
 	u:{id}:karma = ??
