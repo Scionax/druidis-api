@@ -116,7 +116,7 @@ export default class Conn {
 	// ----- Cookie Handling ----- //
 	
 	// maxAge is seconds to expire
-	cookieSet(name: string, value: string, maxAge: number, httpOnly = true, secure = config.prod, path = "/") {
+	cookieSet(name: string, value: string, maxAge: number, secure = config.prod, httpOnly = false, path = "/") {
 		this.headers.append("Set-Cookie", `${name}=${value}; Max-Age=${maxAge}; Path=${path}; SameSite=Lax;` + (httpOnly ? " HttpOnly;" : "") + (secure ? " Secure;" : ""));
 	}
 	

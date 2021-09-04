@@ -1,4 +1,3 @@
-import Mapp from "../core/Mapp.ts";
 
 export const enum Curation {
 	Public = 0,
@@ -72,7 +71,7 @@ export class Forum {
 	// Routing
 	public static get(name: string): Forum { return Forum.schema[name]; }
 	
-	public static getCompactForumData() {
+	public static getCompactForumSchema() {
 		const response: {[id: string]: { parent?: string, children?: Array<string>}} = {};
 		
 		for (const [key, value] of Object.entries(Forum.schema)) {
