@@ -62,8 +62,6 @@ export class Forum {
 		this.rules = [];
 	}
 	
-	public static getPostRow(forum: string, postId: number) { return `post:${forum}:${postId}`; }
-	
 	// Validation
 	public static exists(forum: string) { return forum && Forum.schema[forum]; }
 	public hasChildForum(childForum: string) { return this.children[childForum] ? true : false; }

@@ -47,7 +47,7 @@ export default class DataController extends WebController {
 			}
 			
 			// Return Compact Forum Data
-			return await conn.sendJson( Forum.getCompactForumData());
+			return await conn.sendJson( Forum.getCompactForumSchema());
 		}
 		
 		// Fetch a website's HTML.

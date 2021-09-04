@@ -1,3 +1,4 @@
+import RedisDB from "../core/RedisDB.ts";
 import { Forum, ForumType } from "./Forum.ts";
 
 /*
@@ -15,6 +16,25 @@ enum IndexList {
 	Fun = "Fun",
 	Creative = "Creative",
 }
+
+/*
+	Future Integration: Add each of these values as individual settings per post:
+		
+		Educational
+			- Useful Information (Did You Know)
+			- Interesting Tidbit (Did You Know)
+		
+		Quality Journalism (Expose Corruption)
+			- Investigative Journalism
+		
+		Hidden Gems / Showcase (people or groups that deserve a spotlight)
+		
+		Trending, Matters
+		Trending, Doesn't Matter
+		
+		Uplifting, Meaningful Change
+		Uplifting, Feel Good Story
+*/
 
 export class FeedIndexer {
 	
@@ -81,6 +101,57 @@ export class FeedIndexer {
 			"Design": { weight: 25 },
 			"Writing": { weight: 10 },
 		},
+		"Home": {
+			
+			// Entertainment - 20%
+			"Shows": { weight: 4 },				// Highest scored because everyone watches shows.
+			"Movies": { weight: 2 },			// Everyone watches movies, but also similar to Shows.
+			"People": { weight: 3 },			// A popular subject. Some won't care. Same with Sports / Gaming.
+			"Sports": { weight: 3 },			// Lots of sports fans. Some won't care. Same with People / Gaming.
+			"Gaming": { weight: 3 },			// Lots of gaming enthusiasts. Some won't care. Same with People / Sports.
+			"Virtual Reality": { weight: 1 },
+			"Tabletop Games": { weight: 2 },
+			"Music": { weight: 1 },
+			"Books": { weight: 1 },
+			
+			// News - 17%
+			"World News": { weight: 4 },
+			"Social Issues": { weight: 3 },
+			"Environment": { weight: 3 },		// Very important, but we shouldn't overdo it.
+			"Politics": { weight: 2 },
+			"Business": { weight: 2 },
+			"Economic": { weight: 2 },
+			"Legal": { weight: 1 },				// Generally useless to socity. May remove if we can't find anything of substance.
+			
+			// Informative - 20%
+			"Technology": { weight: 7 },
+			"Science": { weight: 7 },
+			"Education": { weight: 3 },
+			"History": { weight: 3 },
+			
+			// Lifestyle - 8%
+			"Fashion": { weight: 1 },
+			"Food": { weight: 1 },
+			"Health": { weight: 1 },
+			"Fitness": { weight: 1 },
+			"Social Life": { weight: 1 },
+			"Relationships": { weight: 1 },
+			"Recipes": { weight: 1 },
+			"Travel": { weight: 1 },
+			
+			// Fun - 23%
+			"Funny": { weight: 9 },
+			"Cute": { weight: 6 },
+			"Ask": { weight: 4 },
+			"Cosplay": { weight: 3 },
+			"Forum Games": { weight: 1 },
+			
+			// Creative - 12%
+			"Crafts": { weight: 5 },
+			"Artwork": { weight: 5 },
+			"Design": { weight: 3 },
+			"Writing": { weight: 2 },
+		},
 	}
 	
 	constructor() {}
@@ -88,13 +159,13 @@ export class FeedIndexer {
 	public getEntriesFromForum(index: IndexList, forum: string, num: number) {
 		const weight = FeedIndexer.indexDetails[index][forum].weight;
 		const type = Forum.schema[forum].type;
-		
-		// TODO:
-		// const highestId = !!!; // Must set this value to proceed. Identify the highest ID for 
+		const newestId = RedisDB.getCounter(`post:${forum}`);
 		
 		// TODO: Mixed can be it's own search version:
 		if(type === ForumType.News || type === ForumType.Mixed) {
+			
 			// 1. Get the first `num` results.
+			
 		}
 		
 		else if(type === ForumType.Collect) {
@@ -102,34 +173,45 @@ export class FeedIndexer {
 		}
 	}
 	
+	// Best solution is to create the home feed all at once, update every 5 hours. 10k results. Weight every 100.
+	// Use a mix of collections, and maintain the news in its general order.
 	public buildForumIndex() {
 		
 	}
 	
 	public buildHomeIndex() {
 		
-		/*
-			Algorithm:
-			The algorithm sources data based on the following classifications.
-			Every {X} posts contains one of each of the PRIMARY classes.
-			To do this, every {X} posts, it builds a new set of 20 options, and sorts it by random.
+		// A "batch" is 100 posts. If we run 100 batches, that's 10,000 posts being indexed.
+		const numberOfBatches = 100;
+		
+		// Loop through all of the indexed forums:
+		for (const [forum, values] of Object.entries(FeedIndexer.indexDetails.Home)) {
 			
-			??? (Should we have this integrate into other sets?)
-				Educational
-					- Useful Information (Did You Know)
-					- Interesting Tidbit (Did You Know)
-				
-				Quality Journalism (Expose Corruption)
-					- Investigative Journalism
-				
-				Hidden Gems / Showcase (people or groups that deserve a spotlight)
-				
-				Trending, Matters
-				Trending, Doesn't Matter
-				
-				Uplifting, Meaningful Change
-				Uplifting, Feel Good Story
-		*/
+			// Get Values
+			const weight = values.weight;
+			const type = Forum.schema[forum].type;
+			const newestId = Number(RedisDB.getCounter(`post:${forum}`)) || 0;
+			const totalToRetrive = Math.min(newestId, weight * numberOfBatches);
+			
+			// Sets will automatically prevent any duplicate values, making it perfect for the "Collection" type.
+			// If we don't have a sufficient number of entries, it will just reject some. That's fine. Once populated, it's irrelevant.
+			const entries = new Set();
+			
+			// Get a list of posts from a "Collection" - meaning they aren't time sensitive.
+			if(type === ForumType.Collect) {
+				for(let i = 0; i < totalToRetrive; i++) {
+					entries.add(Math.floor(Math.random() * newestId) + 1);
+				}
+			}
+			
+			// Get a list of posts from a time-sensitive ("News") forum.
+			// TODO: Mixed could be separated to its own block of code.
+			else if(type === ForumType.News || type === ForumType.Mixed) {
+				for(let i = 0; i < totalToRetrive; i++) {
+					entries.add(newestId - i);
+				}
+			}
+		}
 		
 		/*
 			PRIMARY:
