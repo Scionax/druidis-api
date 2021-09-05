@@ -1,6 +1,6 @@
 import Conn from "../core/Conn.ts";
 import RedisDB from "../core/RedisDB.ts";
-import { FeedIndexer, IndexList } from "../model/FeedIndexer.ts";
+import { Feed, FeedList } from "../model/Feed.ts";
 import { Forum } from "../model/Forum.ts";
 import WebController from "./WebController.ts";
 
@@ -54,7 +54,7 @@ export default class ForumController extends WebController {
 		// 3. Otherwise, send identical to a standard post list. The custom value will be responsible for
 		
 		// Get the current cached Feed Index.
-		const index = FeedIndexer.cachedIndex[forum as IndexList];
+		const index = Feed.cached[forum as FeedList];
 		
 		// Get the user's query string parameters.
 		// Search parameters for feed indexes are different than for regular forums. We don't have to worry about "ASC" and "DESC".

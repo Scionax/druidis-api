@@ -3,13 +3,13 @@ import RedisDB from "../core/RedisDB.ts";
 import { Forum, ForumType } from "./Forum.ts";
 
 /*
-	// Forum Indexing Process
-	1. Check if there are any cached results from the last 15 minutes.
-		- If so, return the cached results.
-	2. If results are stale, run the algorithm and cache new results. Return to step #1.
+	About Feeds:
+		- Feeds don't contain any of their own posts.
+		- Feeds collect (and display) a large number of posts from multiple forums.
+		- Feeds are cached for a given duration, then re-run when they are marked as stale.
 */
 
-export enum IndexList {
+export enum FeedList {
 	Home = "Home",
 	Entertainment = "Entertainment",
 	News = "News",
@@ -38,22 +38,22 @@ export enum IndexList {
 		Uplifting, Feel Good Story
 */
 
-export class FeedIndexer {
+export class Feed {
 	
 	/*
-		To determine what is in a forum index, get 100 of the latest results from the given forums.
+		To determine the contents of a Feed, get 100 posts from the associated forums.
 			- Retrieve a number from each forum based on a weighting score.
-			- Position them randomly. Use a sorted set of 1000.
+			- Shuffle their positions so that they're not bunched together.
 		
 		"weight" refers to the percent (of 100) of how often the related forum appears in the index.
 		
 		We also use the "ForumType," which helps indicate how the entries should be retrieved.
 			"News" means the forum is based on current events. Should extract results by recent IDs.
 			"Collect" means the forum is a collection; entries can be selected from any point and still be relevant.
-			"Mixed" means the forum is a collection, but generally has time-sensitive relevance.
+			"Mixed" means the forum is a collection, but may have time-sensitive relevance.
 	*/
 	
-	static indexDetails: { [index: string]: { [forum: string]: { weight: number } } } = {
+	static feedWeights: { [index: string]: { [forum: string]: { weight: number } } } = {
 		"Entertainment": {
 			"Shows": { weight: 20 },			// Highest scored because everyone watches shows.
 			"Movies": { weight: 10 },			// Everyone watches movies, but also similar to Shows.
@@ -157,55 +157,56 @@ export class FeedIndexer {
 			// Druidis Extras (Features, etc) - This adds BEYOND the standard 100 results.
 			// "Sponsored": { weight: 10 },
 			// "Featured": { weight: 10 },
+			// "CallToAction": { weight: 10 },
 		},
 	}
 	
 	// Stores the full list of indexes:
-	static cachedIndex: {
-		[IndexList.Home]: string[],
-		[IndexList.Creative]: string[],
-		[IndexList.Entertainment]: string[],
-		[IndexList.Fun]: string[],
-		[IndexList.Informative]: string[],
-		[IndexList.Lifestyle]: string[],
-		[IndexList.News]: string[],
+	static cached: {
+		[FeedList.Home]: string[],
+		[FeedList.Creative]: string[],
+		[FeedList.Entertainment]: string[],
+		[FeedList.Fun]: string[],
+		[FeedList.Informative]: string[],
+		[FeedList.Lifestyle]: string[],
+		[FeedList.News]: string[],
 	} = {
-		[IndexList.Home]: [],
-		[IndexList.Creative]: [],
-		[IndexList.Entertainment]: [],
-		[IndexList.Fun]: [],
-		[IndexList.Informative]: [],
-		[IndexList.Lifestyle]: [],
-		[IndexList.News]: [],
+		[FeedList.Home]: [],
+		[FeedList.Creative]: [],
+		[FeedList.Entertainment]: [],
+		[FeedList.Fun]: [],
+		[FeedList.Informative]: [],
+		[FeedList.Lifestyle]: [],
+		[FeedList.News]: [],
 	};
 	
 	constructor() {}
 	
 	// Best solution is to create the feed all at once, update every few hours.
-	// A "batch" is 100 posts. If we run 100 batches, that's 10,000 posts being indexed.
+	// A "batch" is 100 posts (+extras, if applicable). If we run 100 batches, that's 10,000 posts being indexed.
 	// Use a mix of collections, and maintain the news in its general order.
-	// const index = await FeedIndexer.buildForumIndex(IndexList.Home);
-	public static async buildForumIndex(index: IndexList = IndexList.Home, numberOfBatches = 10) {
+	// const feed = await FeedIndexer.build(FeedList.Home);
+	public static async build(feedName: FeedList = FeedList.Home, numberOfBatches = 10) {
 		
-		let indexData: Array<string> = [];
+		let posts: Array<string> = [];
 		
 		// Build the iterator tracker. This keeps track of each forum's iterator, which is important for ordering the feed.
 		const iterators: { [forum: string]: number } = {};
 		
-		for (const [forum, _values] of Object.entries(FeedIndexer.indexDetails[index])) {
+		for (const [forum, _values] of Object.entries(Feed.feedWeights[feedName])) {
 			const newestId = Number(await RedisDB.getCounter(`post:${forum}`)) || 0;
 			iterators[forum] = newestId;
 		}
 		
-		// We will repeat this process #ofBatch times
+		// We will repeat this process {numberOffBatch} times
 		for(let batchRun = 0; batchRun < numberOfBatches; batchRun++) {
 			
 			// Sets will automatically prevent any duplicate values, making it perfect for the "Collection" type.
 			// If we don't have a sufficient number of entries, it will just reject some. That's fine. Once populated, it's irrelevant.
 			const entries = new Set();
 			
-			// Loop through all of the indexed forums:
-			for (const [forum, values] of Object.entries(FeedIndexer.indexDetails[index])) {
+			// Loop through all of the related forums:
+			for (const [forum, values] of Object.entries(Feed.feedWeights[feedName])) {
 				
 				// Get Values
 				const weight = values.weight;
@@ -238,84 +239,44 @@ export class FeedIndexer {
 			// Append this batch of results to the homeIndex array.
 			const batchResults: string[] = Array.from(entries) as string[];
 			Data.shuffle(batchResults);
-			indexData = indexData.concat(batchResults);
+			posts = posts.concat(batchResults);
 		}
 		
-		// Cache the Index
-		FeedIndexer.cachedIndex[index] = indexData;
-		console.log(`Built Feed Index: ${index}`);
-		return indexData;
+		// Cache the Feed
+		Feed.cached[feedName] = posts;
+		console.log(`Built Feed Index: ${feedName}`);
+		return posts;
 		
 		/*
-			PRIMARY:
+			Later Considerations:
 				World Events (make sure many are positive; if posting negative, post investigation on corruption, not just complaints)
 					- Positive Foreign News
-				Entertainment News
-					- Sports
-					- People, Celebrities
-					- Events
-				Entertainment Discovery (Feature Games, Music, Movies, Shows, etc)
 				Helpful Information - DYK, MythBusting
 				Interesting Tidbits - TIL, Shower Thoughts, Thought Provoking
-				Community Questions - Ask
 				Uplifting News
 					- Meaningful Changes
 					- Feel Good Stories
-				Science & Education
 				Quality Journalism (Expose Corruption)
 					- Investigative Journalism
-				Issues
-					- Political Issues
-					- Social Issues
-					- Climate & Environment
-				Technology
-					- Energy
-					- Artificial Intelligence
-					- Space
-					- Robotics
-					- Gadgets
-					- Futurism
 				Trending News (not bs news, has to be meaningful; don't popularize stupid people unless we must)
-				General News
-					- Economy, Business, Finance, Investments
-					- Crime & Justice
-					- Legal
-				Funny, Comedy
-				Cute, Aww
 				Impressive, Inspiring, Artistic
 					- Beautiful Photography
 					- Talent
-				Creative Discovery - Arts & Crafts, Design, Creative (Writing)
 				Culture Discovery (feature something from culture section)
-				Lifestyle
-					- Travel
-					- Fitness
-					- Fashion
-					- Food, Recipes
-					- Social & Relationships
-					- Health & Wellness
-					- Advice, Personal Growth, How-Tos
 				Hidden Gems (people or groups that don't get the attention they deserve)
-			
-			INJECTIONS:
-				Call To Action
-				Druidis News
-				Sponsored
-				
-			???:
 				Stimulating - Mental Boost
 		*/
 	}
 	
-	// Initialize Feed Indexes at Server Start.
-	// NOTE: Feed indexes will build asynchronously, and may finish in any order.
+	// Initialize Feeds at Server Start.
+	// NOTE: Feeds will build asynchronously, and may finish in any order.
 	public static initialize() {
-		FeedIndexer.buildForumIndex(IndexList.Home);
-		FeedIndexer.buildForumIndex(IndexList.Creative);
-		FeedIndexer.buildForumIndex(IndexList.Entertainment);
-		FeedIndexer.buildForumIndex(IndexList.Fun);
-		FeedIndexer.buildForumIndex(IndexList.Informative);
-		FeedIndexer.buildForumIndex(IndexList.Lifestyle);
-		FeedIndexer.buildForumIndex(IndexList.News);
+		Feed.build(FeedList.Home);
+		Feed.build(FeedList.Creative);
+		Feed.build(FeedList.Entertainment);
+		Feed.build(FeedList.Fun);
+		Feed.build(FeedList.Informative);
+		Feed.build(FeedList.Lifestyle);
+		Feed.build(FeedList.News);
 	}
 }

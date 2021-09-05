@@ -1,7 +1,7 @@
 import WebController from "./WebController.ts";
 import { Forum } from "../model/Forum.ts";
 import Conn from "../core/Conn.ts";
-import { FeedIndexer, IndexList } from "../model/FeedIndexer.ts";
+import { Feed } from "../model/Feed.ts";
 
 export default class DataController extends WebController {
 	
@@ -73,7 +73,7 @@ export default class DataController extends WebController {
 			// const index = await FeedIndexer.buildForumIndex(IndexList.Entertainment);
 			// return await conn.sendJson(index);
 			
-			const index = FeedIndexer.cachedIndex["Entertainment"];
+			const index = Feed.cached["Entertainment"];
 			return await conn.sendJson(index);
 		}
 		
