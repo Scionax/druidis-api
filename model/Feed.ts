@@ -185,6 +185,19 @@ export class Feed {
 	
 	public static exists(feed: string) { return feed && Feed.schema[feed]; }
 	
+	public static getCompactSchema() {
+		const response: {[feed: string]: string[]} = {};
+		
+		for (const [key, child] of Object.entries(Feed.schema)) {
+			response[key] = [];
+			for (const [forum, _v2] of Object.entries(child)) {
+				response[key].push(forum);
+			}
+		}
+		
+		return response;
+	}
+	
 	// Best solution is to create the feed all at once, update every few hours.
 	// A "batch" is 100 posts (+extras, if applicable). If we run 100 batches, that's 10,000 posts being indexed.
 	// Use a mix of collections, and maintain the news in its general order.

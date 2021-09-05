@@ -65,7 +65,7 @@ export class Forum {
 	
 	public static get(name: string): Forum { return Forum.schema[name]; }
 	
-	public static getCompactForumSchema() {
+	public static getCompactSchema() {
 		const response: {[forum: string]: string} = {};
 		
 		for (const [key, value] of Object.entries(Forum.schema)) {
