@@ -18,6 +18,7 @@ import LocalServer from "./core/LocalServer.ts";
 import ForumController from "./controller/ForumController.ts";
 import Playground from "./playground.ts";
 import UserController from "./controller/UserController.ts";
+import { FeedIndexer } from "./model/FeedIndexer.ts";
 
 // Handle Setup Arguments
 // for( let i = 0; i < Deno.args.length; i++ ) {
@@ -54,7 +55,16 @@ ImageMod.initialize();
 ObjectStorage.connectToS3();		// Connect to AWS
 
 // Run Initialization for Exclusively Local Server
-if(config.local) { LocalServer.initialize(); }
+if(config.local) {
+	LocalServer.initialize().then(() => {
+		FeedIndexer.initialize(); // Needs LocalServer.initialize() to have Posts available.
+	});
+}
+
+// Build Feed Indexes (Asynchronous)
+else {
+	FeedIndexer.initialize();
+}
 
 // Server Routing
 async function handle(conn: Deno.Conn) {

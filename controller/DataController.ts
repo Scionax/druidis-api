@@ -1,4 +1,3 @@
-import Mapp from "../core/Mapp.ts";
 import WebController from "./WebController.ts";
 import { Forum } from "../model/Forum.ts";
 import Conn from "../core/Conn.ts";
@@ -71,8 +70,10 @@ export default class DataController extends WebController {
 			// const cookies = conn.cookieGet();
 			// console.log(cookies);
 			
-			const index = await FeedIndexer.buildForumIndex(IndexList.Home);
+			// const index = await FeedIndexer.buildForumIndex(IndexList.Entertainment);
+			// return await conn.sendJson(index);
 			
+			const index = FeedIndexer.cachedIndex["Entertainment"];
 			return await conn.sendJson(index);
 		}
 		

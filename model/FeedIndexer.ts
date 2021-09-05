@@ -160,17 +160,34 @@ export class FeedIndexer {
 		},
 	}
 	
+	// Stores the full list of indexes:
+	static cachedIndex: {
+		[IndexList.Home]: string[],
+		[IndexList.Creative]: string[],
+		[IndexList.Entertainment]: string[],
+		[IndexList.Fun]: string[],
+		[IndexList.Informative]: string[],
+		[IndexList.Lifestyle]: string[],
+		[IndexList.News]: string[],
+	} = {
+		[IndexList.Home]: [],
+		[IndexList.Creative]: [],
+		[IndexList.Entertainment]: [],
+		[IndexList.Fun]: [],
+		[IndexList.Informative]: [],
+		[IndexList.Lifestyle]: [],
+		[IndexList.News]: [],
+	};
+	
 	constructor() {}
 	
-	// Best solution is to create the home feed all at once, update every 5 hours. 10k results. Weight every 100.
+	// Best solution is to create the feed all at once, update every few hours.
+	// A "batch" is 100 posts. If we run 100 batches, that's 10,000 posts being indexed.
 	// Use a mix of collections, and maintain the news in its general order.
 	// const index = await FeedIndexer.buildForumIndex(IndexList.Home);
-	public static async buildForumIndex(index: IndexList = IndexList.Home) {
+	public static async buildForumIndex(index: IndexList = IndexList.Home, numberOfBatches = 10) {
 		
 		let indexData: Array<string> = [];
-		
-		// A "batch" is 100 posts. If we run 100 batches, that's 10,000 posts being indexed.
-		const numberOfBatches = 10;
 		
 		// Build the iterator tracker. This keeps track of each forum's iterator, which is important for ordering the feed.
 		const iterators: { [forum: string]: number } = {};
@@ -224,6 +241,9 @@ export class FeedIndexer {
 			indexData = indexData.concat(batchResults);
 		}
 		
+		// Cache the Index
+		FeedIndexer.cachedIndex[index] = indexData;
+		console.log(`Built Feed Index: ${index}`);
 		return indexData;
 		
 		/*
@@ -285,5 +305,17 @@ export class FeedIndexer {
 			???:
 				Stimulating - Mental Boost
 		*/
+	}
+	
+	// Initialize Feed Indexes at Server Start.
+	// NOTE: Feed indexes will build asynchronously, and may finish in any order.
+	public static initialize() {
+		FeedIndexer.buildForumIndex(IndexList.Home);
+		FeedIndexer.buildForumIndex(IndexList.Creative);
+		FeedIndexer.buildForumIndex(IndexList.Entertainment);
+		FeedIndexer.buildForumIndex(IndexList.Fun);
+		FeedIndexer.buildForumIndex(IndexList.Informative);
+		FeedIndexer.buildForumIndex(IndexList.Lifestyle);
+		FeedIndexer.buildForumIndex(IndexList.News);
 	}
 }

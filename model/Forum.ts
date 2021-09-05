@@ -29,7 +29,7 @@ export class Forum {
 	
 	// Forum Traits
 	readonly name: string;								// Forum Name
-	readonly type: string;								// Forum Type (News, Collect, Mixed)
+	readonly type: ForumType;							// Forum Type (News, Collect, Mixed)
 	readonly parent: string;							// Parent Forum Name
 	private children: { [id: string]: string };			// Sub-Forums
 	private related: string[];							// Related Forums
@@ -64,6 +64,7 @@ export class Forum {
 	
 	// Validation
 	public static exists(forum: string) { return forum && Forum.schema[forum]; }
+	public isIndex() { return this.parent ? false : true; }
 	public hasChildForum(childForum: string) { return this.children[childForum] ? true : false; }
 	
 	// Routing
