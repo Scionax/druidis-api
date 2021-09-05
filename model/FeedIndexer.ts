@@ -9,7 +9,7 @@ import { Forum, ForumType } from "./Forum.ts";
 	2. If results are stale, run the algorithm and cache new results. Return to step #1.
 */
 
-enum IndexList {
+export enum IndexList {
 	Home = "Home",
 	Entertainment = "Entertainment",
 	News = "News",
@@ -164,8 +164,8 @@ export class FeedIndexer {
 	
 	// Best solution is to create the home feed all at once, update every 5 hours. 10k results. Weight every 100.
 	// Use a mix of collections, and maintain the news in its general order.
-	// const index = buildForumIndex(IndexList.Home);
-	public buildForumIndex(index: IndexList = IndexList.Home) {
+	// const index = await FeedIndexer.buildForumIndex(IndexList.Home);
+	public static async buildForumIndex(index: IndexList = IndexList.Home) {
 		
 		let indexData: Array<string> = [];
 		
@@ -176,7 +176,7 @@ export class FeedIndexer {
 		const iterators: { [forum: string]: number } = {};
 		
 		for (const [forum, _values] of Object.entries(FeedIndexer.indexDetails[index])) {
-			const newestId = Number(RedisDB.getCounter(`post:${forum}`)) || 0;
+			const newestId = Number(await RedisDB.getCounter(`post:${forum}`)) || 0;
 			iterators[forum] = newestId;
 		}
 		
@@ -194,7 +194,7 @@ export class FeedIndexer {
 				const weight = values.weight;
 				const type = Forum.schema[forum].type;
 				const newestId = iterators[forum];
-				const totalToRetrive = Math.min(newestId, weight * numberOfBatches);
+				const totalToRetrive = Math.min(newestId, weight);
 				
 				// Get a list of posts from a "Collection" - meaning they aren't time sensitive.
 				if(type === ForumType.Collect) {

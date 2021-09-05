@@ -2,6 +2,7 @@ import Mapp from "../core/Mapp.ts";
 import WebController from "./WebController.ts";
 import { Forum } from "../model/Forum.ts";
 import Conn from "../core/Conn.ts";
+import { FeedIndexer, IndexList } from "../model/FeedIndexer.ts";
 
 export default class DataController extends WebController {
 	
@@ -67,10 +68,12 @@ export default class DataController extends WebController {
 		// Run a Test
 		if(conn.url2 === "test") {
 			
-			const cookies = conn.cookieGet();
-			console.log(cookies);
+			// const cookies = conn.cookieGet();
+			// console.log(cookies);
 			
-			return await conn.sendJson("Let's try this");
+			const index = await FeedIndexer.buildForumIndex(IndexList.Home);
+			
+			return await conn.sendJson(index);
 		}
 		
 		// Something invalid.
