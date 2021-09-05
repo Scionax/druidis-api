@@ -19,6 +19,7 @@ import ForumController from "./controller/ForumController.ts";
 import Playground from "./playground.ts";
 import UserController from "./controller/UserController.ts";
 import { Feed } from "./model/Feed.ts";
+import FeedController from "./controller/FeedController.ts";
 
 // Handle Setup Arguments
 // for( let i = 0; i < Deno.args.length; i++ ) {
@@ -45,6 +46,7 @@ try {
 const RouteMap: { [name: string]: WebController } = {
 	"post": new PostController(),
 	"data": new DataController(),			// API to pull important data, such as Fixed Forum Data.
+	"feed": new FeedController(),
 	"forum": new ForumController(),
 	"user": new UserController(),
 };

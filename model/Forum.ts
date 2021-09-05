@@ -25,13 +25,13 @@ export const enum ForumType {
 
 export class Forum {
 	
+	// Contains a full list of Forums
 	static schema: { [id: string]: Forum } = {};
 	
 	// Forum Traits
 	readonly name: string;								// Forum Name
 	readonly type: ForumType;							// Forum Type (News, Collect, Mixed)
-	readonly parent: string;							// Parent Forum Name
-	private children: { [id: string]: string };			// Sub-Forums
+	readonly feed: string;								// Parent Forum Name
 	private related: string[];							// Related Forums
 	private communities: string[];						// Related Communities
 	private desc: string;								// Full description of the forum.
@@ -46,11 +46,10 @@ export class Forum {
 	// Custom Rules
 	private rules: string[];
 	
-	constructor(name: string, parent: string, type: ForumType) {
+	constructor(name: string, feed: string, type: ForumType) {
 		this.name = name;
 		this.type = type;
-		this.parent = parent;
-		this.children = {};
+		this.feed = feed;
 		this.related = [];
 		this.communities = [];
 		this.desc = "";
@@ -62,31 +61,15 @@ export class Forum {
 		this.rules = [];
 	}
 	
-	// Validation
 	public static exists(forum: string) { return forum && Forum.schema[forum]; }
-	public isIndex() { return this.parent ? false : true; }
-	public hasChildForum(childForum: string) { return this.children[childForum] ? true : false; }
 	
-	// Routing
 	public static get(name: string): Forum { return Forum.schema[name]; }
 	
 	public static getCompactForumSchema() {
-		const response: {[id: string]: { parent?: string, children?: Array<string>}} = {};
+		const response: {[forum: string]: string} = {};
 		
 		for (const [key, value] of Object.entries(Forum.schema)) {
-			response[key] = {};
-			
-			if(Forum.schema[key].parent) { response[key].parent = value.parent; }
-			
-			const children = [];
-			
-			for(const [k, _v] of Object.entries(Forum.schema[key].children)) {
-				children.push(k);
-			}
-			
-			if(children.length > 0) {
-				response[key].children = children;
-			}
+			response[key] = value.feed;
 		}
 		
 		return response;
@@ -95,19 +78,7 @@ export class Forum {
 	// Initialize Forums at Server Start
 	public static initialize() {
 		
-		/*
-			News
-				- Business
-				- Economic
-				- Environment
-				- Legal
-				- Politics
-				- Social Issues
-				- World News
-		*/
-		
-		Forum.schema["News"] = new Forum("News", "", ForumType.News).addChildren("Business", "Economic", "Environment", "Legal", "Politics", "Social Issues", "World News");
-		
+		// News Feed
 		Forum.schema["Business"] = new Forum("Business", "News", ForumType.News);
 		Forum.schema["Economic"] = new Forum("Economic", "News", ForumType.News);
 		Forum.schema["Environment"] = new Forum("Environment", "News", ForumType.News);
@@ -116,36 +87,13 @@ export class Forum {
 		Forum.schema["Social Issues"] = new Forum("Social Issues", "News", ForumType.News);
 		Forum.schema["World News"] = new Forum("World News", "News", ForumType.News);
 		
-		/*
-			Informative
-				- Education
-				- History
-				- Science
-				- Technology
-		*/
-		
-		Forum.schema["Informative"] = new Forum("Informative", "", ForumType.News).addChildren("Education", "History", "Science", "Technology");
-		
+		// Informative Feed
 		Forum.schema["Education"] = new Forum("Education", "Informative", ForumType.Collect);
 		Forum.schema["History"] = new Forum("History", "Informative", ForumType.Collect);
 		Forum.schema["Science"] = new Forum("Science", "Informative", ForumType.News);
 		Forum.schema["Technology"] = new Forum("Technology", "Informative", ForumType.News);
 		
-		/*
-			Entertainment
-				- Books
-				- Gaming
-				- Movies
-				- Music
-				- People
-				- Shows
-				- Sports
-				- Tabletop Games
-				- Virtual Reality
-		*/
-		
-		Forum.schema["Entertainment"] = new Forum("Entertainment", "", ForumType.News).addChildren("Books", "Gaming", "Movies", "Music", "People", "Shows", "Sports", "Tabletop Games", "Virtual Reality");
-		
+		// Entertainment Feed
 		Forum.schema["Books"] = new Forum("Books", "Entertainment", ForumType.Mixed);
 		Forum.schema["Gaming"] = new Forum("Gaming", "Entertainment", ForumType.News);
 		Forum.schema["Movies"] = new Forum("Movies", "Entertainment", ForumType.News);
@@ -156,20 +104,7 @@ export class Forum {
 		Forum.schema["Tabletop Games"] = new Forum("Tabletop Games", "Entertainment", ForumType.Mixed);
 		Forum.schema["Virtual Reality"] = new Forum("Virtual Reality", "Entertainment", ForumType.Mixed);
 		
-		/*
-			Lifestyle
-				- Fashion
-				- Fitness
-				- Food
-				- Health
-				- Recipes
-				- Social Life
-				- Relationships
-				- Travel
-		*/
-		
-		Forum.schema["Lifestyle"] = new Forum("Lifestyle", "", ForumType.Collect).addChildren("Fashion", "Fitness", "Food", "Health", "Recipes", "Social Life", "Relationships", "Travel");
-		
+		// Lifestyle Feed
 		Forum.schema["Fashion"] = new Forum("Fashion", "Lifestyle", ForumType.Mixed);
 		Forum.schema["Fitness"] = new Forum("Fitness", "Lifestyle", ForumType.Collect);
 		Forum.schema["Food"] = new Forum("Food", "Lifestyle", ForumType.Collect);
@@ -179,33 +114,14 @@ export class Forum {
 		Forum.schema["Social Life"] = new Forum("Social Life", "Lifestyle", ForumType.Collect);
 		Forum.schema["Travel"] = new Forum("Travel", "Lifestyle", ForumType.Mixed);
 		
-		/*
-			Fun
-				- Ask (community questions)
-				- Cosplay
-				- Cute
-				- Forum Games (choose X or Y)
-				- Funny
-		*/
-		
-		Forum.schema["Fun"] = new Forum("Fun", "", ForumType.Collect).addChildren("Ask", "Cosplay", "Cute", "Forum Games", "Funny", );
-		
+		// Fun Feed
 		Forum.schema["Ask"] = new Forum("Ask", "Fun", ForumType.Collect);
 		Forum.schema["Cosplay"] = new Forum("Cosplay", "Fun", ForumType.Collect);
 		Forum.schema["Cute"] = new Forum("Cute", "Fun", ForumType.Collect);
 		Forum.schema["Forum Games"] = new Forum("Forum Games", "Fun", ForumType.Collect);
 		Forum.schema["Funny"] = new Forum("Funny", "Fun", ForumType.Collect);
 		
-		/*
-			Creative
-				- Artwork
-				- Crafts
-				- Design
-				- Writing
-		*/
-		
-		Forum.schema["Creative"] = new Forum("Creative", "", ForumType.Collect).addChildren("Artwork", "Crafts", "Design", "Writing");
-		
+		// Creative Feed
 		Forum.schema["Artwork"] = new Forum("Artwork", "Creative", ForumType.Collect);
 		Forum.schema["Crafts"] = new Forum("Crafts", "Creative", ForumType.Collect);
 		Forum.schema["Design"] = new Forum("Design", "Creative", ForumType.Collect);
@@ -216,13 +132,6 @@ export class Forum {
 	}
 	
 	// ----- Initialize Forums ----- //
-	
-	private addChildren(...args: string[] ) {
-		for(let i = 0; i < args.length; i++) {
-			this.children[args[i]] = args[i];
-		}
-		return this;
-	}
 	
 	private addRelated(...args: string[] ) {
 		for(let i = 0; i < args.length; i++) {

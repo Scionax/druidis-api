@@ -53,7 +53,8 @@ export class Feed {
 			"Mixed" means the forum is a collection, but may have time-sensitive relevance.
 	*/
 	
-	static feedWeights: { [index: string]: { [forum: string]: { weight: number } } } = {
+	// Contains the full Feed Schema
+	static schema: { [feed: string]: { [forum: string]: { weight: number } } } = {
 		"Entertainment": {
 			"Shows": { weight: 20 },			// Highest scored because everyone watches shows.
 			"Movies": { weight: 10 },			// Everyone watches movies, but also similar to Shows.
@@ -182,6 +183,8 @@ export class Feed {
 	
 	constructor() {}
 	
+	public static exists(feed: string) { return feed && Feed.schema[feed]; }
+	
 	// Best solution is to create the feed all at once, update every few hours.
 	// A "batch" is 100 posts (+extras, if applicable). If we run 100 batches, that's 10,000 posts being indexed.
 	// Use a mix of collections, and maintain the news in its general order.
@@ -193,7 +196,7 @@ export class Feed {
 		// Build the iterator tracker. This keeps track of each forum's iterator, which is important for ordering the feed.
 		const iterators: { [forum: string]: number } = {};
 		
-		for (const [forum, _values] of Object.entries(Feed.feedWeights[feedName])) {
+		for (const [forum, _values] of Object.entries(Feed.schema[feedName])) {
 			const newestId = Number(await RedisDB.getCounter(`post:${forum}`)) || 0;
 			iterators[forum] = newestId;
 		}
@@ -206,7 +209,7 @@ export class Feed {
 			const entries = new Set();
 			
 			// Loop through all of the related forums:
-			for (const [forum, values] of Object.entries(Feed.feedWeights[feedName])) {
+			for (const [forum, values] of Object.entries(Feed.schema[feedName])) {
 				
 				// Get Values
 				const weight = values.weight;
