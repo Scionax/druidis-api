@@ -1,3 +1,4 @@
+import Data from "../core/Data.ts";
 import RedisDB from "../core/RedisDB.ts";
 import { Forum, ForumType } from "./Forum.ts";
 
@@ -9,6 +10,7 @@ import { Forum, ForumType } from "./Forum.ts";
 */
 
 enum IndexList {
+	Home = "Home",
 	Entertainment = "Entertainment",
 	News = "News",
 	Informative = "Informative",
@@ -151,67 +153,78 @@ export class FeedIndexer {
 			"Artwork": { weight: 5 },
 			"Design": { weight: 3 },
 			"Writing": { weight: 2 },
+			
+			// Druidis Extras (Features, etc) - This adds BEYOND the standard 100 results.
+			// "Sponsored": { weight: 10 },
+			// "Featured": { weight: 10 },
 		},
 	}
 	
 	constructor() {}
 	
-	public getEntriesFromForum(index: IndexList, forum: string, num: number) {
-		const weight = FeedIndexer.indexDetails[index][forum].weight;
-		const type = Forum.schema[forum].type;
-		const newestId = RedisDB.getCounter(`post:${forum}`);
-		
-		// TODO: Mixed can be it's own search version:
-		if(type === ForumType.News || type === ForumType.Mixed) {
-			
-			// 1. Get the first `num` results.
-			
-		}
-		
-		else if(type === ForumType.Collect) {
-			// 1. Get `num` results from any ID available
-		}
-	}
-	
 	// Best solution is to create the home feed all at once, update every 5 hours. 10k results. Weight every 100.
 	// Use a mix of collections, and maintain the news in its general order.
-	public buildForumIndex() {
+	// const index = buildForumIndex(IndexList.Home);
+	public buildForumIndex(index: IndexList = IndexList.Home) {
 		
-	}
-	
-	public buildHomeIndex() {
+		let indexData: Array<string> = [];
 		
 		// A "batch" is 100 posts. If we run 100 batches, that's 10,000 posts being indexed.
-		const numberOfBatches = 100;
+		const numberOfBatches = 10;
 		
-		// Loop through all of the indexed forums:
-		for (const [forum, values] of Object.entries(FeedIndexer.indexDetails.Home)) {
-			
-			// Get Values
-			const weight = values.weight;
-			const type = Forum.schema[forum].type;
+		// Build the iterator tracker. This keeps track of each forum's iterator, which is important for ordering the feed.
+		const iterators: { [forum: string]: number } = {};
+		
+		for (const [forum, _values] of Object.entries(FeedIndexer.indexDetails[index])) {
 			const newestId = Number(RedisDB.getCounter(`post:${forum}`)) || 0;
-			const totalToRetrive = Math.min(newestId, weight * numberOfBatches);
+			iterators[forum] = newestId;
+		}
+		
+		// We will repeat this process #ofBatch times
+		for(let batchRun = 0; batchRun < numberOfBatches; batchRun++) {
 			
 			// Sets will automatically prevent any duplicate values, making it perfect for the "Collection" type.
 			// If we don't have a sufficient number of entries, it will just reject some. That's fine. Once populated, it's irrelevant.
 			const entries = new Set();
 			
-			// Get a list of posts from a "Collection" - meaning they aren't time sensitive.
-			if(type === ForumType.Collect) {
-				for(let i = 0; i < totalToRetrive; i++) {
-					entries.add(Math.floor(Math.random() * newestId) + 1);
+			// Loop through all of the indexed forums:
+			for (const [forum, values] of Object.entries(FeedIndexer.indexDetails[index])) {
+				
+				// Get Values
+				const weight = values.weight;
+				const type = Forum.schema[forum].type;
+				const newestId = iterators[forum];
+				const totalToRetrive = Math.min(newestId, weight * numberOfBatches);
+				
+				// Get a list of posts from a "Collection" - meaning they aren't time sensitive.
+				if(type === ForumType.Collect) {
+					for(let i = 0; i < totalToRetrive; i++) {
+						const id = Math.floor(Math.random() * newestId) + 1;
+						entries.add(`post:${forum}:${id}`);
+					}
+				}
+				
+				// Get a list of posts from a time-sensitive ("News") forum.
+				// TODO: Mixed could be separated to its own block of code.
+				else if(type === ForumType.News || type === ForumType.Mixed) {
+					
+					// The iterator has to be reduced so that next time around we're not overlapping the same IDs.
+					iterators[forum] -= totalToRetrive;
+					
+					for(let i = 0; i < totalToRetrive; i++) {
+						const id = newestId - i;
+						entries.add(`post:${forum}:${id}`);
+					}
 				}
 			}
 			
-			// Get a list of posts from a time-sensitive ("News") forum.
-			// TODO: Mixed could be separated to its own block of code.
-			else if(type === ForumType.News || type === ForumType.Mixed) {
-				for(let i = 0; i < totalToRetrive; i++) {
-					entries.add(newestId - i);
-				}
-			}
+			// Append this batch of results to the homeIndex array.
+			const batchResults: string[] = Array.from(entries) as string[];
+			Data.shuffle(batchResults);
+			indexData = indexData.concat(batchResults);
 		}
+		
+		return indexData;
 		
 		/*
 			PRIMARY:
