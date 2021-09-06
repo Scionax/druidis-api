@@ -1,6 +1,8 @@
 import Conn from "../core/Conn.ts";
 import RedisDB from "../core/RedisDB.ts";
+import { TableType } from "../core/Types.ts";
 import { Forum } from "../model/Forum.ts";
+import { ForumPost } from "../model/ForumPost.ts";
 import WebController from "./WebController.ts";
 
 export default class ForumController extends WebController {
@@ -66,11 +68,11 @@ export default class ForumController extends WebController {
 			}
 		}
 		
-		const postResults: unknown[] = [];
+		const postResults: Record<string, string|number>[] = [];
 		
 		// TODO: Pipelines return absolutely f*#@ing idiotic data, so I guess we loop here. Maybe someday we can optimize this.
 		for(let id = scanHigh; id >= scanLow; id--) {
-			const obj = await RedisDB.getHashTable(`post:${forum}:${id}`);
+			const obj = await ForumPost.getPostDataForUser(forum, id, TableType.Post);
 			postResults.push(obj);
 		}
 		

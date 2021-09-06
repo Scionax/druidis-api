@@ -81,8 +81,8 @@ export default abstract class LocalServer {
 		
 		post.applyTrackedValues(
 			status,
-			(Date.now() - (Math.ceil(Math.random() * 1000 * 3600 * 24 * 365))), // timePosted
-			0, // timeEdited
+			(Date.now() - (Math.ceil(Math.random() * 1000 * 3600 * 24 * 365))), // created
+			0, // edited
 			Math.ceil(Math.random() * 100000), // views
 			Math.ceil(Math.random() * 1000), // clicks
 			Math.ceil(Math.random() * 10), // comments

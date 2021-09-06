@@ -15,13 +15,6 @@ export const enum PostStatus {
 	Announced = 9,		// Announcement Post. Stickied at the top.
 }
 
-export class AwardList {
-	public award1 = 0;		// $0.05 for a Award #1 (Seed?)
-	public award2 = 0;		// $0.25 for a Award #2 (Plant?)
-	public award3 = 0;		// $1.00 for a Award #3 (Tree?)
-	public award4 = 0;		// $5.00 for a Award #4 (Druid?)
-}
-
 export class ForumPost {
 	
 	// Fixed Content
@@ -41,16 +34,15 @@ export class ForumPost {
 	private views = 0;					// Views (Impressions) this post has had.
 	private clicks = 0;					// Clicks on this post.
 	private comments = 0;				// Number of comments on this post.
-	private timePosted = 0;				// Timestamp of when the post was created.
-	private timeEdited = 0;				// Timestamp of the last edit, if applicable.
+	private created = 0;				// Timestamp of when the post was created.
+	private edited = 0;					// Timestamp of the last edit, if applicable.
 	
 	// List of awards given to this post.
-	private awards: AwardList = {
-		award1: 0,
-		award2: 0,
-		award3: 0,
-		award4: 0,
-	};
+	private awards: number[] = [0, 0, 0, 0];
+		// [0]				$0.05 for a Award #1 (Seed?)
+		// [1]				$0.25 for a Award #2 (Plant?)
+		// [2]				$1.00 for a Award #3 (Tree?)
+		// [3]				$5.00 for a Award #4 (Druid?)
 	
 	constructor(
 		forum: string,
@@ -202,20 +194,17 @@ export class ForumPost {
 		this.applyTrackedValues(status, Math.floor(Date.now() / 1000));
 	}
 	
-	public applyTrackedValues(status = PostStatus.Visible, timePosted = 0, timeEdited = 0, views = 0, clicks = 0, comments = 0) {
+	public applyTrackedValues(status = PostStatus.Visible, created = 0, edited = 0, views = 0, clicks = 0, comments = 0) {
 		this.status = status;
-		this.timePosted = timePosted;
-		this.timeEdited = timeEdited;
+		this.created = created;
+		this.edited = edited;
 		this.views = views;
 		this.clicks = clicks;
 		this.comments = comments;
 	}
 	
 	public applyAwards(award1 = 0, award2 = 0, award3 = 0, award4 = 0) {
-		this.awards.award1 = award1;
-		this.awards.award2 = award2;
-		this.awards.award3 = award3;
-		this.awards.award4 = award4;
+		this.awards = [this.awards[0] + award1, this.awards[1] + award2, this.awards[2] + award3, this.awards[3] + award4];
 	}
 	
 	// Apply an Edit
@@ -226,7 +215,7 @@ export class ForumPost {
 			return false;
 		}
 		
-		this.timeEdited = Math.floor(Date.now() / 1000);
+		this.edited = Math.floor(Date.now() / 1000);
 		return true;
 	}
 	
@@ -275,17 +264,12 @@ export class ForumPost {
 			
 			// Tracked Values
 			"status",			// 10
-			"timePosted",		// 11
-			"timeEdited",		// 12
+			"created",			// 11
+			"edited",			// 12
 			"views",			// 13
 			"clicks",			// 14
 			"comments",			// 15
-			
-			// Awards
-			"award1",
-			"award2",
-			"award3",
-			"award4",
+			"awards",			// 16 (split by '.'; e.g. 4.3.0.0)
 		);
 		
 		const post = new ForumPost(
@@ -306,16 +290,60 @@ export class ForumPost {
 		
 		post.applyTrackedValues(
 			Number(raw[10] as string),			// status
-			Number(raw[11] as string),			// timePosted
-			Number(raw[12] as string),			// timeEdited
+			Number(raw[11] as string),			// created
+			Number(raw[12] as string),			// edited
 			Number(raw[13] as string),			// views
 			Number(raw[14] as string),			// clicks
 			Number(raw[15] as string)			// comments
 		);
 		
-		post.applyAwards(Number(raw[16] as string), Number(raw[17] as string), Number(raw[18] as string), Number(raw[19] as string));
+		const awards = (raw[16] as string).split(".");
+		post.applyAwards(Number(awards[0]) || 0, Number(awards[1]) || 0, Number(awards[2]) || 0, Number(awards[3]) || 0);
 		
 		return post;
+	}
+	
+	// post:{forum}:{id}			// Uses count:post:{forum}.
+	// sponsor:{forum}:{id}			// Uses count:sponsor:{forum}.
+	// queue:{forum}:{id}			// Uses count:queue:{forum}.
+	public static async getPostDataForUser(forum: string, id: number, tableType: TableType): Promise<Record<string, string|number>> {
+		const raw = await Mapp.redis.hmget(`${tableType}:${forum}:${id}`,
+			
+			// Fixed Content
+			"forum",			// 0
+			"id",				// 1
+			"url",				// 2
+			"authorId",			// 3
+			"title",			// 4
+			"content",			// 5
+			"img",				// 6
+			"video",			// 7
+			"w",				// 8
+			"h",				// 9
+			
+			// Tracked Values
+			"status",			// 10
+			"comments",			// 11
+			"awards",			// 12 (split by '.'; e.g. 4.3.0.0)
+		);
+		console.log(raw[16], raw[16] as string);
+		if(!raw) { return {}; }
+		
+		return {
+			"forum": forum,
+			"id": Number(raw[1] as string),				// id
+			"url": raw[2] as string,					// url
+			"authorId": Number(raw[3] as string),		// authorId
+			"title": raw[4] as string,					// title
+			"content": raw[5] as string,				// content
+			"img": raw[6] as string,					// img
+			"video": raw[7] as string,					// video
+			"w": Number(raw[8] as string),				// w
+			"h": Number(raw[9] as string),				// h
+			"status": Number(raw[10] as string),		// status (required for verification)
+			"comments": Number(raw[11] as string) || 0,	// 
+			"awards": raw[12] as string || "",			// 
+		};
 	}
 	
 	// post:{forum}:{id}			// Uses count:post:{forum}.
@@ -344,17 +372,14 @@ export class ForumPost {
 			
 			// Tracked Values
 			["status", this.status],
-			["timePosted", this.timePosted],
-			["timeEdited", this.timeEdited],
+			["created", this.created],
+			["edited", this.edited],
 			["views", this.views],
 			["clicks", this.clicks],
 			["comments", this.comments],
 			
 			// Awards
-			["award1", this.awards.award1],
-			["award2", this.awards.award2],
-			["award3", this.awards.award3],
-			["award4", this.awards.award4],
+			["awards", this.awards.join(".")],
 		);
 		
 		return true;

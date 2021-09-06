@@ -21,3 +21,6 @@ export { DOMParser, Element } from "https://deno.land/x/deno_dom@v0.1.13-alpha/d
 
 // AWS
 export { S3 } from "https://deno.land/x/aws_sdk@v3.23.0-1/client-s3/S3.ts";
+
+// OS Signals
+// export { onSignal } from "https://deno.land/std@0.106.0/signal";
