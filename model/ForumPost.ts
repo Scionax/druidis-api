@@ -326,7 +326,7 @@ export class ForumPost {
 			"comments",			// 11
 			"awards",			// 12 (split by '.'; e.g. 4.3.0.0)
 		);
-		console.log(raw[16], raw[16] as string);
+		
 		if(!raw) { return {}; }
 		
 		return {

@@ -1,6 +1,7 @@
 import Conn from "../core/Conn.ts";
-import RedisDB from "../core/RedisDB.ts";
+import { TableType } from "../core/Types.ts";
 import { Feed, FeedList } from "../model/Feed.ts";
+import { ForumPost } from "../model/ForumPost.ts";
 import WebController from "./WebController.ts";
 
 export default class ForumController extends WebController {
@@ -25,21 +26,20 @@ export default class ForumController extends WebController {
 		
 		// Get the current cached Feed.
 		const index = Feed.cached[feed as FeedList];
-		
-		// Check user's Pagination request ("p")
-		const params = conn.url.searchParams;
-		
-		const page = Math.max(0, Number(params.get("p")) || 0);
 		const count = 25;
-		const start = page * count;
+		
+		// "p" is the "pos" or start index position. Not page.
+		// With feeds, we only scroll down. If the feed gets rebuilt, it will start from scratch.
+		const params = conn.url.searchParams;
+		const start = Number(params.get("p")) || 0;
 		const end = Math.min(start + count - 1, index.length - 1);
 		
-		const postResults: unknown[] = [];
+		const postResults: Record<string, string|number>[] = [];
 		
 		// TODO: Pipelines return absolutely f*#@ing idiotic data, so I guess we loop here. Maybe someday we can optimize this.
 		for(let id = start; id < end; id++) {
-			const post = index[id];
-			const obj = await RedisDB.getHashTable(post);
+			const pData = index[id].split(":");
+			const obj = await ForumPost.getPostDataForUser(pData[1], Number(pData[2]), pData[0] as TableType);
 			postResults.push(obj);
 		}
 		
