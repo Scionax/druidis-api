@@ -164,21 +164,21 @@ export class Feed {
 	
 	// Stores the full list of indexes:
 	static cached: {
-		[FeedList.Home]: string[],
-		[FeedList.Creative]: string[],
-		[FeedList.Entertainment]: string[],
-		[FeedList.Fun]: string[],
-		[FeedList.Informative]: string[],
-		[FeedList.Lifestyle]: string[],
-		[FeedList.News]: string[],
+		[FeedList.Home]: { posts: string[], tag: string },
+		[FeedList.Creative]: { posts: string[], tag: string },
+		[FeedList.Entertainment]: { posts: string[], tag: string },
+		[FeedList.Fun]: { posts: string[], tag: string },
+		[FeedList.Informative]: { posts: string[], tag: string },
+		[FeedList.Lifestyle]: { posts: string[], tag: string },
+		[FeedList.News]: { posts: string[], tag: string },
 	} = {
-		[FeedList.Home]: [],
-		[FeedList.Creative]: [],
-		[FeedList.Entertainment]: [],
-		[FeedList.Fun]: [],
-		[FeedList.Informative]: [],
-		[FeedList.Lifestyle]: [],
-		[FeedList.News]: [],
+		[FeedList.Home]: { posts: [], tag: "" },
+		[FeedList.Creative]: { posts: [], tag: "" },
+		[FeedList.Entertainment]: { posts: [], tag: "" },
+		[FeedList.Fun]: { posts: [], tag: "" },
+		[FeedList.Informative]: { posts: [], tag: "" },
+		[FeedList.Lifestyle]: { posts: [], tag: "" },
+		[FeedList.News]: { posts: [], tag: "" },
 	};
 	
 	constructor() {}
@@ -259,7 +259,8 @@ export class Feed {
 		}
 		
 		// Cache the Feed
-		Feed.cached[feedName] = posts;
+		Feed.cached[feedName].tag = Math.floor(Date.now() / 1000).toString();
+		Feed.cached[feedName].posts = posts;
 		console.log(`Built Feed Index: ${feedName}`);
 		return posts;
 		

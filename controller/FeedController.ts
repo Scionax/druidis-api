@@ -4,7 +4,7 @@ import { Feed, FeedList } from "../model/Feed.ts";
 import { ForumPost } from "../model/ForumPost.ts";
 import WebController from "./WebController.ts";
 
-export default class ForumController extends WebController {
+export default class FeedController extends WebController {
 	
 	async runHandler(conn: Conn): Promise<Response> {
 		
@@ -25,7 +25,7 @@ export default class ForumController extends WebController {
 		}
 		
 		// Get the current cached Feed.
-		const index = Feed.cached[feed as FeedList];
+		const index = Feed.cached[feed as FeedList].posts;
 		const count = 25;
 		
 		// "p" is the "pos" or start index position. Not page.
@@ -43,6 +43,6 @@ export default class ForumController extends WebController {
 			postResults.push(obj);
 		}
 		
-		return await conn.sendJson(postResults);
+		return await conn.sendJson({ tag: Feed.cached[feed as FeedList].tag, start: start, end: end, posts: postResults });
 	}
 }
