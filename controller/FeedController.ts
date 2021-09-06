@@ -15,6 +15,8 @@ export default class FeedController extends WebController {
 		return await conn.sendFail("Method Not Allowed", 405);
 	}
 	
+	// When requesting posts from a Feed, you must supply a tag ('tag') and a position ('p').
+	// If the 'tag' doesn't match, it means the feed was rebuilt, and it will send you the new results instead.
 	async getController(conn: Conn): Promise<Response> {
 		
 		const feed = conn.url2 ? conn.url2 : "Home";
@@ -31,7 +33,8 @@ export default class FeedController extends WebController {
 		// "p" is the "pos" or start index position. Not page.
 		// With feeds, we only scroll down. If the feed gets rebuilt, it will start from scratch.
 		const params = conn.url.searchParams;
-		const start = Number(params.get("p")) || 0;
+		const tag = params.get('tag');
+		const start = tag === Feed.cached[feed as FeedList].tag ? Number(params.get("p")) || 0 : 0; // If the tag doesn't match, start with index position 0.
 		const end = Math.min(start + count - 1, index.length - 1);
 		
 		const postResults: Record<string, string|number>[] = [];

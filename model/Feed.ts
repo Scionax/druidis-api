@@ -1,3 +1,4 @@
+import Crypto from "../core/Crypto.ts";
 import Data from "../core/Data.ts";
 import RedisDB from "../core/RedisDB.ts";
 import { Forum, ForumType } from "./Forum.ts";
@@ -259,7 +260,7 @@ export class Feed {
 		}
 		
 		// Cache the Feed
-		Feed.cached[feedName].tag = Math.floor(Date.now() / 1000).toString();
+		Feed.cached[feedName].tag = Crypto.simpleHash(Math.floor(Date.now() / 1000).toString());
 		Feed.cached[feedName].posts = posts;
 		console.log(`Built Feed Index: ${feedName}`);
 		return posts;

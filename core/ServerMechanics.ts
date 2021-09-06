@@ -17,6 +17,8 @@
 // 	console.log("interrupt or usr1 signal");
 // }
 
+// Deno.exit();
+
 export default abstract class ServerMechanics {
 	
 	static async runOnExit() {
