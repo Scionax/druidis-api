@@ -1,17 +1,27 @@
 import { Curation, Forum } from "./Forum.ts";
 
 /*
-	Only Druidis can create communities. Must have an official curator in charge of it.
+	Only Druidis can create communities. Must have an official moderator in charge of it. They also act as a partial curator.
 	
 	Some Communities are very broad, like Game Development, Creative Writing, etc.
 	Other communities are much more narrow, like RWBY and Genshin Impact.
 		- But may also be more active than something like Game Development.
-		
+	
 	There may be a few community archetypes, which can have fairly expected categories / divisions:
-		Video Game > Guides, Discussion, Art, Clips
-		Series (Book, Film, Show, etc) > Fan Art, Discussion (can include theories & questions), Fan Fiction (Vetted)
-		Craft or Trade (Metalwork, Woodwork, Tailoring, Programming) > Guide, Discussion, Showcase
-		Activity (Activism, Dance) > ???
+	
+	Community Types:
+		Activism (only 3-5 types, to improve activism coordination): Environment, Social, Economic
+		Work/Business/Finance (Stocks), Science Fields, Hobby Overlaps Elsewhere (Cars), Fan Clubs (Tesla)
+		Gaming: Multiple Video Game Communities (WOW, LOL, NMS, etc) / (Video Games, Guides, Discussion, Art, Clips)
+		Series (Film / Shows / Books): Fan Art, Discussion (can include theories & questions), Fan Fiction (Vetted)
+		Crafts or Trade (Metalwork, Woodwork, Tailoring, Programming) > Guide, Discussion, Showcase
+		Education: Science Fields
+		Activity: Dance?
+		Other: Gadgets (tech products), [____] Products
+	
+	Rules:
+		- Removed if discussing politics, inaccurate science, or disinformation.
+		- Optional: Mod post confirmation / approval. Approved posters. Trusted posters. Limit to posts/comments.
 	
 	How do you keep a Community Engaged?
 		- Content has to keep active. If it falls too low, do something? Encourage posting? Focus elsewhere?

@@ -48,7 +48,7 @@ type UserProfile = {
 	website?: string;				// Personal website of the user.
 }
 
-export abstract class User implements User {
+export abstract class User {
 	
 	// Static Trackers
 	private static _userMin = 6;
