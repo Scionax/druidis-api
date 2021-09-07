@@ -98,11 +98,11 @@ export default abstract class LocalServer {
 		const rnd = Math.floor(Math.random() * 5);
 		
 		switch(rnd) {
-			case 1: imgPath = `img-local-1.webp`; height = 315; break;
-			case 2: imgPath = `img-local-2.webp`; height = 443; break;
-			case 3: imgPath = `img-local-3.webp`; height = 462; break;
-			case 4: imgPath = `img-local-4.webp`; height = 487; break;
-			default: imgPath = `img-local-5.webp`; height = 462; break;
+			case 1: imgPath = `local-1-hash.webp`; height = 315; break;
+			case 2: imgPath = `local-2-hash.webp`; height = 443; break;
+			case 3: imgPath = `local-3-hash.webp`; height = 462; break;
+			case 4: imgPath = `local-4-hash.webp`; height = 487; break;
+			default: imgPath = `local-5-hash.webp`; height = 462; break;
 		}
 		
 		return {imgPath, width, height};

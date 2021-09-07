@@ -1,3 +1,4 @@
+import { config } from "../config.ts";
 import Crypto from "../core/Crypto.ts";
 import Mapp from "../core/Mapp.ts";
 import RedisDB from "../core/RedisDB.ts";
@@ -24,7 +25,7 @@ export class ForumPost {
 	private authorId: number;
 	private title: string;				// Title of the post.
 	private content: string;			// Text content for the post.
-	private img: string;				// Image Path for Object Storage, e.g. img-ID-HASH.webp
+	private img: string;				// Image Path for Object Storage, e.g. img-ID-HASH.webp (or local-ID-HASH.webp for local)
 	private video: string;				// Video Path (URL or object storage).
 	private w: number;					// The width of the media object (image or video).
 	private h: number;					// The height of the media object (image or video).
@@ -185,7 +186,7 @@ export class ForumPost {
 		
 		// Prepare Image
 		const hash = Crypto.simpleHash(forum + id + authorId + id);
-		const img = `img-${id}-${hash}.webp`;
+		const img = (config.local ? "local" : "img") + `-${id}-${hash}.webp`;
 		
 		return new ForumPost(forum, id, url, authorId, title, content, img, "", w, h, status);
 	}
