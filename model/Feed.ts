@@ -21,6 +21,24 @@ export enum FeedList {
 }
 
 /*
+	Later Considerations:
+		World Events (make sure many are positive; if posting negative, post investigation on corruption, not just complaints)
+			- Positive Foreign News
+		Helpful Information - DYK, MythBusting
+		Interesting Tidbits - TIL, Shower Thoughts, Thought Provoking
+		Uplifting News
+			- Meaningful Changes
+			- Feel Good Stories
+		Quality Journalism (Expose Corruption)
+			- Investigative Journalism
+		Trending News (not bs news, has to be meaningful; don't popularize stupid people unless we must)
+		Impressive, Inspiring, Artistic
+			- Beautiful Photography
+			- Talent
+		Culture Discovery (feature something from culture section)
+		Hidden Gems (people or groups that don't get the attention they deserve)
+		Stimulating - Mental Boost
+	
 	Future Integration: Add each of these values as individual settings per post:
 		
 		Educational
@@ -38,6 +56,8 @@ export enum FeedList {
 		Uplifting, Meaningful Change
 		Uplifting, Feel Good Story
 */
+
+const RebuildFeedCycle = 1000 * 60 * 60 * 5;		// Duration before a feed gets rebuilt.
 
 export class Feed {
 	
@@ -182,6 +202,28 @@ export class Feed {
 		[FeedList.News]: { posts: [], tag: "" },
 	};
 	
+	// This tracks rules related to when each feed gets rebuilt.
+	// 'offset' shifts the base time when feeds get rebuilt so they don't run simultaneously.
+	// 'numBatches' indicates the number of batches this feed will produce. Total posts = numBatches x (100 + extras)
+	// 'nextRebuild' is the next designated time to rebuild.
+	static rebuildRules: {
+		[FeedList.Home]: { offset: number, numBatches: number, nextRebuild: number },
+		[FeedList.Creative]: { offset: number, numBatches: number, nextRebuild: number },
+		[FeedList.Entertainment]: { offset: number, numBatches: number, nextRebuild: number },
+		[FeedList.Fun]: { offset: number, numBatches: number, nextRebuild: number },
+		[FeedList.Informative]: { offset: number, numBatches: number, nextRebuild: number },
+		[FeedList.Lifestyle]: { offset: number, numBatches: number, nextRebuild: number },
+		[FeedList.News]: { offset: number, numBatches: number, nextRebuild: number },
+	} = {
+		[FeedList.Home]: { offset: 0, numBatches: 20, nextRebuild: 0 },
+		[FeedList.Creative]: { offset: Math.round(RebuildFeedCycle * 0.2), numBatches: 10, nextRebuild: 0 },
+		[FeedList.Entertainment]: { offset: Math.round(RebuildFeedCycle * 0.3), numBatches: 10, nextRebuild: 0 },
+		[FeedList.Fun]: { offset: Math.round(RebuildFeedCycle * 0.4), numBatches: 10, nextRebuild: 0 },
+		[FeedList.Informative]: { offset: Math.round(RebuildFeedCycle * 0.5), numBatches: 10, nextRebuild: 0 },
+		[FeedList.Lifestyle]: { offset: Math.round(RebuildFeedCycle * 0.7), numBatches: 10, nextRebuild: 0 },
+		[FeedList.News]: { offset: Math.round(RebuildFeedCycle * 0.8), numBatches: 10, nextRebuild: 0 },
+	};
+	
 	constructor() {}
 	
 	public static exists(feed: string) { return feed && Feed.schema[feed]; }
@@ -203,9 +245,10 @@ export class Feed {
 	// A "batch" is 100 posts (+extras, if applicable). If we run 100 batches, that's 10,000 posts being indexed.
 	// Use a mix of collections, and maintain the news in its general order.
 	// const feed = await FeedIndexer.build(FeedList.Home);
-	public static async build(feedName: FeedList = FeedList.Home, numberOfBatches = 10) {
+	public static async build(feedName: FeedList = FeedList.Home) {
 		
 		let posts: Array<string> = [];
+		const numberOfBatches = Feed.rebuildRules[feedName].numBatches;
 		
 		// Build the iterator tracker. This keeps track of each forum's iterator, which is important for ordering the feed.
 		const iterators: { [forum: string]: number } = {};
@@ -262,33 +305,18 @@ export class Feed {
 		// Cache the Feed
 		Feed.cached[feedName].tag = Crypto.simpleHash(Math.floor(Date.now() / 1000).toString());
 		Feed.cached[feedName].posts = posts;
-		console.log(`Built Feed Index: ${feedName}`);
-		return posts;
 		
-		/*
-			Later Considerations:
-				World Events (make sure many are positive; if posting negative, post investigation on corruption, not just complaints)
-					- Positive Foreign News
-				Helpful Information - DYK, MythBusting
-				Interesting Tidbits - TIL, Shower Thoughts, Thought Provoking
-				Uplifting News
-					- Meaningful Changes
-					- Feel Good Stories
-				Quality Journalism (Expose Corruption)
-					- Investigative Journalism
-				Trending News (not bs news, has to be meaningful; don't popularize stupid people unless we must)
-				Impressive, Inspiring, Artistic
-					- Beautiful Photography
-					- Talent
-				Culture Discovery (feature something from culture section)
-				Hidden Gems (people or groups that don't get the attention they deserve)
-				Stimulating - Mental Boost
-		*/
+		Feed.assignNextRebuildTime(feedName);
+		console.log(`Built Feed: ${feedName.padEnd(18)} - ${Feed.rebuildRules[feedName].nextRebuild} is next run time.`);
+		
+		return posts;
 	}
 	
 	// Initialize Feeds at Server Start.
 	// NOTE: Feeds will build asynchronously, and may finish in any order.
 	public static initialize() {
+		
+		// Build Each Feed
 		Feed.build(FeedList.Home);
 		Feed.build(FeedList.Creative);
 		Feed.build(FeedList.Entertainment);
@@ -296,5 +324,28 @@ export class Feed {
 		Feed.build(FeedList.Informative);
 		Feed.build(FeedList.Lifestyle);
 		Feed.build(FeedList.News);
+	}
+	
+	// Assign the next time that the feed will be rebuilt. Will distribute the time effectively using offsets (to avoid overlap).
+	private static assignNextRebuildTime(feed: FeedList) {
+		const rules = Feed.rebuildRules[feed];
+		if(rules.nextRebuild !== 0) { rules.nextRebuild += RebuildFeedCycle; return; }
+		
+		const now = Date.now();
+		const offset = rules.offset;
+		const nextCycle = now % RebuildFeedCycle;
+		const timeFromNow = nextCycle + offset > RebuildFeedCycle ? nextCycle + offset - RebuildFeedCycle : nextCycle + offset;
+		rules.nextRebuild = now + timeFromNow;
+	}
+	
+	// Rebuilds a feed that has passed its scheduled time for rebuilding. (Limits to one at a time, just in case).
+	public static runNextScheduledRebuild() {
+		const now = Date.now();
+		for(const [feedName, rules] of Object.entries(Feed.rebuildRules)) {
+			if(now > rules.nextRebuild) {
+				Feed.build(feedName as FeedList);
+				return;
+			}
+		}
 	}
 }

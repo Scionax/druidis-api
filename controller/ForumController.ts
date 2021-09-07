@@ -50,7 +50,7 @@ export default class ForumController extends WebController {
 		// Scan "Descending" (starting from one below the "l" (lowId) provided)
 		if(scan === "desc") {
 			scanHigh = lowId - 1;
-			scanLow = Math.max(0, scanHigh - count + 1);
+			scanLow = Math.max(1, scanHigh - count + 1);
 		}
 		else {
 			const newestId = await RedisDB.getCounter(`post:${forum}`);

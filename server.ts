@@ -20,6 +20,7 @@ import Playground from "./playground.ts";
 import UserController from "./controller/UserController.ts";
 import { Feed } from "./model/Feed.ts";
 import FeedController from "./controller/FeedController.ts";
+import ServerMechanics from "./core/ServerMechanics.ts";
 
 // Handle Setup Arguments
 // for( let i = 0; i < Deno.args.length; i++ ) {
@@ -94,6 +95,10 @@ async function handle(conn: Deno.Conn) {
 		}
 	}
 }
+
+// Launch Periodic Runner
+// This will asynchronously run periodic / scheduled updates: rebuilding feeds, purging old data, etc.
+ServerMechanics.runScheduledUpdates();
 
 // Run Playground
 Playground.runOnServerLoad();
