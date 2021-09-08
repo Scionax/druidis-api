@@ -1,4 +1,4 @@
-import { ArticleSection } from "./ArticleSection.ts";
+import { ArticleSectionJson, ArticleSection, ArticleText, ArticleBold, ArticleQuote, ArticleVideo, ArticleVideoSource, ArticleImage, ArticleH2, ArticleH3 } from "./ArticleSection.ts";
 
 /*
 	Articles consist of a few main details (title, author, etc), and then an array of ArticleSections (See ArticleSection Class).
@@ -28,5 +28,46 @@ export class Article {
 	
 	appendSection(section: ArticleSection) {
 		this.sections.push(section);
+	}
+	
+	// Output the article as HTML.
+	html() {
+		let html = "";
+		
+		// Loop through each section and output the corresponding HTML.
+		for(let i = 0; i < this.sections.length; i++) {
+			html += `
+			${this.sections[i].html()}`;
+		}
+		
+		return html;
+	}
+	
+	// Output the article as JSON.
+	json() {
+		const json: ArticleSectionJson[] = [];
+		
+		// Loop through each section and attach the corresponding JSON.
+		for(let i = 0; i < this.sections.length; i++) {
+			json.push(this.sections[i].json());
+		}
+		
+		return json;
+	}
+	
+	static buildSectionFromJson(json: ArticleSectionJson) {
+		
+		switch(json.type) {
+			case "text": return new ArticleText(json.text);
+			case "bold": return new ArticleBold(json.text);
+			case "quote": return new ArticleQuote(json.text);
+			case "image": return new ArticleImage(json.url as string, json.text);
+			case "video": return new ArticleVideo(json.url as string, json.source as ArticleVideoSource, json.text);
+			case "h2": return new ArticleH2(json.text);
+			case "h3": return new ArticleH3(json.text);
+		}
+		
+		// If the previous sections failed to build, just provide a default text block.
+		return new ArticleText(json.text);
 	}
 }

@@ -1,10 +1,18 @@
 
 export interface ArticleSection {
-	html: () => string,
+	html: () => string,					// Outputs the section into HTML.
+	json: () => ArticleSectionJson		// Outputs the section into a JSON object.
 }
 
-enum VideoSource {
+export enum ArticleVideoSource {
 	YouTube = "YouTube",
+}
+
+export type ArticleSectionJson = {
+	type: string,
+	text: string,
+	url?: string,
+	source?: string,
 }
 
 // A standard block of text.
@@ -16,6 +24,7 @@ export class ArticleText implements ArticleSection {
 	}
 	
 	public html() { return `<p>${this.text}</p>`; }
+	public json() { return { "type": "text", "text": this.text }; }
 }
 
 // An emphasized block of text. Generally a smaller amount of text. Used for skimming, breaking up larger parts.
@@ -27,6 +36,7 @@ export class ArticleBold implements ArticleSection {
 	}
 	
 	public html() { return `<p class="bold">${this.text}</p>`; }
+	public json(): ArticleSectionJson { return { "type": "bold", "text": this.text }; }
 }
 
 // A different-styled quote block. May be italicized.
@@ -38,6 +48,7 @@ export class ArticleQuote implements ArticleSection {
 	}
 	
 	public html() { return `<div class="quote">${this.text}</div>`; }
+	public json(): ArticleSectionJson { return { "type": "quote", "text": this.text }; }
 }
 
 // A rounded image with an optional quote beneath it.
@@ -56,15 +67,17 @@ export class ArticleImage implements ArticleSection {
 			<amp-img src="${this.img}"></amp-img>
 		</div>`;
 	}
+	
+	public json(): ArticleSectionJson { return { "type": "image", "url": this.img, "text": this.text }; }
 }
 
 // A simple video implemented into a view.
 export class ArticleVideo implements ArticleSection {
 	readonly video: string;
-	readonly source: VideoSource;
+	readonly source: ArticleVideoSource;
 	readonly text: string;
 	
-	constructor(video: string, source: VideoSource, text: string) {
+	constructor(video: string, source: ArticleVideoSource, text: string) {
 		this.video = video;
 		this.source = source;
 		this.text = text;
@@ -73,7 +86,7 @@ export class ArticleVideo implements ArticleSection {
 	public html() {
 		
 		// YouTube link:
-		if(this.source === VideoSource.YouTube) {
+		if(this.source === ArticleVideoSource.YouTube) {
 			return `
 			<div class="video">
 				Add YouTube Link: ${this.video}
@@ -82,6 +95,8 @@ export class ArticleVideo implements ArticleSection {
 		
 		return ``;
 	}
+	
+	public json(): ArticleSectionJson { return { "type": "video", "url": this.video, "text": this.text }; }
 }
 
 // A header to split up large sections.
@@ -93,6 +108,7 @@ export class ArticleH2 implements ArticleSection {
 	}
 	
 	public html() { return `<h2>${this.title}</h2>`; }
+	public json(): ArticleSectionJson { return { "type": "h2", "text": this.title }; }
 }
 
 // A header to split up moderate sections.
@@ -104,4 +120,5 @@ export class ArticleH3 implements ArticleSection {
 	}
 	
 	public html() { return `<h3>${this.title}</h3>`; }
+	public json(): ArticleSectionJson { return { "type": "h3", "text": this.title }; }
 }
