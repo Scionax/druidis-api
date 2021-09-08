@@ -1,6 +1,6 @@
-import VerboseLog from "./VerboseLog.ts";
 import { config } from "../config.ts";
 import { User } from "../model/User.ts";
+import { log } from "../deps.ts";
 
 export default class Conn {
 	
@@ -67,7 +67,7 @@ export default class Conn {
 	
 	// return await WebController.sendBadRequest("So that error just happened.");
 	sendFail( reason = "Bad Request", status = 400 ): Response {
-		VerboseLog.verbose(`${this.url.pathname} :: sendFail(): ` + reason );
+		log.debug(`${this.url.pathname} :: sendFail(): ${reason}`);
 		return new Response(`{"error": "${reason}"}`, { status: status, statusText: "Bad Request", headers: this.headers});
 	}
 	

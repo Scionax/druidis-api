@@ -1,8 +1,7 @@
 import OpenGraph from "../core/OpenGraph.ts";
 import Validate from "./Validate.ts";
 import Conn from "./Conn.ts";
-import { Buffer, ensureDir } from "../deps.ts";
-import VerboseLog from "./VerboseLog.ts";
+import { Buffer, ensureDir, log } from "../deps.ts";
 
 export interface DownlodedFile {
 	file: string,
@@ -77,11 +76,13 @@ export default abstract class Web {
 		try {
 			response = await fetch(url, options);
 		} catch {
-			return VerboseLog.error(`URL Fetch Failed. Likely the result of a malformed URL.`);
+			log.warning("URL Fetch Failed. Likely the result of a malformed URL.");
+			return false;
 		}
 		
 		if(response.status != 200){
-			return VerboseLog.error(`Web.download() returned status ${response.status}-'${response.statusText}'`);
+			log.warning(`Web.download() returned status ${response.status}-'${response.statusText}'`);
+			return false;
 		}
 		
 		const blob = await response.blob();
@@ -96,7 +97,8 @@ export default abstract class Web {
 		try {
 			await Deno.writeFile(fullPath, unit8arr, {create: true, mode: 0o755, append: false});
 		} catch {
-			return VerboseLog.error("Unable to write to: " + fullPath);
+			log.error(`Web.download() unable to write to: ${fullPath}`);
+			return false;
 		}
 		
 		return Promise.resolve({file, dir, fullPath, size});

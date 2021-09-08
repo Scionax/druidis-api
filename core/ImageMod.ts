@@ -1,5 +1,4 @@
-import { exists, path } from "../deps.ts";
-import VerboseLog from "./VerboseLog.ts";
+import { exists, log, path } from "../deps.ts";
 
 /*
 	This class modifies images into webp format.
@@ -153,7 +152,7 @@ export default abstract class ImageMod {
 		
 		// Make sure the input image exists:
 		if(!(await exists(inputPath))) {
-			VerboseLog.log("Error with ImageMod.convert(). Image does not exist.");
+			log.warning("Error with ImageMod.convert(). Image does not exist.");
 			return;
 		}
 		
