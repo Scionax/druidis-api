@@ -28,14 +28,6 @@ export const config = {
         logging: false,
         verbose: false,		// Provide extra logging details.
 	},
-	cookies: {
-		password: "amFm3KdMdre_ns6teI2x4o4KjEvmsa0on",
-	},
-	crypto: {
-		rounds: 5,			// Don't change; crypto would be invalid.
-		gSalt: "by3VE9uALnZtd2U1t6adNC7XsneD5re0",
-		hashKey: "1uEgfzXMYqLQ5X1Ji9DvslSVKhdp37oc",
-	},
 	objectStore: {
 		bucket: "druidis-cdn",
 	}

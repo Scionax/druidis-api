@@ -1,12 +1,14 @@
-import Mapp from "./Mapp.ts";
+import { Redis } from "../deps.ts";
 import { TableType } from "./Types.ts";
 
 export default abstract class RedisDB {
 	
+	static db: Redis;		// Redis Connection
+	
 	// ------ Helper Functions ------ //
 	
 	static async getHashTable(table: string): Promise<{ [id: string]: string }> {
-		const results = await Mapp.redis.hgetall(table);
+		const results = await RedisDB.db.hgetall(table);
 		const obj: {[id: string]: string} = {};
 		for(let i = 0; i < results.length; i += 2) {
 			obj[results[i]] = results[i+1];
@@ -16,12 +18,12 @@ export default abstract class RedisDB {
 	
 	// ------ Counters ------ //
 	static async getCounter(table: string) {
-		const val = await Mapp.redis.get(`count:${table}`) as string;
+		const val = await RedisDB.db.get(`count:${table}`) as string;
 		return Number(val);
 	}
 	
 	static async incrementCounter(table: string) {
-		return await Mapp.redis.incr(`count:${table}`);
+		return await RedisDB.db.incr(`count:${table}`);
 	}
 	
 	// ------ INDEX, GET (BY ID) ------ //
@@ -30,8 +32,8 @@ export default abstract class RedisDB {
 	//		NOTE: This can be resolved by using Date.now()/1k for all scores.
 	
 	static async getForumIndex(forum: string, startId: number, count: number, tableType = TableType.Post, reverse = false, byScore = false) {
-		if(reverse) { return await Mapp.redis.zrevrange(`i${tableType}:${forum}`, startId + count, startId, {withScore: byScore}); }
-		return await Mapp.redis.zrange(`i${tableType}:${forum}`, startId + count, startId, {withScore: byScore});
+		if(reverse) { return await RedisDB.db.zrevrange(`i${tableType}:${forum}`, startId + count, startId, {withScore: byScore}); }
+		return await RedisDB.db.zrange(`i${tableType}:${forum}`, startId + count, startId, {withScore: byScore});
 	}
 	
 	// ------ INDEX, SET ------ //
@@ -46,14 +48,14 @@ export default abstract class RedisDB {
 	*/
 	
 	static async addToIndex_Post_Primary(forum: string, id: number) {
-		const added = await Mapp.redis.zadd(`index:home`, id, `${forum}:${id}`);
+		const added = await RedisDB.db.zadd(`index:home`, id, `${forum}:${id}`);
 		RedisDB.purgeExcess(`index:home`, id, 25000, 100);
 		return added === 1 ? true : false;
 	}
 	
 	// // Old Indexing System - May need again later for sorting purposes.
 	// static async addToForumIndex(forum: string, id: number, tableType = TableType.Post) {
-	// 	const added = await Mapp.redis.zadd(`i${tableType}:${forum}`, id, `${forum}:${id}`);
+	// 	const added = await RedisDB.db.zadd(`i${tableType}:${forum}`, id, `${forum}:${id}`);
 	// 	RedisDB.purgeExcess(`i${tableType}:${forum}`, id, 5000, 100);
 	// 	return added === 1 ? true : false;
 	// }
@@ -65,9 +67,9 @@ export default abstract class RedisDB {
 		
 		// Every {purgeAmount} results, purge excess values beyond {setSize}.
 		if(scoreAdded % purgeAmount === 0) {
-			const count = await Mapp.redis.zcount(table, -Infinity, Infinity);
+			const count = await RedisDB.db.zcount(table, -Infinity, Infinity);
 			if(count > setSize) {
-				await Mapp.redis.zpopmin(table, count - setSize);
+				await RedisDB.db.zpopmin(table, count - setSize);
 			}
 		}
 		

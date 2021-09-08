@@ -4,9 +4,8 @@
 // deno run --allow-net --allow-write --allow-read --allow-run --allow-env --unstable server.ts -port 8000 -specialOpts needToSetup
 // deno test
 
-import { connectRedis } from "./deps.ts";
+import { connectRedis, signal } from "./deps.ts";
 import { config } from "./config.ts";
-import Mapp from "./core/Mapp.ts";
 import { Forum } from "./model/Forum.ts";
 import WebController from "./controller/WebController.ts";
 import ImageMod from "./core/ImageMod.ts";
@@ -21,6 +20,7 @@ import UserController from "./controller/UserController.ts";
 import { Feed } from "./model/Feed.ts";
 import FeedController from "./controller/FeedController.ts";
 import ServerMechanics from "./core/ServerMechanics.ts";
+import RedisDB from "./core/RedisDB.ts";
 
 // Handle Setup Arguments
 // for( let i = 0; i < Deno.args.length; i++ ) {
@@ -38,7 +38,7 @@ const opts: { hostname: string, port: number, password?: string, tls?: boolean, 
 if(config.redis.password) { opts.password = config.redis.password; }
 
 try {
-	Mapp.redis = await connectRedis(opts);
+	RedisDB.db = await connectRedis(opts);
 } catch (error) {
 	console.error(error);
 }
@@ -93,6 +93,22 @@ async function handle(conn: Deno.Conn) {
 		else {
 			await requestEvent.respondWith( new Response("404 - Request Not Found", { status: 404 }) );
 		}
+	}
+}
+
+// Handle Termination Signals
+if(Deno.build.os === "linux") {
+	
+	const sig = signal(
+		Deno.Signal.SIGINT,			// Interrupt: Control + C
+		Deno.Signal.SIGTERM,		// Standard 'kill' termination
+		Deno.Signal.SIGQUIT,		// Modified kill, generally designed to dump output.
+		// Deno.Signal.SIGUSR1,		// Custom User Signal
+	);
+	
+	// If a termination signal is detected, run our graceful exit:
+	for await (const _ of sig) {
+		ServerMechanics.gracefulExit();
 	}
 }
 

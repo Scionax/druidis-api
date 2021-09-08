@@ -2,6 +2,8 @@ import WebController from "./WebController.ts";
 import { Forum } from "../model/Forum.ts";
 import Conn from "../core/Conn.ts";
 import { Feed } from "../model/Feed.ts";
+import { config } from "../config.ts";
+import ServerMechanics from "../core/ServerMechanics.ts";
 
 export default class DataController extends WebController {
 	
@@ -91,8 +93,18 @@ export default class DataController extends WebController {
 		// Retrieve Post Data
 		const rawData = await conn.getPostData();
 		
+		// Run Shutdown
+		if(conn.url2 === "shutdown") {
+			// const pass = Deno.env.get('SHUTDOWN_PASS');
+			// if(rawData.pass !== pass) { conn.sendFail("Stop that, it tickles."); }
+			
+			if(config.local && !config.prod) {
+				ServerMechanics.gracefulExit();
+			}
+		}
+		
 		// Run POST Test
-		if(conn.url2 === "test") {
+		else if(conn.url2 === "test") {
 			console.log(rawData);
 			return await conn.sendJson(rawData);
 		}

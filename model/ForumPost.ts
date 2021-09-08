@@ -1,6 +1,5 @@
 import { config } from "../config.ts";
 import Crypto from "../core/Crypto.ts";
-import Mapp from "../core/Mapp.ts";
 import RedisDB from "../core/RedisDB.ts";
 import { TableType } from "../core/Types.ts";
 import Validate from "../core/Validate.ts";
@@ -242,14 +241,14 @@ export class ForumPost {
 	}
 	
 	public static async checkIfPostExists(forum: string, id: number): Promise<boolean> {
-		return (await Mapp.redis.exists(`post:${forum}:${id}`)) === 0 ? false : true;
+		return (await RedisDB.db.exists(`post:${forum}:${id}`)) === 0 ? false : true;
 	}
 	
 	// post:{forum}:{id}			// Uses count:post:{forum}.
 	// sponsor:{forum}:{id}			// Uses count:sponsor:{forum}.
 	// queue:{forum}:{id}			// Uses count:queue:{forum}.
 	public static async loadFromId(forum: string, id: number, tableType: TableType): Promise<ForumPost|false> {
-		const raw = await Mapp.redis.hmget(`${tableType}:${forum}:${id}`,
+		const raw = await RedisDB.db.hmget(`${tableType}:${forum}:${id}`,
 			
 			// Fixed Content
 			"forum",			// 0
@@ -308,7 +307,7 @@ export class ForumPost {
 	// sponsor:{forum}:{id}			// Uses count:sponsor:{forum}.
 	// queue:{forum}:{id}			// Uses count:queue:{forum}.
 	public static async getPostDataForUser(forum: string, id: number, tableType: TableType): Promise<Record<string, string|number>> {
-		const raw = await Mapp.redis.hmget(`${tableType}:${forum}:${id}`,
+		const raw = await RedisDB.db.hmget(`${tableType}:${forum}:${id}`,
 			
 			// Fixed Content
 			"forum",			// 0
@@ -357,7 +356,7 @@ export class ForumPost {
 		// TODO: Only add indexes if the transaction succeeds.
 		
 		// TODO: hmset is deprecated, but hset (the designated alternative) won't function locally (probably due to Windows Redis)
-		await Mapp.redis.hmset(`${tableType}:${this.forum}:${this.id}`,
+		await RedisDB.db.hmset(`${tableType}:${this.forum}:${this.id}`,
 			
 			// Fixed Content
 			["forum", this.forum],

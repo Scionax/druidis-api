@@ -2,7 +2,7 @@ import { config } from "../config.ts";
 import { ForumPost, PostStatus } from "../model/ForumPost.ts";
 import { User } from "../model/User.ts";
 import ImageMod from "./ImageMod.ts";
-import Mapp from "./Mapp.ts";
+import RedisDB from "./RedisDB.ts";
 import { TableType } from "./Types.ts";
 
 export default abstract class LocalServer {
@@ -15,7 +15,7 @@ export default abstract class LocalServer {
 		// Flush the Database
 		// Double check config settings, and make sure we're only flushing windows data.
 		if(config.local === true && config.prod === false) {
-			await Mapp.redis.flushdb();
+			await RedisDB.db.flushdb();
 		}
 		
 		// Produce Local Content

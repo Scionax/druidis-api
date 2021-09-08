@@ -1,7 +1,6 @@
 import { config } from "../config.ts";
 import Conn from "../core/Conn.ts";
 import ImageMod from "../core/ImageMod.ts";
-import Mapp from "../core/Mapp.ts";
 import ObjectStorage from "../core/ObjectStorage.ts";
 import { TableType } from "../core/Types.ts";
 import Validate from "../core/Validate.ts";
@@ -10,7 +9,11 @@ import { Forum } from "../model/Forum.ts";
 import { ForumPost, PostStatus } from "../model/ForumPost.ts";
 import WebController from "./WebController.ts";
 
+type TrackRecentPost = { title: string; url: string; lastPost: number; }
+
 export default class PostController extends WebController {
+	
+	static recentPosts: { [authorId: number]: TrackRecentPost } = {};		// Used to prevent re-submitting same material.
 	
 	async runHandler(conn: Conn): Promise<Response> {
 		
@@ -66,19 +69,19 @@ export default class PostController extends WebController {
 		// Make sure the author hasn't re-submitted the same content (such as accidentally clicking twice).
 		const authorId = 0; // TODO: Change authorID based on the Connection.
 		
-		if(Mapp.recentPosts[authorId]) {
+		if(PostController.recentPosts[authorId]) {
 			if(
-				Mapp.recentPosts[authorId].title === rawData.title ||
-				Mapp.recentPosts[authorId].url === rawData.url ||
-				Mapp.recentPosts[authorId].lastPost > Math.floor(Date.now() / 1000) - 5		// Posted within last five seconds.
+				PostController.recentPosts[authorId].title === rawData.title ||
+				PostController.recentPosts[authorId].url === rawData.url ||
+				PostController.recentPosts[authorId].lastPost > Math.floor(Date.now() / 1000) - 5		// Posted within last five seconds.
 			) {
 				return await conn.sendFail(`Resubmission Error. Already posted "${rawData.title}" at ${rawData.url}, or a re-submission was attempted too quickly.`);
 			}
 		} else {
-			Mapp.recentPosts[authorId] = { lastPost: 0, title: "", url: "" };
+			PostController.recentPosts[authorId] = { lastPost: 0, title: "", url: "" };
 		}
 		
-		Mapp.recentPosts[authorId].lastPost = Math.floor(Date.now() / 1000);
+		PostController.recentPosts[authorId].lastPost = Math.floor(Date.now() / 1000);
 		
 		// If there is no image data, prevent the post.
 		// TODO: Allow video submissions (eventually).
@@ -139,8 +142,8 @@ export default class PostController extends WebController {
 		post.saveToRedis(TableType.Post);		// Save To Database
 		
 		// The post was at least partially successful. Update the author's submission data to catch recent posts.
-		Mapp.recentPosts[authorId].title = rawData.title as string;
-		Mapp.recentPosts[authorId].url = rawData.url as string;
+		PostController.recentPosts[authorId].title = rawData.title as string;
+		PostController.recentPosts[authorId].url = rawData.url as string;
 		
 		// Crop and Resize the image as needed, convert it to webp.
 		const fullImagePath = `images/${imageDir}/${imagePath}`;

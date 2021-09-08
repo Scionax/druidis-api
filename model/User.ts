@@ -1,5 +1,4 @@
 import Crypto from "../core/Crypto.ts";
-import Mapp from "../core/Mapp.ts";
 import RedisDB from "../core/RedisDB.ts";
 import Validate from "../core/Validate.ts";
 
@@ -57,12 +56,12 @@ export abstract class User {
 	
 	// ----- Retrieve User Data ----- //
 	
-	static async getId(username: string) { return Number(await Mapp.redis.get(`u:${username}`)) || 0; }
-	static async getUsername(id: number) { return (await Mapp.redis.get(`u:${id}`)) || ""; }
-	static async getPassword(id: number) { return (await Mapp.redis.get(`u:${id}:pass`)) || ""; }
-	static async getIP(id: number) { return (await Mapp.redis.get(`u:${id}:ip`)) || ""; }
-	static async getLastTime(id: number) { return Number(await Mapp.redis.get(`u:${id}:last`)) || 0; }
-	static async getTimeSpent(id: number) { return Number(await Mapp.redis.get(`u:${id}:time`)) || 0; }
+	static async getId(username: string) { return Number(await RedisDB.db.get(`u:${username}`)) || 0; }
+	static async getUsername(id: number) { return (await RedisDB.db.get(`u:${id}`)) || ""; }
+	static async getPassword(id: number) { return (await RedisDB.db.get(`u:${id}:pass`)) || ""; }
+	static async getIP(id: number) { return (await RedisDB.db.get(`u:${id}:ip`)) || ""; }
+	static async getLastTime(id: number) { return Number(await RedisDB.db.get(`u:${id}:last`)) || 0; }
+	static async getTimeSpent(id: number) { return Number(await RedisDB.db.get(`u:${id}:time`)) || 0; }
 	static async getProfile(id: number): Promise<UserProfile> { return (await RedisDB.getHashTable(`u:${id}:profile`)) || {}; }
 	
 	// ----- Set User Data ----- //
@@ -76,19 +75,19 @@ export abstract class User {
 		if(await User.usernameExists(newUsername)) { return false; }
 		
 		// Update Username
-		if(!(await Mapp.redis.set(`u:${id}`, newUsername))) { return false; }
+		if(!(await RedisDB.db.set(`u:${id}`, newUsername))) { return false; }
 		
 		return true;
 	}
 	
 	static async setProfile(id: number, profile: UserProfile): Promise<boolean> {
-		await Mapp.redis.set(`u:${id}:profile`, JSON.stringify(profile));
+		await RedisDB.db.set(`u:${id}:profile`, JSON.stringify(profile));
 		return true;
 	}
 	
 	static async setPassword(id: number, password: string): Promise<string> {
 		const passHash = Crypto.safeHash(password);
-		return await Mapp.redis.set(`u:${id}:pass`, passHash);
+		return await RedisDB.db.set(`u:${id}:pass`, passHash);
 	}
 	
 	// addCommunity 	// adds a new community
@@ -99,7 +98,7 @@ export abstract class User {
 	// ----- Checks ----- //
 	
 	static async idExists(id: number): Promise<boolean> {
-		const userId = (await Mapp.redis.get(`u:${id}`)) || "";
+		const userId = (await RedisDB.db.get(`u:${id}`)) || "";
 		return (userId && typeof userId === "string" && userId.length > 0) ? true : false;
 	}
 	
@@ -137,12 +136,12 @@ export abstract class User {
 	}
 	
 	private static updateLastTimeAsync(id: number) {
-		Mapp.redis.set(`u:${id}:last`, Math.floor(Date.now() / 1000));
+		RedisDB.db.set(`u:${id}:last`, Math.floor(Date.now() / 1000));
 	}
 	
 	private static updateTimeSpentAsync(id: number, addSeconds: number) {
 		User.getTimeSpent(id).then((value: number) => {
-			Mapp.redis.set(`u:${id}:time`, value + addSeconds)
+			RedisDB.db.set(`u:${id}:time`, value + addSeconds)
 		});
 	}
 	
@@ -167,13 +166,13 @@ export abstract class User {
 	
 	private static async updateToken(id: number): Promise<string> {
 		const token = Crypto.safeHash(Math.random().toString(16), 20);
-		await Mapp.redis.set(`u:${id}:token`, token);
+		await RedisDB.db.set(`u:${id}:token`, token);
 		return token;
 	}
 	
 	// Retrieves the current Cookie token, or generates a new one if not available.
 	static async getToken(id: number, autoGenerate: boolean): Promise<string> {
-		let token = (await Mapp.redis.get(`u:${id}:token`)) as string || "";
+		let token = (await RedisDB.db.get(`u:${id}:token`)) as string || "";
 		
 		// If we don't have an existing token, create oone.
 		if(!token && autoGenerate) {
@@ -185,7 +184,7 @@ export abstract class User {
 	
 	// Purges the token, such as when logging out.
 	static async clearToken(id: number): Promise<true> {
-		await Mapp.redis.set(`u:${id}:token`, "");
+		await RedisDB.db.set(`u:${id}:token`, "");
 		return true;
 	}
 	
@@ -230,11 +229,11 @@ export abstract class User {
 		
 		// Create the user
 		// TODO: These can all be activated at once with transaction.
-		await Mapp.redis.set(`u:${id}`, username);
-		await Mapp.redis.set(`u:${username}`, id);
+		await RedisDB.db.set(`u:${id}`, username);
+		await RedisDB.db.set(`u:${username}`, id);
 		await User.setPassword(id, password);
 		await User.setProfile(id, profile);
-		await Mapp.redis.set(`u:${id}:time`, 0);
+		await RedisDB.db.set(`u:${id}:time`, 0);
 		
 		return id;
 	}
