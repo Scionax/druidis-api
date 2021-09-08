@@ -1,3 +1,5 @@
+import ObjectStorage from "../core/ObjectStorage.ts";
+import Web from "../core/Web.ts";
 import { ArticleSectionJson, ArticleSection, ArticleText, ArticleBold, ArticleQuote, ArticleVideo, ArticleVideoSource, ArticleImage, ArticleH2, ArticleH3 } from "./ArticleSection.ts";
 
 /*
@@ -18,16 +20,23 @@ export class Article {
 	
 	readonly title: string;
 	readonly authorId: number;
+	private slug: string;					// A URL slug based on the title, e.g. "my-super-cool-article"
 	private sections: ArticleSection[];
 	
 	constructor(title: string, authorId: number) {
 		this.title = title;
 		this.authorId = authorId;
 		this.sections = [];
+		this.slug = Web.getSlugFromTitle(this.title);
 	}
 	
 	appendSection(section: ArticleSection) {
 		this.sections.push(section);
+	}
+	
+	save() {
+		ObjectStorage.putObject("druidis-cdn", `articles/${this.slug}.html`, this.html(), "text/html")
+		ObjectStorage.putObject("druidis-cdn", `data/articles/${this.slug}.json`, this.html(), "application/json")
 	}
 	
 	// Output the article as HTML.
