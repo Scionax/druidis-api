@@ -232,6 +232,7 @@ export class Feed {
 		const response: {[feed: string]: string[]} = {};
 		
 		for (const [key, child] of Object.entries(Feed.schema)) {
+			if(key === "Home") { continue; }
 			response[key] = [];
 			for (const [forum, _v2] of Object.entries(child)) {
 				response[key].push(forum);
