@@ -44,7 +44,7 @@ export default abstract class ImageMod {
 			case "windows": binName = "cwebp_windows.exe"; break;
 			case "darwin": binName = "cwebp_osx"; break;
 			default:
-				console.error("Error with cwebp: unable to identify platform `" + platform + "`.");
+				log.critical("Error with cwebp: unable to identify platform `" + platform + "`.");
 				return "";
 		}
 		
@@ -52,7 +52,7 @@ export default abstract class ImageMod {
 		
 		// Make sure the bin file exists.
 		if(!(await exists(ImageMod.binFile))) {
-			console.error("Error with ImageMod.initialize(). Unable to verify that the bin file exists.");
+			log.critical("Error with ImageMod.initialize(). Unable to verify that the bin file exists.");
 			return;
 		}
 		
@@ -61,7 +61,7 @@ export default abstract class ImageMod {
 			await Deno.chmod(ImageMod.binFile, 0o764);
 		}
 		
-		console.log("Image & Webp Manipulation System Initialized.")
+		log.info("Image & Webp Manipulation System Initialized.")
 	}
 	
 	// Crop to 1.3:1 Aspect Ratios (Wide). If too short, can center on a background.
@@ -148,7 +148,7 @@ export default abstract class ImageMod {
 	//	-lossless				Encode the image without any loss.
 	static async convertFormal(inputPath: string, outputPath: string, option = "") {
 		
-		if(!ImageMod.binFile) { console.error("Cannot find `cwebp` binary. See ImageMod class for details."); return; }
+		if(!ImageMod.binFile) { log.critical("Cannot find `cwebp` binary. See ImageMod class for details."); return; }
 		
 		// Make sure the input image exists:
 		if(!(await exists(inputPath))) {

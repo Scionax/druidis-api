@@ -4,6 +4,7 @@ import Conn from "../core/Conn.ts";
 import { Feed } from "../model/Feed.ts";
 import { config } from "../config.ts";
 import ServerMechanics from "../core/ServerMechanics.ts";
+import { log } from "../deps.ts";
 
 export default class DataController extends WebController {
 	
@@ -75,7 +76,7 @@ export default class DataController extends WebController {
 		if(conn.url2 === "test") {
 			
 			// const cookies = conn.cookieGet();
-			// console.log(cookies);
+			// log.info(cookies);
 			
 			// const index = await FeedIndexer.buildForumIndex(IndexList.Entertainment);
 			// return await conn.sendJson(index);
@@ -105,7 +106,7 @@ export default class DataController extends WebController {
 		
 		// Run POST Test
 		else if(conn.url2 === "test") {
-			console.log(rawData);
+			log.info(rawData);
 			return await conn.sendJson(rawData);
 		}
 		

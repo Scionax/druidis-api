@@ -1,6 +1,7 @@
 import Crypto from "../core/Crypto.ts";
 import Data from "../core/Data.ts";
 import RedisDB from "../core/RedisDB.ts";
+import { log } from "../deps.ts";
 import { Forum, ForumType } from "./Forum.ts";
 
 /*
@@ -307,7 +308,7 @@ export class Feed {
 		Feed.cached[feedName].posts = posts;
 		
 		Feed.assignNextRebuildTime(feedName);
-		console.log(`Built Feed: ${feedName.padEnd(18)} - ${Feed.rebuildRules[feedName].nextRebuild} is next run time.`);
+		log.info(`Built Feed: ${feedName.padEnd(18)} - ${Feed.rebuildRules[feedName].nextRebuild} is next run time.`);
 		
 		return posts;
 	}

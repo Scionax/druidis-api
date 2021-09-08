@@ -1,3 +1,4 @@
+import { log } from "../deps.ts";
 
 export const enum Curation {
 	Public = 0,
@@ -128,7 +129,7 @@ export class Forum {
 		Forum.schema["Writing"] = new Forum("Writing", "Creative", ForumType.Collect);
 		
 		// Console Display
-		console.log("Forums Initialized.");
+		log.info("Forums Initialized.");
 	}
 	
 	// ----- Initialize Forums ----- //

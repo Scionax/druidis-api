@@ -1,4 +1,4 @@
-import { S3 } from "../deps.ts";
+import { log, S3 } from "../deps.ts";
 
 /*
 	For ObjectStorage to work, make sure the appropriate environment variables were set.
@@ -34,6 +34,6 @@ export default abstract class ObjectStorage {
 	// List Bucket Example
 	static async listBuckets() {
 		const { Buckets = [] } = await ObjectStorage.s3.listBuckets({});
-		Buckets.forEach(bucket => console.log(bucket.Name));
+		Buckets.forEach(bucket => log.info(bucket.Name));
 	}
 }

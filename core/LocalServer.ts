@@ -1,4 +1,5 @@
 import { config } from "../config.ts";
+import { log } from "../deps.ts";
 import { ForumPost, PostStatus } from "../model/ForumPost.ts";
 import { User } from "../model/User.ts";
 import ImageMod from "./ImageMod.ts";
@@ -50,11 +51,11 @@ export default abstract class LocalServer {
 		await LocalServer.postSimple("Gaming", 29);
 		await LocalServer.postSimple("Gaming", 30);
 		
-		console.log("Created Local Gaming Post Placeholders.");
+		log.info("Created Local Gaming Post Placeholders.");
 		
 		// Add Druidis User
 		const id = await User.createUser("Druidis", "password", "info@druidis.org", {});
-		if(!id) { console.log("Error when Creating Druidis User."); } else { console.log("Created Druidis User."); }
+		if(!id) { log.error("Error when Creating Druidis User."); } else { log.info("Created Druidis User."); }
 	}
 	
 	static async postSimple(forum: string, id: number, status = PostStatus.Visible) {
@@ -73,7 +74,7 @@ export default abstract class LocalServer {
 		);
 		
 		// On Failure
-		if(typeof post === "string") { console.error(`Error on postSimple(${forum}, ${id}): ${post}`); return; }
+		if(typeof post === "string") { log.error(`Error on postSimple(${forum}, ${id}): ${post}`); return; }
 		
 		// Need to provide image updates for local behavior:
 		const {imgPath, width, height} = LocalServer.randomImage();

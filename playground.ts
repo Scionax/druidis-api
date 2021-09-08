@@ -1,5 +1,7 @@
 // deno run --allow-net --allow-write --allow-read --allow-run --allow-env --unstable playground.ts --runDirect
 
+import { log } from "./deps.ts";
+
 export default abstract class Playground {
 	
 	static runOnServerLoad() {
@@ -11,7 +13,7 @@ export default abstract class Playground {
 		
 		const { files } = await Deno.emit("../scripts/druidis.ts");
 		for (const [fileName, text] of Object.entries(files)) {
-			console.log(`emitted ${fileName} with a length of ${text}`);
+			log.info(`emitted ${fileName} with a length of ${text}`);
 		}
 	}
 }

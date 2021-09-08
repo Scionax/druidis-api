@@ -133,6 +133,6 @@ export class Community {
 		// Forum.schema["ContagiousLaughter"] = new Community("ContagiousLaughter").addCategories();
 		
 		// // Console Display
-		// console.log("Forums Initialized.");
+		// log.info("Forums Initialized.");
 	}
 }

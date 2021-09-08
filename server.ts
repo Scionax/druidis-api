@@ -40,7 +40,7 @@ if(config.redis.password) { opts.password = config.redis.password; }
 try {
 	RedisDB.db = await connectRedis(opts);
 } catch (error) {
-	console.error(error);
+	log.critical(error);
 }
 
 // Custom Routing Map
@@ -84,7 +84,7 @@ async function handle(conn: Deno.Conn) {
 			try {
 				await requestEvent.respondWith(RouteMap[conn.url1].runHandler(conn));
 			} catch (error) {
-				console.error(error);
+				log.error(error);
 				await requestEvent.respondWith( new Response("Internal issue with service.", { status: 400 }) );
 			}
 		}
@@ -114,6 +114,7 @@ async function handle(conn: Deno.Conn) {
 
 // Logging Handler - Saves "warnings" or higher in log.txt
 //		log.debug("Standard debug message. Won't get logged in a file.");
+//		log.info("Standard info message. Won't get logged in a file.");
 //		log.warning(true);
 //		log.error({ foo: "bar", fizz: "bazz" });
 //		log.critical("500 Internal Server Error");
@@ -140,7 +141,7 @@ Playground.runOnServerLoad();
 
 // Run Server
 const serv = config.local ? config.serverLocal : config.server;
-console.log("Launching Server on Port " + serv.port + ".")
+log.info("Launching Server on Port " + serv.port + ".")
 
 if(serv.certFile && serv.keyFile) {
 	const server = Deno.listenTls({

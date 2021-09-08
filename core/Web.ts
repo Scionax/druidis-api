@@ -45,7 +45,7 @@ export default abstract class Web {
 		}
 		
 		catch {
-			console.error("Failed a fetch() call with url: " + url);
+			log.debug(`Failed a fetch() call with url: ${url}`);
 			return Promise.reject("Failed HTML Fetch.");
 		}
 	}
