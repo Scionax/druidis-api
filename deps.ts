@@ -13,6 +13,9 @@ export { join } from "https://deno.land/std@0.103.0/path/posix.ts";
 export { ensureDir } from "https://deno.land/std@0.103.0/fs/ensure_dir.ts";
 export { exists } from "https://deno.land/std@0.104.0/fs/exists.ts";
 
+// Logger
+export * as log from "https://deno.land/std@0.106.0/log/mod.ts";
+
 // Save Path
 export * as path from "https://deno.land/std@0.104.0/path/mod.ts";
 

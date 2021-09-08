@@ -1,10 +1,5 @@
 import { config } from "../config.ts";
 
-// deno-lint-ignore no-unused-vars
-function log(...args: Array<string | unknown>) {
-	if(config.local) { console.log(...args); }
-}
-
 export default abstract class VerboseLog {
     
     static isLogging: boolean = config.debug.logging;
