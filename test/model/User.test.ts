@@ -51,7 +51,6 @@ Deno.test("Check Local Druidis User.", async() => {
 	assert(idExists, `User.idExists("${id}") did not correctly identify "${id}" (the ${username} account).`);
 	
 	const password = await User.getPassword(id);
-	console.log(password);
 	assert(password.length > 10, `Failed to retrieve password for ${origUsername} account.`);
 	
 	const isCorrect = await User.isCorrectPassword(id, origPassword);
