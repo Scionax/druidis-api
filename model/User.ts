@@ -9,12 +9,23 @@ import Validate from "../core/Validate.ts";
 	u:{id}:pass = password
 	u:{id}:last = lastTimeUpdate
 	u:{id}:time = timeSpentOnSite
-	u:{id}:profile = profileData						// First Name, Last Name, Country, State/Province, Postal Code, DOB, Email, Website, etc.
-	u:{id}:token = tokenHash							// The current token. If a cookie uses this token for the user, it can log in.
+	u:{id}:profile = profileData					// First Name, Last Name, Country, State/Province, Postal Code, DOB, Email, Website, etc.
+	u:{id}:token = tokenHash						// The current token. If a cookie uses this token for the user, it can log in.
+	
+	// Permissions
+	u:{id}:role = UserRole							// The global role of the user (user, mod, staff, dev, admin, superuser, etc)
+	u:{id}:roleLock = duration						// Timestamp until which this user's role is LOCKED (mute, ban, etc). 0 if user was never role-locked.
+	u:{id}:modEvents = [{time, type, reason, etc}]	// An array that tracks any events the user received mod actions from.
+	u:{id}:access = {
+		{comm} = AccessType							// The level (or type) of access in a given community.
+	}
+	u:{id}:curator = {
+		{feed} = CuratorType						// The level (or type) of curator influence in a given feed, forum, community, etc.
+	}
 	
 	// Planned for, or considered, but not yet implemented:
-	u:{id}:comm = [Community1, Community2] or Sorted Set		// List of communities the user is subscribed to.
-	u:{id}:subs = [Sub1, Sub2] or Sorted Set					// List of forums the user is subscribed to.
+	u:{id}:comm = [comm, comm] or Sorted Set			// List of communities the user is subscribed to.
+	u:{id}:subs = [sub, sub] or Sorted Set				// List of forums the user is subscribed to.
 	u:{id}:allowComment = 1
 	u:{id}:allowPost = 1
 	u:{id}:karma = ??
@@ -31,6 +42,17 @@ import Validate from "../core/Validate.ts";
 	// Related Tables
 	count:users					// User Index. Tracks the number of users and returns the next User ID.
 */
+
+export const enum UserRole {
+	Banned = -5,
+	Muted = -3,
+	User = 2,
+	VIP = 3,
+	Mod = 6,
+	Staff = 7,
+	Admin = 9,
+	Superuser = 10,
+}
 
 // Can use User.convertToUserProfile(email, firstName, lastName, ...) to convert to UserProfile type.
 type UserProfile = {
@@ -69,7 +91,7 @@ export abstract class User {
 	static async changeUsername(id: number, newUsername: string): Promise<boolean> {
 		
 		// Ensure that we're working with a valid ID.
-		if(!await User.idExists(id)) { return false; }
+		if(!(await User.idExists(id))) { return false; }
 		
 		// Can't allow the same user to be named twice.
 		if(await User.usernameExists(newUsername)) { return false; }
@@ -192,6 +214,44 @@ export abstract class User {
 		if(!token || !tokenSent) { return false; }
 		return token === tokenSent;
 	}
+	
+	// ----- Permissions ----- //
+	
+	static async getRole(id: number): Promise<UserRole> {
+		return (await RedisDB.db.get(`u:${id}:role`) || UserRole.User) as UserRole;
+	}
+	
+	static async setRole(id: number, role: UserRole) {
+		await RedisDB.db.set(`u:${id}:role`, `${role}`);
+		return true;
+	}
+	
+	static async setMuted(id: number, seconds: number) {
+		if(seconds < 30) { return false; }
+		const endDate = Date.now() + (seconds * 1000);
+		await RedisDB.db.set(`u:${id}:muted`, `${endDate}`);
+		await User.setRole(id, UserRole.Muted);
+		return true;
+	}
+	
+	// Design the system so that to get unmuted you have to agree to some additional terms, write something up.
+	// Also indicate that you might be under higher scrutiny, less leniency if you screw around again.
+	static async updateMutedStatus(id: number) {
+		const mutedTime = Number(await RedisDB.db.get(`u:${id}:muted`)) || 0;
+		if(mutedTime > Date.now()) { return false; }
+		
+	}
+	
+	// Permissions
+	// u:{id}:role = UserRole							// The global role of the user (user, mod, staff, dev, admin, superuser, etc)
+	// u:{id}:muted = duration							// A timestamp until which this user is muted. 0 if user was never muted.
+	// u:{id}:access = {
+	// 	{comm} = AccessType							// The level (or type) of access in a given community.
+	// }
+	// u:{id}:curator = {
+	// 	{feed} = CuratorType						// The level (or type) of curator influence in a given feed, forum, community, etc.
+	// }
+	
 	
 	// ----- Validation for User Creation ----- //
 	
