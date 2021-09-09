@@ -5,6 +5,7 @@ import { Feed } from "../model/Feed.ts";
 import { config } from "../config.ts";
 import ServerMechanics from "../core/ServerMechanics.ts";
 import { log } from "../deps.ts";
+import Data from "../core/Data.ts";
 
 export default class DataController extends WebController {
 	
@@ -75,14 +76,11 @@ export default class DataController extends WebController {
 		// Run a Test
 		if(conn.url2 === "test") {
 			
-			// const cookies = conn.cookieGet();
-			// log.info(cookies);
-			
-			// const index = await FeedIndexer.buildForumIndex(IndexList.Entertainment);
+			// const index = Feed.cached["Entertainment"];
 			// return await conn.sendJson(index);
 			
-			const index = Feed.cached["Entertainment"];
-			return await conn.sendJson(index);
+			const files = await Data.getFilesRecursive(`images`);
+			return await conn.sendJson(files);
 		}
 		
 		// Something invalid.
