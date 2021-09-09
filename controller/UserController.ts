@@ -1,8 +1,9 @@
 import Conn from "../core/Conn.ts";
 import Crypto from "../core/Crypto.ts";
-import { MonthInSeconds } from "../core/Types.ts";
 import { User } from "../model/User.ts";
 import WebController from "./WebController.ts";
+
+const MonthInSeconds = 2592000;
 
 export default class UserController extends WebController {
 	

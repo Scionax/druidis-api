@@ -31,7 +31,7 @@ export default abstract class Data {
 	}
 	
 	private static _arraySwap(arr: Array<unknown>, i: number, j: number) {
-		let q = arr[i];
+		const q = arr[i];
 		arr[i] = arr[j];
 		arr[j] = q;
 		return arr;

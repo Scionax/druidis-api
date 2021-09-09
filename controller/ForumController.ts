@@ -1,8 +1,7 @@
 import Conn from "../core/Conn.ts";
 import RedisDB from "../core/RedisDB.ts";
-import { TableType } from "../core/Types.ts";
 import { Forum } from "../model/Forum.ts";
-import { ForumPost } from "../model/ForumPost.ts";
+import { ForumPost, TableType } from "../model/ForumPost.ts";
 import WebController from "./WebController.ts";
 
 export default class ForumController extends WebController {

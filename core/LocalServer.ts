@@ -1,10 +1,9 @@
 import { config } from "../config.ts";
 import { log } from "../deps.ts";
-import { ForumPost, PostStatus } from "../model/ForumPost.ts";
+import { ForumPost, PostStatus, TableType } from "../model/ForumPost.ts";
 import { User } from "../model/User.ts";
 import ImageMod from "./ImageMod.ts";
 import RedisDB from "./RedisDB.ts";
-import { TableType } from "./Types.ts";
 
 export default abstract class LocalServer {
 	

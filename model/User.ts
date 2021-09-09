@@ -56,7 +56,10 @@ export abstract class User {
 	
 	// ----- Retrieve User Data ----- //
 	
-	static async getId(username: string) { return Number(await RedisDB.db.get(`u:${username}`)) || 0; }
+	static async getId(username: string) {
+		console.log(username);
+		console.log(RedisDB.db);
+		return Number(await RedisDB.db.get(`u:${username}`)) || 0; }
 	static async getUsername(id: number) { return (await RedisDB.db.get(`u:${id}`)) || ""; }
 	static async getPassword(id: number) { return (await RedisDB.db.get(`u:${id}:pass`)) || ""; }
 	static async getIP(id: number) { return (await RedisDB.db.get(`u:${id}:ip`)) || ""; }

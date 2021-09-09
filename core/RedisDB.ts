@@ -1,9 +1,35 @@
-import { Redis } from "../deps.ts";
-import { TableType } from "./Types.ts";
+import { config } from "../config.ts";
+import { connectRedis, log, Redis } from "../deps.ts";
+import { TableType } from "../model/ForumPost.ts";
 
 export default abstract class RedisDB {
 	
 	static db: Redis;		// Redis Connection
+	
+	static async connect(): Promise<boolean> {
+		
+		// Don't re-connect. (Useful, because we reconnect during Unit Tests).
+		if(RedisDB.db) { return true; }
+		
+		// Connect To Redis
+		const opts: { hostname: string, port: number, password?: string, tls?: boolean, name?: string } = {
+			hostname: config.redis.hostname,
+			port: config.redis.port,
+			// tls: boolean, // If using TLS
+			// name: string
+		};
+		
+		if(config.redis.password) { opts.password = config.redis.password; }
+		
+		try {
+			RedisDB.db = await connectRedis(opts);
+		} catch (error) {
+			log.critical(error);
+			return false;
+		}
+		
+		return true;
+	}
 	
 	// ------ Helper Functions ------ //
 	

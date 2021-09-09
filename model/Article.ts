@@ -26,7 +26,7 @@ export class Article {
 	readonly slug: string;					// A URL slug based on the title, e.g. "my-super-cool-article"
 	readonly initUTC: string;				// UTC of when the article was initialized (not same as date posted).
 	
-	private sections: ArticleSection[];
+	public sections: ArticleSection[];
 	
 	constructor(forum: string, title: string, authorId: number, utc = "") {
 		this.forum = forum;
@@ -45,13 +45,15 @@ export class Article {
 	}
 	
 	// Creates an Article Instance from a file.
-	static async loadFromPath(path: string): Promise<Article|false> {
+	static async createFromPath(path: string): Promise<Article|false> {
 		if(!(await exists(path))) { return false; }
 		
 		const content = await Deno.readTextFile(path);
 		const json = JSON.parse(content);
 		
-		const article = new Article(json.forum, json.title, json.authorId, json.initDate);
+		if(!json.forum || !json.title) { return false; }
+		
+		const article = new Article(json.forum, json.title, json.authorId || 0, json.initDate || "");
 		
 		// Loop through each section, retrieve it's 'ArticleSection' class, and append it to the article.
 		for(let i = 0; i < json.sections.length; i++) {
@@ -76,7 +78,7 @@ export class Article {
 		const initYear = date.getFullYear();
 		
 		const dir = `data/articles/${this.forum}/${initYear}`;
-		const fullPath = `${dir}/${this.slug}`;
+		const fullPath = `${dir}/${this.slug}.json`;
 		
 		// Make sure the directory exists.
 		await ensureDir(`data/articles/${this.forum}`);

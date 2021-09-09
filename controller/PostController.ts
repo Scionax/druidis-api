@@ -2,11 +2,10 @@ import { config } from "../config.ts";
 import Conn from "../core/Conn.ts";
 import ImageMod from "../core/ImageMod.ts";
 import ObjectStorage from "../core/ObjectStorage.ts";
-import { TableType } from "../core/Types.ts";
 import Validate from "../core/Validate.ts";
 import Web from "../core/Web.ts";
 import { Forum } from "../model/Forum.ts";
-import { ForumPost, PostStatus } from "../model/ForumPost.ts";
+import { ForumPost, PostStatus, TableType } from "../model/ForumPost.ts";
 import WebController from "./WebController.ts";
 
 type TrackRecentPost = { title: string; url: string; lastPost: number; }
