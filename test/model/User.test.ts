@@ -1,9 +1,12 @@
 import { config } from "../../config.ts";
+import RedisDB from "../../core/RedisDB.ts";
 import { assert } from "../../deps.ts";
 import { User } from "../../model/User.ts";
 
+await RedisDB.connect(); // Connect To Redis
+
 const userData = {
-	handle: "TestAccount",
+	handle: "_TestAcct__829",
 	password: "testPassword",
 	email: "example@email.com",
 };
@@ -22,14 +25,61 @@ const userProfile = {
 	website: "http://example.com",
 };
 
-Deno.test("Create and verify User.", async () => {
+Deno.test("Check if user can be created.", async () => {
+	const canCreate = await User.canCreateUser(userData.handle, userData.password, userData.email, userProfile);
+	assert(canCreate === "", `Failed to create user: ${canCreate}.`);
+});
+
+Deno.test("Check Local Druidis User.", async() => {
 	
 	// Don't test this on production.
 	if(!config.local) { return; }
 	
-	const canCreate = await User.canCreateUser(userData.handle, userData.password, userData.email, userProfile);
+	const origUsername = "Druidis";
+	const origPassword = "password";
 	
-	// Verify basic properties
-	assert(canCreate === "", `Should be able to create user.`);
+	const id = await User.getId(origUsername);
+	assert(id === 1, `Unable to retrieve ${origUsername} account.`);
 	
+	const username = await User.getUsername(id);
+	assert(username === origUsername, `Unable to locate ${origUsername} account by ID.`);
+	
+	const usernameExists = await User.usernameExists(username);
+	assert(usernameExists, `User.usernameExists("${username}") did not correctly identify "${username}".`);
+	
+	const idExists = await User.idExists(id);
+	assert(idExists, `User.idExists("${id}") did not correctly identify "${id}" (the ${username} account).`);
+	
+	const password = await User.getPassword(id);
+	console.log(password);
+	assert(password.length > 10, `Failed to retrieve password for ${origUsername} account.`);
+	
+	const isCorrect = await User.isCorrectPassword(id, origPassword);
+	assert(isCorrect, `Password (${origPassword}) was incorrect.`);
+	
+	const profile = await User.getProfile(id);
+	assert(profile.email && profile.email.length > 0, `${username} should have an email tracked in their profile.`);
 });
+
+Deno.test("Verify that cookie tokens work.", async () => {
+	
+	// Don't test this on production.
+	if(!config.local) { return; }
+	
+	const origUsername = "Druidis";
+	const id = await User.getId(origUsername);
+	
+	const token = await User.getToken(id, true);
+	assert(token.length > 0, `${origUsername} does not have a valid token assigned.`);
+	
+	const verified = await User.verifyLoginCookie(`${id}.${token}`);
+	assert(verified === id, `Unable to verify the login cookie for ID ${id}.`);
+});
+
+
+
+
+
+
+
+

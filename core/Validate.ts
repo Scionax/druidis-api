@@ -22,13 +22,6 @@ export default abstract class Validate {
 		});
 	}
 	
-	// Valid Numbers
-	static isPositiveNumber(number: number | string, max = 0, min = 0) {
-		if(typeof number === "string") { number = Number(number) || 0; }
-		if(max > 0) { return (number > min && number < max); }
-		return (number > min);
-	}
-	
 	// Valid Strings
 	static isSafeWord(word: string) { return word.match(/[a-z0-9_]/gi) ? true : false; }
 	static isAlphaNumeric(word: string) { return word.match(/[a-z0-9]/gi) ? true : false; }

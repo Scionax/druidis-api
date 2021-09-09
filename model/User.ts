@@ -56,16 +56,13 @@ export abstract class User {
 	
 	// ----- Retrieve User Data ----- //
 	
-	static async getId(username: string) {
-		console.log(username);
-		console.log(RedisDB.db);
-		return Number(await RedisDB.db.get(`u:${username}`)) || 0; }
+	static async getId(username: string) { return Number(await RedisDB.db.get(`u:${username}`)) || 0; }
 	static async getUsername(id: number) { return (await RedisDB.db.get(`u:${id}`)) || ""; }
 	static async getPassword(id: number) { return (await RedisDB.db.get(`u:${id}:pass`)) || ""; }
 	static async getIP(id: number) { return (await RedisDB.db.get(`u:${id}:ip`)) || ""; }
 	static async getLastTime(id: number) { return Number(await RedisDB.db.get(`u:${id}:last`)) || 0; }
 	static async getTimeSpent(id: number) { return Number(await RedisDB.db.get(`u:${id}:time`)) || 0; }
-	static async getProfile(id: number): Promise<UserProfile> { return (await RedisDB.getHashTable(`u:${id}:profile`)) || {}; }
+	static async getProfile(id: number): Promise<UserProfile> { return JSON.parse(await RedisDB.db.get(`u:${id}:profile`) as string) || {}; }
 	
 	// ----- Set User Data ----- //
 	
@@ -110,8 +107,7 @@ export abstract class User {
 		return userId > 0;
 	}
 	
-	static async isCorrectPassword(username: string, password: string): Promise<boolean> {
-		const userId = await User.getId(username);
+	static async isCorrectPassword(userId: number, password: string): Promise<boolean> {
 		const hash = await User.getPassword(userId);
 		return hash === Crypto.safeHash(password);
 	}
@@ -296,15 +292,15 @@ export abstract class User {
 		
 		if(profile.dobYear) {
 			const curYear = new Date().getFullYear();
-			if(!Validate.isPositiveNumber(profile.dobYear, curYear, 1900)) { return `An invalid birth year was provided.`; }
+			if(profile.dobYear < 1900 || profile.dobYear > curYear) { return `An invalid birth year was provided.`; }
 		}
 		
 		if(profile.dobMonth) {
-			if(!Validate.isPositiveNumber(profile.dobMonth, 1, 12)) { return `Birth month must be between 1 and 12.`; }
+			if(profile.dobMonth < 1 || profile.dobMonth > 12) { return `Birth month must be between 1 and 12.`; }
 		}
 		
 		if(profile.dobDay) {
-			if(!Validate.isPositiveNumber(profile.dobDay, 1, 31)) { return `Birth day must be between 1 and 31.`; }
+			if(profile.dobDay < 1 || profile.dobDay > 31) { return `Birth day must be between 1 and 31.`; }
 		}
 		
 		// Verify Name

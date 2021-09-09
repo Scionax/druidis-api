@@ -61,6 +61,4 @@ Deno.test("Article exporting.", async () => {
 	assert(json.sections[4].type === "h3", "Fifth section should be 'h3'.");
 	assert(json.sections[5].type === "image", "Sixth section should be 'image'.");
 	assert(json.sections[6].type === "video", "Seventh section should be 'video'.");
-	
-	console.log(json);
 });
