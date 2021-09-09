@@ -24,10 +24,6 @@ export const config = {
 	},
 	local: false,
 	prod: true,
-	debug: {
-        logging: false,
-        verbose: false,		// Provide extra logging details.
-	},
 	objectStore: {
 		bucket: "druidis-cdn",
 	}
