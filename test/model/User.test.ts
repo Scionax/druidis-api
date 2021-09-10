@@ -31,9 +31,7 @@ Deno.test("Check if user can be created.", async () => {
 });
 
 Deno.test("Check Local Druidis User.", async() => {
-	
-	// Don't test this on production.
-	if(!config.local) { return; }
+	if(config.prod) { return; } // Don't test this on production.
 	
 	const origUsername = "Druidis";
 	const origPassword = "password";
@@ -61,9 +59,7 @@ Deno.test("Check Local Druidis User.", async() => {
 });
 
 Deno.test("Verify that cookie tokens work.", async () => {
-	
-	// Don't test this on production.
-	if(!config.local) { return; }
+	if(config.prod) { return; } // Don't test this on production.
 	
 	const origUsername = "Druidis";
 	const id = await User.getId(origUsername);

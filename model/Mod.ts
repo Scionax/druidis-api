@@ -1,4 +1,5 @@
 import RedisDB from "../core/RedisDB.ts";
+import { RedisReply } from "../deps.ts";
 import { User, UserRole } from "./User.ts";
 
 /*
@@ -58,13 +59,41 @@ export abstract class Mod {
 	
 	// ----- Mod Events ----- //
 	
+	static async getModEventHistory(count = 25) {
+		const eventCount = await RedisDB.getCounter("modEvents");
+		const pl = RedisDB.db.pipeline();
+		
+		// Loop through and retrieve the last {count} mod events:
+		const max = Math.max(1, eventCount - count);
+		for(let i = eventCount; i >= max; i--) {
+			await pl.get(`modEvents:${i}`);
+		}
+		
+		const replies = await pl.flush() as RedisReply[];
+		const arr: Array<string> = [];
+		
+		for (const [_key, value] of Object.entries(replies)) {
+			arr.push(value.value() as string);
+		}
+		
+		return arr;
+	}
+	
+	static async getModEventsByUser(userId: number): Promise<Array<ModEvent>> {
+		const modEvents = await RedisDB.db.get(`u:${userId}:modEvents`) || `[]`;
+		return JSON.parse(modEvents);
+	}
+	
 	static async createModEvent(modId: number, userId: number, type: ModEventType, reason: string, warning: ModWarningType = 0): Promise<boolean> {
 		
 		// Ensure that we're working with a valid User ID.
 		if(!(await User.idExists(userId))) { return false; }
 		
+		// Verify the Mod's UserRole
+		const modRole = await User.getRole(modId);
+		
 		// Make sure the mod can perform these actions.
-		if(!(await Mod.canModPerformThis(modId, type))) { return false; }
+		if(!(await Mod.canModPerformThis(modRole, type))) { return false; }
 		
 		// Generate the Mod Event
 		const event: ModEvent = {
@@ -75,13 +104,29 @@ export abstract class Mod {
 			time: Math.floor(Date.now() / 1000),
 		}
 		
+		await Mod.addModEventToUserTable(userId, event);
+		await Mod.addModEventToModTable(userId, event);
+		
+		return true;
+	}
+	
+	static async addModEventToUserTable(userId: number, event: ModEvent) {
+		
 		// Retrieve existing mod events from the user:
-		const mEvents = await RedisDB.db.get(`u:${userId}:modEvents`) || `[]`;
-		const eJson: Array<ModEvent> = JSON.parse(mEvents);
+		const eJson = await Mod.getModEventsByUser(userId);
 		eJson.push(event);
 		
 		// Update the mod events applied to the user:
 		await RedisDB.db.set(`u:${userId}:modEvents`, JSON.stringify(eJson));
+		return true;
+	}
+	
+	static async addModEventToModTable(userId: number, event: ModEvent) {
+		const modName = await User.getUsername(event.modId);
+		const userName = await User.getUsername(userId);
+		const message = Mod.summarizeModEvent(modName, userId, userName, event.type, event.warning);
+		const eventCount = await RedisDB.incrementCounter("modEvents");
+		await RedisDB.db.set(`modEvents:${eventCount}`, message);
 		return true;
 	}
 	

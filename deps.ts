@@ -4,6 +4,11 @@ export { assert, assertEquals } from "https://deno.land/std@0.103.0/testing/asse
 export { connect as connectRedis } from "https://deno.land/x/redis@v0.23.1/mod.ts";
 export type { Redis } from "https://deno.land/x/redis@v0.23.1/mod.ts";
 
+// Pipelines must cast to RedisReply[], and extract the value AS STRING from the value() function
+// const replies = await pl.flush() as RedisReply[];
+// console.log(replies[0].value() as string);
+export type { RedisReply } from "https://deno.land/x/redis@v0.23.1/protocol/mod.ts";
+
 // Crypto
 export { createHash } from "https://deno.land/std@0.106.0/hash/mod.ts";
 

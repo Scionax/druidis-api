@@ -1,7 +1,8 @@
 import { config } from "../config.ts";
 import { log } from "../deps.ts";
 import { ForumPost, PostStatus, TableType } from "../model/ForumPost.ts";
-import { User } from "../model/User.ts";
+import { Mod, ModEventType, ModWarningType } from "../model/Mod.ts";
+import { User, UserRole } from "../model/User.ts";
 import ImageMod from "./ImageMod.ts";
 import RedisDB from "./RedisDB.ts";
 
@@ -52,9 +53,20 @@ export default abstract class LocalServer {
 		
 		log.info("Created Local Gaming Post Placeholders.");
 		
-		// Add Druidis User
-		const id = await User.createUser("Druidis", "password", "info@druidis.org", {});
-		if(!id) { log.error("Error when Creating Druidis User."); } else { log.info("Created Druidis User."); }
+		// Add Users
+		const id1 = await User.createUser("Druidis", "password", "info@druidis.org", {});
+		const id2 = await User.createUser("TheMod", "password", "themod@druidis.org", {});
+		const id3 = await User.createUser("AnnoyingGuest", "password", "annoying@example.com", {});
+		
+		if(!id1 || !id2 || !id3) { log.error("Error when creating users."); } else { log.info("Created Users."); }
+		
+		// Assign Roles
+		await User.setRole(id1, UserRole.Superuser);
+		await User.setRole(id2, UserRole.Mod);
+		
+		// Add Some Mod Reports
+		await Mod.createModEvent(id2, id3, ModEventType.Report, "User was annoying me.", ModWarningType.ExcessNegativity);
+		await Mod.createModEvent(id2, id3, ModEventType.Mute, "User said something demonstrably untrue.", ModWarningType.Misinformation);
 	}
 	
 	static async postSimple(forum: string, id: number, status = PostStatus.Visible) {

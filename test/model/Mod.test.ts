@@ -1,6 +1,9 @@
+import RedisDB from "../../core/RedisDB.ts";
 import { assert } from "../../deps.ts";
 import { Mod, ModEventType, ModWarningType } from "../../model/Mod.ts";
 import { UserRole } from "../../model/User.ts";
+
+await RedisDB.connect(); // Connect To Redis
 
 Deno.test("Check if mods can perform given actions.", () => {
 	assert(Mod.canModPerformThis(UserRole.Mod, ModEventType.Report), `Mods are not able to perform "Report" command.`);
@@ -23,5 +26,10 @@ Deno.test("Verify Mod Summaries.", () => {
 	
 	const sum3 = Mod.summarizeModEvent("TheMod", 10, "BadGuy", ModEventType.ApplyWarning, ModWarningType.Inappropriate);
 	assert(sum3 === "10:TheMod warned BadGuy for inappropriate behavior.", `Mod Summary (Apply Warning) is reporting incorrectly.`);
+});
+
+Deno.test("Get Mod Events.", async () => {
+	const userModEvents = await Mod.getModEventsByUser(3)
+	const modEvents = await Mod.getModEventHistory();
 });
 
