@@ -1,3 +1,4 @@
+import { config } from "../../config.ts";
 import RedisDB from "../../core/RedisDB.ts";
 import { assert } from "../../deps.ts";
 import { Mod, ModEventType, ModWarningType } from "../../model/Mod.ts";
@@ -17,19 +18,31 @@ Deno.test("Check if mods can perform given actions.", () => {
 });
 
 Deno.test("Verify Mod Summaries.", () => {
+	if(config.prod) { return; } // Don't test this on production.
 	
-	const sum1 = Mod.summarizeModEvent("TheMod", 10, "BadGuy", ModEventType.Report, ModWarningType.Incite);
-	assert(sum1 === "10:TheMod reported BadGuy for inciting hostility.", `Mod Summary (Report) is reporting incorrectly.`);
+	const sum1 = Mod.summarizeModEvent("TheMod", "BadGuy", ModEventType.Report, ModWarningType.Incite);
+	assert(sum1 === "TheMod reported BadGuy for inciting hostility.", `Mod Summary (Report) is reporting incorrectly.`);
 	
-	const sum2 = Mod.summarizeModEvent("TheMod", 10, "BadGuy", ModEventType.Mute, ModWarningType.Misinformation);
-	assert(sum2 === "10:TheMod muted BadGuy for spreading misinformation.", `Mod Summary (Mute) is reporting incorrectly.`);
+	const sum2 = Mod.summarizeModEvent("TheMod", "BadGuy", ModEventType.Mute, ModWarningType.Misinformation);
+	assert(sum2 === "TheMod muted BadGuy for spreading misinformation.", `Mod Summary (Mute) is reporting incorrectly.`);
 	
-	const sum3 = Mod.summarizeModEvent("TheMod", 10, "BadGuy", ModEventType.ApplyWarning, ModWarningType.Inappropriate);
-	assert(sum3 === "10:TheMod warned BadGuy for inappropriate behavior.", `Mod Summary (Apply Warning) is reporting incorrectly.`);
+	const sum3 = Mod.summarizeModEvent("TheMod", "BadGuy", ModEventType.ApplyWarning, ModWarningType.Inappropriate);
+	assert(sum3 === "TheMod warned BadGuy for inappropriate behavior.", `Mod Summary (Apply Warning) is reporting incorrectly.`);
 });
 
 Deno.test("Get Mod Events.", async () => {
-	const userModEvents = await Mod.getModEventsByUser(3)
+	if(config.prod) { return; } // Don't test this on production.
+	
+	const modReports = await Mod.getModReports(3);
+	const modActions = await Mod.getModActions(2);
 	const modEvents = await Mod.getModEventHistory();
+	
+	// If these lines are failing, make sure that LocalServer created the Mod Reports between TheMod and AnnoyingGuest
+	assert(modReports[0] === "2", `Mod.getModReports(userId) did not return correct result.`);
+	assert(modReports[1] === "1", `Mod.getModReports(userId) did not return correct result.`);
+	assert(modActions[0] === "2", `Mod.getModActions(modId) did not return correct result.`);
+	assert(modActions[1] === "1", `Mod.getModActions(modId) did not return correct result.`);
+	assert(modEvents[0].startsWith("2:3:6:8:"), `Mod Event global history is not reporting correctly.`);
+	assert(modEvents[1].startsWith("2:3:1:2:"), `Mod Event global history is not reporting correctly.`);
 });
 

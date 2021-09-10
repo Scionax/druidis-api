@@ -1,13 +1,21 @@
 import RedisDB from "../core/RedisDB.ts";
+import { Sanitize } from "../core/Validate.ts";
 import { RedisReply } from "../deps.ts";
 import { User, UserRole } from "./User.ts";
 
 /*
-	// Schema for Mod Events
+	// Mod Event Global History (a global history of mod events)
 	count:modEvents									// Incrementing indexer for modEvents:{num} records.
-	modEvents:{num}									// A historical record of all mod events that have occurred. Should dump to logs over time.
+	modEvents:{num}									// A historical record of global mod events.
+		`{modId}:{userId}:{type}:{warn}:{reason}:{time}`
 	
-	u:{id}:modEvents = [{type, reason, etc}]		// Array that tracks the mod events a user has received.
+	// Mod Actions (tracks the mod's actions)
+	u:{id}:modActions								// List of mod actions that a mod has taken. (LPUSH, LRANGE)
+		`{modEventId}`
+	
+	// User Reports (tracks the user reported)
+	u:{id}:reports									// List that tracks the mod events reporting the given user. (LPUSH, LRANGE)
+		`{modEventId}`
 */
 
 export const enum ModEventType {
@@ -36,6 +44,7 @@ export const enum ModWarningType {
 
 type ModEvent = {
 	modId: number,					// ID of the moderator that applied the event. Is not visible to users.
+	userId: number,					// ID of the user being reported.
 	type: ModEventType,				// The type of moderation event applied.
 	reason: string,					// Provides an internal (staff-only) reason or additional context for the event. May be customized by the moderator.
 	warning: ModWarningType,		// The warning applied (if applicable)
@@ -79,9 +88,12 @@ export abstract class Mod {
 		return arr;
 	}
 	
-	static async getModEventsByUser(userId: number): Promise<Array<ModEvent>> {
-		const modEvents = await RedisDB.db.get(`u:${userId}:modEvents`) || `[]`;
-		return JSON.parse(modEvents);
+	static async getModReports(userId: number, start = 0, count = 10): Promise<string[]> {
+		return await RedisDB.db.lrange(`u:${userId}:reports`, start, start + count) || [];
+	}
+	
+	static async getModActions(modId: number, start = 0, count = 10): Promise<string[]> {
+		return await RedisDB.db.lrange(`u:${modId}:modActions`, start, start + count) || [];
 	}
 	
 	static async createModEvent(modId: number, userId: number, type: ModEventType, reason: string, warning: ModWarningType = 0): Promise<boolean> {
@@ -97,6 +109,7 @@ export abstract class Mod {
 		
 		// Generate the Mod Event
 		const event: ModEvent = {
+			userId: userId,
 			modId: modId,
 			type: type,
 			reason: reason,
@@ -104,36 +117,34 @@ export abstract class Mod {
 			time: Math.floor(Date.now() / 1000),
 		}
 		
-		await Mod.addModEventToUserTable(userId, event);
-		await Mod.addModEventToModTable(userId, event);
+		// Record the mod globally, and attach it to the user and mod related to the event.
+		const modEventId = await Mod.addModEventToHistory(event);
+		
+		await Mod.attachModReportToUser(userId, modEventId);
+		await Mod.attachModActionToMod(modId, modEventId);
 		
 		return true;
 	}
 	
-	static async addModEventToUserTable(userId: number, event: ModEvent) {
-		
-		// Retrieve existing mod events from the user:
-		const eJson = await Mod.getModEventsByUser(userId);
-		eJson.push(event);
-		
-		// Update the mod events applied to the user:
-		await RedisDB.db.set(`u:${userId}:modEvents`, JSON.stringify(eJson));
-		return true;
+	static async attachModReportToUser(userId: number, modEventId: number) {
+		return await RedisDB.db.lpush(`u:${userId}:reports`, `${modEventId}`);
 	}
 	
-	static async addModEventToModTable(userId: number, event: ModEvent) {
-		const modName = await User.getUsername(event.modId);
-		const userName = await User.getUsername(userId);
-		const message = Mod.summarizeModEvent(modName, userId, userName, event.type, event.warning);
+	static async attachModActionToMod(modId: number, modEventId: number) {
+		return await RedisDB.db.lpush(`u:${modId}:modActions`, `${modEventId}`);
+	}
+	
+	static async addModEventToHistory(event: ModEvent): Promise<number> {
 		const eventCount = await RedisDB.incrementCounter("modEvents");
-		await RedisDB.db.set(`modEvents:${eventCount}`, message);
-		return true;
+		const reason = Sanitize.sentence(event.reason.replace(":", ""));
+		await RedisDB.db.set(`modEvents:${eventCount}`, `${event.modId}:${event.userId}:${event.type}:${event.warning}:${event.time}:${reason}`);
+		return eventCount;
 	}
 	
 	// Returns a simple summary about what a mod event did.
 	// Outputs a string with following format: `{userId}:Message that mods will see explaining the event.`
-	static summarizeModEvent(modName: string, userId: number, userName: string, type: ModEventType, warning: ModWarningType) {
-		let message = `${userId}:${modName} `;
+	static summarizeModEvent(modName: string, userName: string, type: ModEventType, warning: ModWarningType) {
+		let message = `${modName} `;
 		
 		switch(type) {
 			case ModEventType.Report: message += "reported"; break;

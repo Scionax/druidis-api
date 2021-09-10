@@ -12,10 +12,12 @@ import Validate from "../core/Validate.ts";
 	u:{id}:profile = profileData					// First Name, Last Name, Country, State/Province, Postal Code, DOB, Email, Website, etc.
 	u:{id}:token = tokenHash						// The current token. If a cookie uses this token for the user, it can log in.
 	
+	u:{id}:modActions = LIST[modEventId,...]		// Redis List (LPUSH) that tracks any mod actions.
+	u:{id}:reports = LIST[modEventId,...]			// Redis List (LPUSH) that tracks any mod reports the user was targeted by.
+	
 	// Permissions
 	u:{id}:role = UserRole							// The global role of the user (user, mod, staff, dev, admin, superuser, etc)
 	u:{id}:roleLock = duration						// Timestamp until which this user's role is LOCKED (mute, ban, etc). 0 if user was never role-locked.
-	u:{id}:modEvents = [{time, type, reason, etc}]	// An array that tracks any events the user received mod actions from.
 	u:{id}:access = {
 		{comm} = AccessType							// The level (or type) of access in a given community.
 	}
