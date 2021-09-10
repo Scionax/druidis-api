@@ -7,7 +7,7 @@ import { User, UserRole } from "./User.ts";
 	// Mod Event Global History (a global history of mod events)
 	count:modEvents									// Incrementing indexer for modEvents:{num} records.
 	modEvents:{num}									// A historical record of global mod events.
-		`{modId}:{userId}:{type}:{warn}:{reason}:{time}`
+		`{modId}:{userId}:{type}:{warning}:{time}:{reason}`
 	
 	// Mod Actions (tracks the mod's actions)
 	u:{id}:modActions								// List of mod actions that a mod has taken. (LPUSH, LRANGE)
@@ -46,9 +46,9 @@ type ModEvent = {
 	modId: number,					// ID of the moderator that applied the event. Is not visible to users.
 	userId: number,					// ID of the user being reported.
 	type: ModEventType,				// The type of moderation event applied.
-	reason: string,					// Provides an internal (staff-only) reason or additional context for the event. May be customized by the moderator.
 	warning: ModWarningType,		// The warning applied (if applicable)
 	time: number,					// Timestamp of the event (seconds).
+	reason: string,					// Provides an internal (staff-only) reason or additional context for the event. May be customized by the moderator.
 }
 
 export abstract class Mod {
@@ -68,7 +68,7 @@ export abstract class Mod {
 	
 	// ----- Mod Events ----- //
 	
-	static async getModEventHistory(count = 25) {
+	static async getModEventHistory(count = 25): Promise<ModEvent[]> {
 		const eventCount = await RedisDB.getCounter("modEvents");
 		const pl = RedisDB.db.pipeline();
 		
@@ -79,21 +79,42 @@ export abstract class Mod {
 		}
 		
 		const replies = await pl.flush() as RedisReply[];
-		const arr: Array<string> = [];
+		const arr: ModEvent[] = [];
 		
-		for (const [_key, value] of Object.entries(replies)) {
-			arr.push(value.value() as string);
+		for(const [_key, value] of Object.entries(replies)) {
+			const event = Mod.parseModEventString(value.value() as string);
+			arr.push(event);
 		}
 		
 		return arr;
 	}
 	
-	static async getModReports(userId: number, start = 0, count = 10): Promise<string[]> {
-		return await RedisDB.db.lrange(`u:${userId}:reports`, start, start + count) || [];
+	static async getModEventsByIds(ids: string[]): Promise<ModEvent[]> {
+		const arr: ModEvent[] = [];
+		const pl = RedisDB.db.pipeline();
+		
+		for(let i = 0; i < ids.length; i++) {
+			await pl.get(`modEvents:${ids[i]}`);
+		}
+		
+		const replies = await pl.flush() as RedisReply[];
+		
+		for(const [_key, value] of Object.entries(replies)) {
+			const event = Mod.parseModEventString(value.value() as string);
+			arr.push(event);
+		}
+		
+		return arr;
 	}
 	
-	static async getModActions(modId: number, start = 0, count = 10): Promise<string[]> {
-		return await RedisDB.db.lrange(`u:${modId}:modActions`, start, start + count) || [];
+	static async getModReports(userId: number, start = 0, count = 10): Promise<ModEvent[]> {
+		const ids = await RedisDB.db.lrange(`u:${userId}:reports`, start, start + count) || [];
+		return Mod.getModEventsByIds(ids);
+	}
+	
+	static async getModActions(modId: number, start = 0, count = 10): Promise<ModEvent[]> {
+		const ids = await RedisDB.db.lrange(`u:${modId}:modActions`, start, start + count) || [];
+		return Mod.getModEventsByIds(ids);
 	}
 	
 	static async createModEvent(modId: number, userId: number, type: ModEventType, reason: string, warning: ModWarningType = 0): Promise<boolean> {
@@ -109,12 +130,12 @@ export abstract class Mod {
 		
 		// Generate the Mod Event
 		const event: ModEvent = {
-			userId: userId,
 			modId: modId,
+			userId: userId,
 			type: type,
-			reason: reason,
 			warning: warning,
 			time: Math.floor(Date.now() / 1000),
+			reason: reason,
 		}
 		
 		// Record the mod globally, and attach it to the user and mod related to the event.
@@ -139,6 +160,19 @@ export abstract class Mod {
 		const reason = Sanitize.sentence(event.reason.replace(":", ""));
 		await RedisDB.db.set(`modEvents:${eventCount}`, `${event.modId}:${event.userId}:${event.type}:${event.warning}:${event.time}:${reason}`);
 		return eventCount;
+	}
+	
+	static parseModEventString(eventStr: string): ModEvent {
+		const split = eventStr.split(":");
+		
+		return {
+			modId: Number(split[0]) || 0,
+			userId: Number(split[1]) || 0,
+			type: (Number(split[2]) || 0) as ModEventType,
+			warning: (Number(split[3]) || 0) as ModWarningType,
+			time: Number(split[4]) || 0,
+			reason: split[5],
+		};
 	}
 	
 	// Returns a simple summary about what a mod event did.

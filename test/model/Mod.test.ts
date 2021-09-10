@@ -30,6 +30,14 @@ Deno.test("Verify Mod Summaries.", () => {
 	assert(sum3 === "TheMod warned BadGuy for inappropriate behavior.", `Mod Summary (Apply Warning) is reporting incorrectly.`);
 });
 
+Deno.test("Parse Mod Event String.", () => {
+	const parse1 = Mod.parseModEventString("2:3:6:8:1631240337:Zoopy Boop");
+	const parse2 = Mod.parseModEventString("2:3:1:2:1631240337:Ziggle Zam");
+	
+	assert(parse1.reason === "Zoopy Boop" && parse1.modId === 2 && parse1.type === ModEventType.Mute, "Mod.parseModEventString() is parsing incorrectly.");
+	assert(parse2.userId === 3 && parse2.time === 1631240337 && parse2.warning === ModWarningType.ExcessNegativity, "Mod.parseModEventString() is parsing incorrectly.");
+});
+
 Deno.test("Get Mod Events.", async () => {
 	if(config.prod) { return; } // Don't test this on production.
 	
@@ -38,11 +46,10 @@ Deno.test("Get Mod Events.", async () => {
 	const modEvents = await Mod.getModEventHistory();
 	
 	// If these lines are failing, make sure that LocalServer created the Mod Reports between TheMod and AnnoyingGuest
-	assert(modReports[0] === "2", `Mod.getModReports(userId) did not return correct result.`);
-	assert(modReports[1] === "1", `Mod.getModReports(userId) did not return correct result.`);
-	assert(modActions[0] === "2", `Mod.getModActions(modId) did not return correct result.`);
-	assert(modActions[1] === "1", `Mod.getModActions(modId) did not return correct result.`);
-	assert(modEvents[0].startsWith("2:3:6:8:"), `Mod Event global history is not reporting correctly.`);
-	assert(modEvents[1].startsWith("2:3:1:2:"), `Mod Event global history is not reporting correctly.`);
+	assert(modReports[0].userId === 3, `Mod.getModReports(userId) did not return correct result.`);
+	assert(modReports[1].type === ModEventType.Report, `Mod.getModReports(userId) did not return correct result.`);
+	assert(modActions[0].modId === 2, `Mod.getModActions(modId) did not return correct result.`);
+	assert(modActions[1].reason === "User was annoying me.", `Mod.getModActions(modId) did not return correct result.`);
+	assert(modEvents[0].type === ModEventType.Mute, `Mod Event global history is not reporting correctly.`);
+	assert(modEvents[1].warning === ModWarningType.ExcessNegativity, `Mod Event global history is not reporting correctly.`);
 });
-
