@@ -11,15 +11,17 @@ import Validate from "../core/Validate.ts";
 	u:{id}:time = timeSpentOnSite
 	u:{id}:profile = profileData					// First Name, Last Name, Country, State/Province, Postal Code, DOB, Email, Website, etc.
 	u:{id}:token = tokenHash						// The current token. If a cookie uses this token for the user, it can log in.
+	u:{id}:ip = ipAddress
 	
 	// Mod Actions (see "Mod.ts")
 	u:{id}:modActions = LIST[modEventId,...]		// Redis List (LPUSH) that tracks any mod actions.
 	u:{id}:reports = LIST[modEventId,...]			// Redis List (LPUSH) that tracks any mod reports the user was targeted by.
 	
 	// Permissions
-	// Note: Bans & Mutes are global. No community-specific bans or mutes.
 	u:{id}:role = UserRole							// The global role of the user (user, mod, staff, dev, admin, superuser, etc)
-	u:{id}:roleLock = duration						// Timestamp until which this user's role is LOCKED (mute, ban, etc). 0 if user was never role-locked.
+	
+	// Note: Bans & Mutes are global. There are no community-specific bans or mutes.
+	u:{id}:muted = duration							// Timestamp until which this user's role is LOCKED (mute, ban, etc). 0 if user was never role-locked.
 	
 	// Subscriptions
 	u:{id}:subsComm = Set							// List of communities the user is subscribed to.
@@ -39,8 +41,6 @@ import Validate from "../core/Validate.ts";
 	r:{id} = [friendId, friendId]						// List of relationships (often friends) the user has with other users.
 	r:{id}:{id} = relationshipEnum						// The "Relationship" table. First {id} is user, second {id} is related user.
 	
-	u:{id}:ip = ipAddress								// Not sure how I want to handle IP's yet. Maybe in a fingerprint/cookie object.
-	
 	// Cookie: ${id}.${token}
 	id - the id of the user
 	token - some random token, saved into user table
@@ -51,9 +51,8 @@ import Validate from "../core/Validate.ts";
 
 export const enum UserRole {
 	Banned = -5,
-	DistrustHigh = -4,
-	DistrustMid = -3,
-	Muted = -2,
+	DistrustHigh = -3,
+	DistrustMid = -2,
 	DistrustLow = -1,
 	Guest = 0,
 	UserLimited = 1,
@@ -64,6 +63,7 @@ export const enum UserRole {
 	Verified = 10,
 	VIP = 12,
 	Mod = 14,
+	SuperMod = 15,
 	Staff = 16,
 	Admin = 18,
 	Superuser = 20,
@@ -257,7 +257,6 @@ export abstract class User {
 		if(minutes < 30) { return false; }
 		const endDate = Date.now() + (minutes * 1000 * 60);
 		await RedisDB.db.set(`u:${id}:muted`, `${endDate}`);
-		await User.setRole(id, UserRole.Muted);
 		return true;
 	}
 	
@@ -268,6 +267,11 @@ export abstract class User {
 		const mutedTime = Number(await RedisDB.db.get(`u:${id}:muted`)) || 0;
 		if(mutedTime > Date.now()) { return false; }
 		
+	}
+	
+	// Being "Banned" is just being muted. That way, we can review their existing role and mod events without disrupting it.
+	static async setBanned(id: number) {
+		return await User.setMuted(id, 60 * 24 * 365 * 100);
 	}
 	
 	// ----- Validation for User Creation ----- //

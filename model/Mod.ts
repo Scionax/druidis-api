@@ -20,7 +20,7 @@ import { User, UserRole } from "./User.ts";
 
 export const enum ModEventType {
 	Report = 1,						// Track the event for context.
-	ApplyWarning = 3,				// Creates an official warning for the user.
+	Warning = 3,					// Creates an official warning for the user.
 	Quiet = 5,						// Reduces someone's posting allowance or communication status. (Not yet implemented)
 	Mute = 6,						// Silences someone, preventing their posting.
 	TemporaryBan = 8,				// Temporarily bans.
@@ -58,12 +58,12 @@ export abstract class Mod {
 		
 		switch(type) {
 			case ModEventType.Report: return true;
-			case ModEventType.ApplyWarning: return true;
+			case ModEventType.Warning: return true;
 			case ModEventType.Quiet: return true;
 			case ModEventType.Mute: return true;
 		}
 		
-		return role >= UserRole.Staff;
+		return role >= UserRole.SuperMod;
 	}
 	
 	// ----- Mod Events ----- //
@@ -157,13 +157,13 @@ export abstract class Mod {
 	
 	static async addModEventToHistory(event: ModEvent): Promise<number> {
 		const eventCount = await RedisDB.incrementCounter("modEvents");
-		const reason = Sanitize.sentence(event.reason.replace(":", ""));
-		await RedisDB.db.set(`modEvents:${eventCount}`, `${event.modId}:${event.userId}:${event.type}:${event.warning}:${event.time}:${reason}`);
+		const reason = Sanitize.sentence(event.reason.replace("~", "-"));
+		await RedisDB.db.set(`modEvents:${eventCount}`, `${event.modId}~${event.userId}~${event.type}~${event.warning}~${event.time}~${reason}`);
 		return eventCount;
 	}
 	
 	static parseModEventString(eventStr: string): ModEvent {
-		const split = eventStr.split(":");
+		const split = eventStr.split("~");
 		
 		return {
 			modId: Number(split[0]) || 0,
@@ -182,7 +182,7 @@ export abstract class Mod {
 		
 		switch(type) {
 			case ModEventType.Report: message += "reported"; break;
-			case ModEventType.ApplyWarning: message += "warned"; break;
+			case ModEventType.Warning: message += "warned"; break;
 			case ModEventType.Quiet: message += "quieted"; break;
 			case ModEventType.Mute: message += "muted"; break;
 			case ModEventType.TemporaryBan: message += "temporarily banned"; break;
