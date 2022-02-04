@@ -1,4 +1,3 @@
-import { config } from "../config.ts";
 import Conn from "../core/Conn.ts";
 import ImageMod from "../core/ImageMod.ts";
 import ObjectStorage from "../core/ObjectStorage.ts";
@@ -152,7 +151,7 @@ export default class PostController extends WebController {
 		// Save Image to Object Storage
 		try {
 			const fileContents = await Deno.readFile(fullImagePath);
-			ObjectStorage.putObject(config.objectStore.bucket, `${imageDir}/${imagePath}`, fileContents, "image/webp");
+			ObjectStorage.save(imageDir, imagePath, fileContents, "image/webp");
 		} catch(e) {
 			return await conn.sendFail(`Error on image transfer: ${(e as Error).message}`);
 		}

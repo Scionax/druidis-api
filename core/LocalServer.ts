@@ -11,7 +11,8 @@ export default abstract class LocalServer {
 	static async initialize() {
 		
 		// Only initialize this data on Windows
-		if(Deno.build.os !== "windows") { return; } // NOTE: DO NOT REMOVE THIS LINE. It protects us from accidental database flush.
+		// NOTE: DO NOT REMOVE THIS BLOCK. It protects us from accidental database flush.
+		if(Deno.build.os !== "windows") { return; }
 		
 		// Flush the Database
 		// Double check config settings, and make sure we're only flushing windows data.

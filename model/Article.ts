@@ -94,7 +94,7 @@ export class Article {
 	}
 	
 	publish() {
-		ObjectStorage.putObject("druidis-cdn", `articles/${this.slug}.html`, this.html(), "text/html");
+		ObjectStorage.save("articles/", `${this.slug}.html`, this.html(), "text/html");
 	}
 	
 	// Output the article as HTML.

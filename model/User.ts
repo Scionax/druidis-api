@@ -71,12 +71,12 @@ type UserProfile = {
 	website?: string;				// Personal website of the user.
 }
 
+// Important User Constants
+const MIN_USERNAME_LENGTH = 6;
+const MAX_USERNAME_LENGTH = 16;
+const MIN_PASSWORD_LENGTH = 8;
+
 export abstract class User {
-	
-	// Static Trackers
-	private static _userMin = 6;
-	private static _userMax = 16;
-	private static _passMin = 8;
 	
 	// ----- Retrieve User Data ----- //
 	
@@ -324,8 +324,8 @@ export abstract class User {
 	
 	static async verifyUsername(username: string) {
 		if(!username || typeof username !== "string" || username.length === 0) { return "Must provide a valid username."; }
-		if(username.length < User._userMin) { return `Username must have at least ${User._userMin} characters.`; }
-		if(username.length > User._userMax) { return `Username cannot exceed ${User._userMax} characters.`; }
+		if(username.length < MIN_USERNAME_LENGTH) { return `Username must have at least ${MIN_USERNAME_LENGTH} characters.`; }
+		if(username.length > MAX_USERNAME_LENGTH) { return `Username cannot exceed ${MAX_USERNAME_LENGTH} characters.`; }
 		if(!Validate.isSafeWord(username)) { return `Username may only contain letters, numbers, and underscores.`; }
 		if(await User.usernameExists(username)) { return `Username is already taken.`; }
 		return "";
@@ -333,7 +333,7 @@ export abstract class User {
 	
 	static verifyPassword(password: string) {
 		if(!password || typeof password !== "string" || password.length === 0) { return "Must provide a valid password."; }
-		if(password.length < User._userMin) { return `Password must have at least ${User._passMin} characters.`; }
+		if(password.length < MIN_PASSWORD_LENGTH) { return `Password must have at least ${MIN_PASSWORD_LENGTH} characters.`; }
 		return "";
 	}
 	

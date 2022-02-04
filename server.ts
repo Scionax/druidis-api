@@ -1,8 +1,8 @@
 #!/usr/bin/env deno
 
-// deno run --allow-net --allow-write --allow-read --allow-run --allow-env --unstable server.ts
-// deno run --allow-net --allow-write --allow-read --allow-run --allow-env --unstable server.ts -port 8000 -specialOpts needToSetup
-// deno test --allow-net --allow-write --allow-read --allow-run --allow-env --unstable
+// deno run --unstable --allow-net --allow-write --allow-read --allow-run --allow-env server.ts
+// deno run --unstable --allow-net --allow-write --allow-read --allow-run --allow-env server.ts -port 8000 -specialOpts needToSetup
+// deno test --unstable --allow-net --allow-write --allow-read --allow-run --allow-env
 
 import { log } from "./deps.ts";
 import { config } from "./config.ts";
@@ -12,7 +12,6 @@ import ImageMod from "./core/ImageMod.ts";
 import PostController from "./controller/PostController.ts";
 import DataController from "./controller/DataController.ts";
 import Conn from "./core/Conn.ts";
-import ObjectStorage from "./core/ObjectStorage.ts";
 import LocalServer from "./core/LocalServer.ts";
 import ForumController from "./controller/ForumController.ts";
 import Playground from "./playground.ts";
@@ -21,6 +20,8 @@ import { Feed } from "./model/Feed.ts";
 import FeedController from "./controller/FeedController.ts";
 import ServerMechanics from "./core/ServerMechanics.ts";
 import RedisDB from "./core/RedisDB.ts";
+import AdminController from "./controller/AdminController.ts";
+import ObjectStorage from "./core/ObjectStorage.ts";
 
 // Handle Setup Arguments
 // for( let i = 0; i < Deno.args.length; i++ ) {
@@ -38,12 +39,13 @@ const RouteMap: { [name: string]: WebController } = {
 	"feed": new FeedController(),
 	"forum": new ForumController(),
 	"user": new UserController(),
+	"admin": new AdminController(),
 };
 
 // Initializations
 Forum.initialize();
 ImageMod.initialize();
-ObjectStorage.connectToS3();		// Connect to AWS
+ObjectStorage.setup();		// Connect to CDN
 
 // Run Initialization for Exclusively Local Server
 if(config.local) {
@@ -85,7 +87,7 @@ async function handle(conn: Deno.Conn) {
 }
 
 // Handle Termination Signals
-ServerMechanics.handleSignals();
+// ServerMechanics.handleSignals();
 
 // Launch Periodic Runner
 // This will asynchronously run periodic / scheduled updates: rebuilding feeds, purging old data, etc.

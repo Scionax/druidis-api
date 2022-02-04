@@ -58,7 +58,7 @@ export enum FeedList {
 		Uplifting, Feel Good Story
 */
 
-const RebuildFeedCycle = 1000 * 60 * 60 * 5;		// Duration before a feed gets rebuilt.
+const RebuildFeedCycle = 1000 * 60 * 60 * 3.5;		// Duration before a feed gets rebuilt.
 
 export class Feed {
 	
@@ -79,13 +79,13 @@ export class Feed {
 	static schema: { [feed: string]: { [forum: string]: { weight: number } } } = {
 		"Entertainment": {
 			"Shows": { weight: 20 },			// Highest scored because everyone watches shows.
-			"Movies": { weight: 10 },			// Everyone watches movies, but also similar to Shows.
-			"People": { weight: 18 },			// A popular subject. Some won't care. Same with Sports / Gaming.
-			"Sports": { weight: 18 },			// Lots of sports fans. Some won't care. Same with People / Gaming.
+			"Movies": { weight: 12 },			// Everyone watches movies, but also similar to Shows.
+			"People": { weight: 13 },			// A popular subject. Some won't care. Same with Sports / Gaming.
+			"Sports": { weight: 13 },			// Lots of sports fans. Some won't care. Same with People / Gaming.
 			"Gaming": { weight: 18 },			// Lots of gaming enthusiasts. Some won't care. Same with People / Sports.
-			"Virtual Reality": { weight: 5 },
-			"Tabletop Games": { weight: 5 },
-			"Music": { weight: 4 },
+			"Virtual Reality": { weight: 9 },
+			"Tabletop Games": { weight: 7 },
+			"Music": { weight: 6 },
 			"Books": { weight: 2 },
 		},
 		"News": {
@@ -104,20 +104,20 @@ export class Feed {
 			"History": { weight: 10 },
 		},
 		"Lifestyle": {
-			"Fashion": { weight: 20 },
+			"Fashion": { weight: 14 },
 			"Food": { weight: 16 },
 			"Health": { weight: 16 },
-			"Fitness": { weight: 12 },
-			"Social Life": { weight: 10 },
+			"Fitness": { weight: 14 },
+			"Social Life": { weight: 12 },
 			"Relationships": { weight: 10 },
-			"Recipes": { weight: 8 },
+			"Recipes": { weight: 10 },
 			"Travel": { weight: 8 },
 		},
 		"Fun": {
 			"Funny": { weight: 45 },
 			"Ask": { weight: 15 },
-			"Cute": { weight: 15 },
-			"Forum Games": { weight: 15 },
+			"Cute": { weight: 20 },
+			"Forum Games": { weight: 10 },
 			"Cosplay": { weight: 10 },
 		},
 		"Creative": {
@@ -131,12 +131,12 @@ export class Feed {
 			// Entertainment - 20%
 			"Shows": { weight: 4 },				// Highest scored because everyone watches shows.
 			"Movies": { weight: 2 },			// Everyone watches movies, but also similar to Shows.
-			"People": { weight: 3 },			// A popular subject. Some won't care. Same with Sports / Gaming.
-			"Sports": { weight: 3 },			// Lots of sports fans. Some won't care. Same with People / Gaming.
+			"People": { weight: 2 },			// A popular subject. Some won't care. Same with Sports / Gaming.
+			"Sports": { weight: 2 },			// Lots of sports fans. Some won't care. Same with People / Gaming.
 			"Gaming": { weight: 3 },			// Lots of gaming enthusiasts. Some won't care. Same with People / Sports.
-			"Virtual Reality": { weight: 1 },
+			"Virtual Reality": { weight: 2 },
 			"Tabletop Games": { weight: 2 },
-			"Music": { weight: 1 },
+			"Music": { weight: 2 },
 			"Books": { weight: 1 },
 			
 			// News - 17%
