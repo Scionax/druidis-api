@@ -20,14 +20,14 @@ Deno.test("Check if mods can perform given actions.", () => {
 Deno.test("Verify Mod Summaries.", () => {
 	if(config.prod) { return; } // Don't test this on production.
 	
-	const sum1 = Mod.summarizeModEvent("TheMod", "BadGuy", ModEventType.Report, ModWarningType.Incite);
-	assert(sum1 === "TheMod reported BadGuy for inciting hostility.", `Mod Summary (Report) is reporting incorrectly.`);
+	const sum1 = Mod.summarizeModEvent("TheMod", "AnnoyingGuest", ModEventType.Report, ModWarningType.Incite);
+	assert(sum1 === "TheMod reported AnnoyingGuest for inciting hostility.", `Mod Summary (Report) is reporting incorrectly.`);
 	
-	const sum2 = Mod.summarizeModEvent("TheMod", "BadGuy", ModEventType.Mute, ModWarningType.Misinformation);
-	assert(sum2 === "TheMod muted BadGuy for spreading misinformation.", `Mod Summary (Mute) is reporting incorrectly.`);
+	const sum2 = Mod.summarizeModEvent("TheMod", "AnnoyingGuest", ModEventType.Mute, ModWarningType.Misinformation);
+	assert(sum2 === "TheMod muted AnnoyingGuest for spreading misinformation.", `Mod Summary (Mute) is reporting incorrectly.`);
 	
-	const sum3 = Mod.summarizeModEvent("TheMod", "BadGuy", ModEventType.Warning, ModWarningType.Inappropriate);
-	assert(sum3 === "TheMod warned BadGuy for inappropriate behavior.", `Mod Summary (Apply Warning) is reporting incorrectly.`);
+	const sum3 = Mod.summarizeModEvent("TheMod", "AnnoyingGuest", ModEventType.Warning, ModWarningType.Inappropriate);
+	assert(sum3 === "TheMod warned AnnoyingGuest for inappropriate behavior.", `Mod Summary (Apply Warning) is reporting incorrectly.`);
 });
 
 Deno.test("Parse Mod Event String.", () => {

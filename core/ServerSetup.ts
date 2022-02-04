@@ -6,79 +6,100 @@ import { User, UserRole } from "../model/User.ts";
 import ImageMod from "./ImageMod.ts";
 import RedisDB from "./RedisDB.ts";
 
-export default abstract class LocalServer {
+export default abstract class ServerSetup {
 	
 	static async initialize() {
 		
-		// Only initialize this data on Windows
-		// NOTE: DO NOT REMOVE THIS BLOCK. It protects us from accidental database flush.
-		if(Deno.build.os !== "windows") { return; }
-		
-		// Flush the Database
-		// Double check config settings, and make sure we're only flushing windows data.
-		if(config.local === true && config.prod === false) {
-			await RedisDB.db.flushdb();
+		// Local Test Data
+		if(config.local === true && config.prod === false && Deno.build.os === "windows") {
+			await ServerSetup.initializeLocalTestData();
 		}
-		
-		// Produce Local Content
-		await LocalServer.postSimple("Gaming", 1);
-		await LocalServer.postSimple("Gaming", 2);
-		await LocalServer.postSimple("Gaming", 3);
-		await LocalServer.postSimple("Gaming", 4);
-		await LocalServer.postSimple("Gaming", 5);
-		await LocalServer.postSimple("Gaming", 6);
-		await LocalServer.postSimple("Gaming", 7);
-		await LocalServer.postSimple("Gaming", 8);
-		await LocalServer.postSimple("Gaming", 9);
-		await LocalServer.postSimple("Gaming", 10);
-		await LocalServer.postSimple("Gaming", 11);
-		await LocalServer.postSimple("Gaming", 12);
-		await LocalServer.postSimple("Gaming", 13);
-		await LocalServer.postSimple("Gaming", 14);
-		await LocalServer.postSimple("Gaming", 15);
-		await LocalServer.postSimple("Gaming", 16);
-		await LocalServer.postSimple("Gaming", 17);
-		await LocalServer.postSimple("Gaming", 18);
-		await LocalServer.postSimple("Gaming", 19);
-		await LocalServer.postSimple("Gaming", 20);
-		await LocalServer.postSimple("Gaming", 21);
-		await LocalServer.postSimple("Gaming", 22);
-		await LocalServer.postSimple("Gaming", 23);
-		await LocalServer.postSimple("Gaming", 24);
-		await LocalServer.postSimple("Gaming", 25);
-		await LocalServer.postSimple("Gaming", 26);
-		await LocalServer.postSimple("Gaming", 27);
-		await LocalServer.postSimple("Gaming", 28);
-		await LocalServer.postSimple("Gaming", 29);
-		await LocalServer.postSimple("Gaming", 30);
-		
-		log.info("Created Local Gaming Post Placeholders.");
-		
-		// Add Users
-		const id1 = await User.createUser("Druidis", "password", "info@druidis.org", {});
-		const id2 = await User.createUser("TheMod", "password", "themod@druidis.org", {});
-		const id3 = await User.createUser("AnnoyingGuest", "password", "annoying@example.com", {});
-		
-		if(!id1 || !id2 || !id3) { log.error("Error when creating users."); } else { log.info("Created Users."); }
-		
-		// Assign Roles
-		await User.setRole(id1, UserRole.Superuser);
-		await User.setRole(id2, UserRole.Mod);
-		
-		// Add Some Mod Reports
-		await Mod.createModEvent(id2, id3, ModEventType.Report, "User was annoying me.", ModWarningType.ExcessNegativity);
-		await Mod.createModEvent(id2, id3, ModEventType.Mute, "User said something demonstrably untrue.", ModWarningType.Misinformation);
 	}
 	
-	static async postSimple(forum: string, id: number, status = PostStatus.Visible) {
+	private static async initializeLocalTestData() {
+		
+		// Double check config settings. Ensures we're only flushing windows data.
+		if(config.local === false || config.prod === true || Deno.build.os !== "windows") {
+			return;
+		}
+		
+		// Flush the Database
+		await RedisDB.db.flushdb();
+		
+		// Initialize Local Test Data
+		await ServerSetup.initializeTestUsers();
+		await ServerSetup.initalizeTestReports();
+		
+		// Create Test Forum Posts in "Gaming"
+		for(let i = 1; i <= 15; i++) {
+			await ServerSetup.postSimple("Gaming", i);
+			await ServerSetup.postSimple("Movies", i);
+			await ServerSetup.postSimple("Music", i);
+		}
+		
+		log.info("Created Local Gaming Post Placeholders.");
+	}
+	
+	static async initializeTestUsers() {
+		await ServerSetup.initializeUser("Druidis", "password", "info@druidis.org", UserRole.Superuser);
+		await ServerSetup.initializeUser("TheMod", "password", "themod@druidis.org", UserRole.Mod);
+		await ServerSetup.initializeUser("AnnoyingGuest", "password", "annoying@example.com");
+		await ServerSetup.initializeUser("TrustedUser", "password", "trusted@example.com");
+	}
+	
+	static async initalizeTestReports() {
+		
+		const modId = await User.getId("TheMod");
+		const userId = await User.getId("AnnoyingGuest");
+		
+		if(!modId || !userId) {
+			log.error(`Cannot create Mod Reports. The user "TheMod" or "AnnoyingGuest" does not exist.`);
+			return;
+		}
+		
+		// Add Some Mod Reports
+		await Mod.createModEvent(modId, userId, ModEventType.Report, "User was annoying me.", ModWarningType.ExcessNegativity);
+		await Mod.createModEvent(modId, userId, ModEventType.Mute, "User said something demonstrably untrue.", ModWarningType.Misinformation);
+		
+		log.info(`Created Mod Reports for user 'AnnoyingGuest'.`);
+	}
+	
+	private static async initializeUser(username: string, password: string, email: string, role: UserRole = UserRole.Guest) {
+		
+		// Check if the user already exists:
+		const alreadyExists = await User.usernameExists(username);
+		
+		if(alreadyExists) {
+			log.info(`User '${username}' already exists.`);
+			return;
+		}
+		
+		// Create the user
+		const id = await User.createUser(username, password, email, {});
+		
+		if(!id) {
+			log.error(`Failed to create user '${username}'.`);
+			return;
+		}
+		
+		log.info(`Created user '${username}'.`);
+		
+		// Assign Role
+		await User.setRole(id, role);
+	}
+	
+	private static async postSimple(forum: string, id: number, status = PostStatus.Visible) {
+		
+		// Get a fake author ID
+		const authorId = await User.getId("Druidis");
 		
 		// Convert Raw Data to ForumPost
 		const post = await ForumPost.buildMediaPost(
 			forum,
 			"http://example.com", // url
-			0, // authorId
-			LocalServer.randomTitle(), // title
-			LocalServer.randomContent(), // content
+			authorId, // authorId
+			ServerSetup.randomTitle(), // title
+			ServerSetup.randomContent(), // content
 			ImageMod.baseImageWidth, // w
 			ImageMod.baseImageHeight, // h
 			status,
@@ -89,7 +110,7 @@ export default abstract class LocalServer {
 		if(typeof post === "string") { log.error(`Error on postSimple(${forum}, ${id}): ${post}`); return; }
 		
 		// Need to provide image updates for local behavior:
-		const {imgPath, width, height} = LocalServer.randomImage();
+		const {imgPath, width, height} = ServerSetup.randomImage();
 		post.setImage(imgPath, width, height);
 		
 		post.applyTrackedValues(
@@ -105,7 +126,7 @@ export default abstract class LocalServer {
 		await post.saveToRedis(TableType.Post);
 	}
 	
-	static randomImage() {
+	private static randomImage() {
 		let imgPath, height;
 		const width = 600;
 		const rnd = Math.floor(Math.random() * 5);
@@ -121,7 +142,7 @@ export default abstract class LocalServer {
 		return {imgPath, width, height};
 	}
 	
-	static randomTitle() {
+	private static randomTitle() {
 		const rnd = Math.ceil(Math.random() * 10);
 		switch(rnd) {
 			case 1: return "This title is pretty cool.";
@@ -139,7 +160,7 @@ export default abstract class LocalServer {
 		return "In theory, this headline should not appear. But if it does, that's fine."
 	}
 	
-	static randomContent() {
+	private static randomContent() {
 		const rnd = Math.ceil(Math.random() * 10);
 		switch(rnd) {
 			case 1: return "Okay, so one day I was talking to this dog, and he was like 'WOOF'. And I was like 'OMG, a talking dog!'.";

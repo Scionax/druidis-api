@@ -357,7 +357,7 @@ export abstract class User {
 	}
 	
 	static verifyEmail(email: string) {
-		if(!email || typeof email !== "string" || email.length === 0) { return "Must provide a valid password."; }
+		if(!email || typeof email !== "string" || email.length === 0) { return "Must provide a valid email."; }
 		if(!Validate.isEmailFormatted(email)) { return "Email is not in the correct format."; }
 		return "";
 	}

@@ -12,7 +12,7 @@ import ImageMod from "./core/ImageMod.ts";
 import PostController from "./controller/PostController.ts";
 import DataController from "./controller/DataController.ts";
 import Conn from "./core/Conn.ts";
-import LocalServer from "./core/LocalServer.ts";
+import ServerSetup from "./core/ServerSetup.ts";
 import ForumController from "./controller/ForumController.ts";
 import Playground from "./playground.ts";
 import UserController from "./controller/UserController.ts";
@@ -49,7 +49,7 @@ ObjectStorage.setup();		// Connect to CDN
 
 // Run Initialization for Exclusively Local Server
 if(config.local) {
-	LocalServer.initialize().then(() => {
+	ServerSetup.initialize().then(() => {
 		Feed.initialize(); // Needs LocalServer.initialize() to have Posts available.
 	});
 }
