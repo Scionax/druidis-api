@@ -2,7 +2,7 @@ import { Forum } from "./Forum.ts";
 import { UserRole } from "./User.ts";
 
 /*
-	Only Druidis can create communities. Must have an official moderator in charge of it. They also act as a partial curator.
+	Only Druidis can create communities.
 	
 	Some Communities are very broad, like Game Development, Creative Writing, etc.
 	Other communities are much more narrow, like RWBY and Genshin Impact.

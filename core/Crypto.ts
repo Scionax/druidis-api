@@ -1,19 +1,30 @@
 import { createHash } from "../deps.ts";
+import { crypto } from "https://deno.land/std@0.125.0/crypto/mod.ts";
+import { encode } from "https://deno.land/std@0.125.0/encoding/base64.ts";
 
 export default abstract class Crypto {
 	
-	static safeHash(pass: string, length = 32): string {
-		return createHash("sha3-512").update(pass).toString("base64").substring(0, length);
+	// SHA3-512
+	static async safeHash(pass: string, length = 32) {
+		
+		const hashArray = new Uint8Array(
+			await crypto.subtle.digest("SHA3-512", new TextEncoder().encode(pass)),
+		)
+		
+		return encode(hashArray).substring(0, length);
 	}
 	
-	static simpleHash(pass: string, length = 4): string {
-		let hash = createHash("md5").update(pass).toString("base64").substring(2, length + 2);
-		hash = hash.replace('/', "L");
-		hash = hash.replace("+", "X");
-		return hash;
+	// Simple Hash (MD5), Tiny
+	static async simpleHash(pass: string, length = 4) {
+		
+		const hashArray = new Uint8Array(
+			await crypto.subtle.digest("MD5", new TextEncoder().encode(pass)),
+		)
+		
+		return encode(hashArray).substring(2, length + 2);
 	}
 	
-	private static convertToReadableHash( hash: string ): string {
+	public static convertToReadableHash( hash: string ): string {
 		
 		// Removes anything that isn't base64 (except for underscores) and upper-cases it.
 		let desired = hash.replace(/[^\w\\\+]/gi, '').toUpperCase();
@@ -69,4 +80,15 @@ export default abstract class Crypto {
 	// 	const exportedAsBase64 = encode64(exportedKey);
 	// 	return `-----BEGIN PRIVATE KEY-----\n${exportedAsBase64}\n-----END PRIVATE KEY-----`;
 	// }
+	
+	static safeHashDeprecated(pass: string, length = 32): string {
+		return createHash("sha3-512").update(pass).toString("base64").substring(0, length);
+	}
+	
+	static simpleHashDeprecated(pass: string, length = 4): string {
+		let hash = createHash("md5").update(pass).toString("base64").substring(2, length + 2);
+		hash = hash.replace('/', "L");
+		hash = hash.replace("+", "X");
+		return hash;
+	}
 }

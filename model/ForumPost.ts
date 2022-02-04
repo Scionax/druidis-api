@@ -4,6 +4,7 @@ import RedisDB from "../core/RedisDB.ts";
 import Validate from "../core/Validate.ts";
 import { ensureDir } from "../deps.ts";
 import { Forum } from "./Forum.ts";
+import { User } from "./User.ts";
 
 export const enum TableType {
 	Home = "home",
@@ -76,7 +77,7 @@ export class ForumPost {
 		this.status = status;
 	}
 	
-	public static validatePostData(
+	public static async validatePostData(
 		forum: string,
 		url: string,
 		authorId: number,
@@ -90,8 +91,9 @@ export class ForumPost {
 		if(typeof forum !== "string" || !forum) { return "Must include a `forum` entry." }
 		if(typeof url !== "string" || !url) { return "Must include a `url` entry." }
 		
-		// Validate authorId is not invalid.
-		if(authorId < 0) { return "Invalid `authorId` entry."}
+		// Make sure the author exists.
+		const userExists = await User.idExists(authorId);
+		if(userExists !== true) { return "Invalid `authorId`."}
 		
 		// Must have one or more of the following: (1) Media, (2) Title, (3) Content, or (4) Comment
 		if(hasMedia === false && title.length > 0 && content.length === 0) {
@@ -107,7 +109,10 @@ export class ForumPost {
 		
 		// Confirm that forum is valid:
 		if(!forum.match(/^[a-z0-9 ]+$/i)) { return "`forum` is not valid." }
-		if(!Forum.schema[forum]) { return "`forum` does not exist." }
+		
+		const forumSchema = Forum.schema[forum];
+		
+		if(!forumSchema) { return "`forum` does not exist." }
 		
 		// URL Requirements
 		if(url) {
@@ -118,9 +123,12 @@ export class ForumPost {
 			}
 		}
 		
-		// TODO: Make sure the author exists.
+		// Verify author's permissions.
+		const role = await User.getRole(authorId);
 		
-		// TODO: Verify user permissions.
+		if(!forumSchema.canPost(role)) {
+			return `User does not have permission to post on this forum.`;
+		}
 		
 		// TODO: Affect status based on permissions.
 		if(status > PostStatus.Visible) { return "`status` cannot start above visible state." }
@@ -139,7 +147,7 @@ export class ForumPost {
 	): Promise<ForumPost | string> {
 		
 		// Validate Generic Post Data
-		const msg = ForumPost.validatePostData(forum, url, authorId, title, content, status);
+		const msg = await ForumPost.validatePostData(forum, url, authorId, title, content, status);
 		if(msg.length > 0) { return msg; }
 		
 		// Make sure the forum exists:
@@ -167,7 +175,7 @@ export class ForumPost {
 	): Promise<ForumPost | string> {
 		
 		// Validate Generic Post Data
-		const msg = ForumPost.validatePostData(forum, url, authorId, title, content, status, true);
+		const msg = await ForumPost.validatePostData(forum, url, authorId, title, content, status, true);
 		if(msg.length > 0) { return msg; }
 		
 		// Validate Width & Height
@@ -361,7 +369,7 @@ export class ForumPost {
 			// See https://github.com/denodrivers/redis for full details
 		// TODO: Only add indexes if the transaction succeeds.
 		
-		// TODO: hmset is deprecated, but hset (the designated alternative) won't function locally (probably due to Windows Redis)
+		// TODO: hmset is deprecated, but hset requires >= version 4.00 (probably not available on Windows Redis)
 		await RedisDB.db.hmset(`${tableType}:${this.forum}:${this.id}`,
 			
 			// Fixed Content

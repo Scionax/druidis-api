@@ -123,7 +123,7 @@ export abstract class User {
 	}
 	
 	static async setPassword(id: number, password: string): Promise<string> {
-		const passHash = Crypto.safeHash(password);
+		const passHash = await Crypto.safeHash(password);
 		return await RedisDB.db.set(`u:${id}:pass`, passHash);
 	}
 	
@@ -141,7 +141,7 @@ export abstract class User {
 	
 	static async isCorrectPassword(userId: number, password: string): Promise<boolean> {
 		const hash = await User.getPassword(userId);
-		return hash === Crypto.safeHash(password);
+		return hash === await Crypto.safeHash(password);
 	}
 	
 	// ----- Time Updatees ----- //
@@ -196,7 +196,7 @@ export abstract class User {
 	}
 	
 	private static async updateToken(id: number): Promise<string> {
-		const token = Crypto.safeHash(Math.random().toString(16), 20);
+		const token = await Crypto.safeHash(Math.random().toString(16), 20);
 		await RedisDB.db.set(`u:${id}:token`, token);
 		return token;
 	}

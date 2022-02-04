@@ -129,15 +129,22 @@ export class Forum {
 		return this;
 	}
 	
+	private setDescription(desc: string) { this.desc = desc; }
+	
+	private addRule(rule: string) {
+		this.rules.push(rule);
+	}
+	
+	// ----- Permissions ----- //
+	
+	public canView(role: UserRole) { return this.permissions.view <= role; }
+	public canPost(role: UserRole) { return this.permissions.post <= role; }
+	public canComment(role: UserRole) { return this.permissions.comment <= role; }
+	
 	private setPermissions(view: UserRole, post: UserRole, comment: UserRole) {
 		this.permissions.view = view;
 		this.permissions.post = post;
 		this.permissions.comment = comment;
 	}
 	
-	private setDescription(desc: string) { this.desc = desc; }
-	
-	private addRule(rule: string) {
-		this.rules.push(rule);
-	}
 }
