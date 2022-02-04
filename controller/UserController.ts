@@ -59,7 +59,7 @@ export default class UserController extends WebController {
 		
 		// Attemept to validate the login:
 		const passHash = await User.getPassword(id);
-		const passed = (passHash === Crypto.safeHash(password));
+		const passed = (passHash === await Crypto.safeHash(password));
 		if(!passed) { return conn.sendFail("Unable to log in. User or password was not valid."); }
 		
 		// The password has cleared. Build the necessary cookie tokens.

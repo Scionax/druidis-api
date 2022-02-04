@@ -10,8 +10,8 @@ export type { Redis } from "https://deno.land/x/redis@v0.25.2/mod.ts";
 export type { RedisReply } from "https://deno.land/x/redis@v0.25.2/protocol/mod.ts";
 
 // Crypto
-export { createHash } from "https://deno.land/std@0.123.0/hash/mod.ts";
-// export { encode as encode64, decode as decode64 } from "https://deno.land/std@0.123.0/encoding/base64.ts";
+export { crypto } from "https://deno.land/std@0.125.0/crypto/mod.ts";
+export { encode as encode64, decode as decode64 } from "https://deno.land/std@0.125.0/encoding/base64.ts";
 
 // File Systems
 export { Buffer } from "https://deno.land/std@0.123.0/io/buffer.ts";

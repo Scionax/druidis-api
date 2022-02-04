@@ -1,27 +1,28 @@
-import { createHash } from "../deps.ts";
-import { crypto } from "https://deno.land/std@0.125.0/crypto/mod.ts";
-import { encode } from "https://deno.land/std@0.125.0/encoding/base64.ts";
+import { encode64 } from "../deps.ts";
 
 export default abstract class Crypto {
 	
-	// SHA3-512
+	// SHA-512
 	static async safeHash(pass: string, length = 32) {
 		
 		const hashArray = new Uint8Array(
-			await crypto.subtle.digest("SHA3-512", new TextEncoder().encode(pass)),
+			await crypto.subtle.digest("SHA-512", new TextEncoder().encode(pass)),
 		)
 		
-		return encode(hashArray).substring(0, length);
+		return encode64(hashArray).substring(0, length);
 	}
 	
-	// Simple Hash (MD5), Tiny
+	// Simple Hash (SHA1), Tiny
 	static async simpleHash(pass: string, length = 4) {
 		
 		const hashArray = new Uint8Array(
-			await crypto.subtle.digest("MD5", new TextEncoder().encode(pass)),
+			await crypto.subtle.digest("SHA-1", new TextEncoder().encode(pass)),
 		)
 		
-		return encode(hashArray).substring(2, length + 2);
+		let hash = encode64(hashArray).substring(2, length + 2);
+		hash = hash.replace('/', "L");
+		hash = hash.replace("+", "X");
+		return hash;
 	}
 	
 	public static convertToReadableHash( hash: string ): string {
@@ -80,15 +81,4 @@ export default abstract class Crypto {
 	// 	const exportedAsBase64 = encode64(exportedKey);
 	// 	return `-----BEGIN PRIVATE KEY-----\n${exportedAsBase64}\n-----END PRIVATE KEY-----`;
 	// }
-	
-	static safeHashDeprecated(pass: string, length = 32): string {
-		return createHash("sha3-512").update(pass).toString("base64").substring(0, length);
-	}
-	
-	static simpleHashDeprecated(pass: string, length = 4): string {
-		let hash = createHash("md5").update(pass).toString("base64").substring(2, length + 2);
-		hash = hash.replace('/', "L");
-		hash = hash.replace("+", "X");
-		return hash;
-	}
 }

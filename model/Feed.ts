@@ -304,7 +304,7 @@ export class Feed {
 		}
 		
 		// Cache the Feed
-		Feed.cached[feedName].tag = Crypto.simpleHash(Math.floor(Date.now() / 1000).toString());
+		Feed.cached[feedName].tag = await Crypto.simpleHash(Math.floor(Date.now() / 1000).toString());
 		Feed.cached[feedName].posts = posts;
 		
 		Feed.assignNextRebuildTime(feedName);
