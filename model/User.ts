@@ -12,22 +12,26 @@ import Validate from "../core/Validate.ts";
 	u:{id}:profile = profileData					// First Name, Last Name, Country, State/Province, Postal Code, DOB, Email, Website, etc.
 	u:{id}:token = tokenHash						// The current token. If a cookie uses this token for the user, it can log in.
 	
+	// Mod Actions (see "Mod.ts")
 	u:{id}:modActions = LIST[modEventId,...]		// Redis List (LPUSH) that tracks any mod actions.
 	u:{id}:reports = LIST[modEventId,...]			// Redis List (LPUSH) that tracks any mod reports the user was targeted by.
 	
 	// Permissions
+	// Note: Bans & Mutes are global. No community-specific bans or mutes.
 	u:{id}:role = UserRole							// The global role of the user (user, mod, staff, dev, admin, superuser, etc)
 	u:{id}:roleLock = duration						// Timestamp until which this user's role is LOCKED (mute, ban, etc). 0 if user was never role-locked.
-	u:{id}:access = {
-		{comm} = AccessType							// The level (or type) of access in a given community.
+	
+	// Subscriptions
+	u:{id}:subsComm = Set							// List of communities the user is subscribed to.
+	
+	// Curation (not implemented)
+	u:{id}:curateComm:{comm} = {					// Curator settings for a given community.
+		{???} = ???
 	}
-	u:{id}:curator = {
-		{feed} = CuratorType						// The level (or type) of curator influence in a given feed, forum, community, etc.
-	}
+	u:{id}:curateFeed:{feed} = {...}				// Curator settings for a given feed (otherwise identical to 'community').
 	
 	// Planned for, or considered, but not yet implemented:
-	u:{id}:comm = [comm, comm] or Sorted Set			// List of communities the user is subscribed to.
-	u:{id}:subs = [sub, sub] or Sorted Set				// List of forums the user is subscribed to.
+	u:{id}:subsFeed = Set								// List of feeds, forums the user is subscribed to.
 	u:{id}:allowComment = 1
 	u:{id}:allowPost = 1
 	u:{id}:karma = ??
@@ -47,13 +51,22 @@ import Validate from "../core/Validate.ts";
 
 export const enum UserRole {
 	Banned = -5,
-	Muted = -3,
+	DistrustHigh = -4,
+	DistrustMid = -3,
+	Muted = -2,
+	DistrustLow = -1,
+	Guest = 0,
+	UserLimited = 1,
 	User = 2,
-	VIP = 3,
-	Mod = 6,
-	Staff = 7,
-	Admin = 9,
-	Superuser = 10,
+	TrustLow = 4,
+	TrustMid = 6,
+	TrustHigh = 8,
+	Verified = 10,
+	VIP = 12,
+	Mod = 14,
+	Staff = 16,
+	Admin = 18,
+	Superuser = 20,
 }
 
 // Can use User.convertToUserProfile(email, firstName, lastName, ...) to convert to UserProfile type.
@@ -113,11 +126,6 @@ export abstract class User {
 		const passHash = Crypto.safeHash(password);
 		return await RedisDB.db.set(`u:${id}:pass`, passHash);
 	}
-	
-	// addCommunity 	// adds a new community
-	// addSub			// adds a new sub (RedisDB.addToArray(hash)
-	// removeCommunity
-	// removeSub
 	
 	// ----- Checks ----- //
 	
@@ -217,6 +225,23 @@ export abstract class User {
 		return token === tokenSent;
 	}
 	
+	// ----- Subscriptions ----- //
+	
+	static async isSubscribedToCommunity(id: number, community: string) {
+		const subBool = await RedisDB.db.sismember(`u:${id}:subsComm`, `${community}`);
+		return subBool === 1 ? true : false;
+	}
+	
+	static async subscribeToCommunity(id: number, community: string) {
+		await RedisDB.db.sadd(`u:${id}:subsComm`, `${community}`);
+		return true;
+	}
+	
+	static async unsubscribeFromCommunity(id: number, community: string) {
+		await RedisDB.db.srem(`u:${id}:subsComm`, `${community}`);
+		return true;
+	}
+	
 	// ----- Permissions ----- //
 	
 	static async getRole(id: number): Promise<UserRole> {
@@ -228,14 +253,15 @@ export abstract class User {
 		return true;
 	}
 	
-	static async setMuted(id: number, seconds: number) {
-		if(seconds < 30) { return false; }
-		const endDate = Date.now() + (seconds * 1000);
+	static async setMuted(id: number, minutes: number) {
+		if(minutes < 30) { return false; }
+		const endDate = Date.now() + (minutes * 1000 * 60);
 		await RedisDB.db.set(`u:${id}:muted`, `${endDate}`);
 		await User.setRole(id, UserRole.Muted);
 		return true;
 	}
 	
+	// TODO: Update Muted Status
 	// Design the system so that to get unmuted you have to agree to some additional terms, write something up.
 	// Also indicate that you might be under higher scrutiny, less leniency if you screw around again.
 	static async updateMutedStatus(id: number) {
@@ -243,17 +269,6 @@ export abstract class User {
 		if(mutedTime > Date.now()) { return false; }
 		
 	}
-	
-	// Permissions
-	// u:{id}:role = UserRole							// The global role of the user (user, mod, staff, dev, admin, superuser, etc)
-	// u:{id}:muted = duration							// A timestamp until which this user is muted. 0 if user was never muted.
-	// u:{id}:access = {
-	// 	{comm} = AccessType							// The level (or type) of access in a given community.
-	// }
-	// u:{id}:curator = {
-	// 	{feed} = CuratorType						// The level (or type) of curator influence in a given feed, forum, community, etc.
-	// }
-	
 	
 	// ----- Validation for User Creation ----- //
 	

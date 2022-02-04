@@ -1,17 +1,5 @@
 import { log } from "../deps.ts";
-
-export const enum Curation {
-	Public = 0,
-	Registered = 1,			// Registered on the site.
-	TrustedUser = 2,		// Is trusted by the site.
-	VerifiedUser = 4,		// Is a verified user.
-	VIPUser = 5,			// A VIP member.
-	ApprovedUser = 6,		// An approved poster; given permission by moderator.
-	ModApproval = 7,		// Must be approved by a moderator or curator.
-	ModsOnly = 8,			// Restricted to moderators of the forum.
-	Curated = 9,			// Restricted to designated curators.
-	Admin = 10,				// Limited to admins.
-}
+import { UserRole } from "./User.ts";
 
 export const enum ForumType {
 	News = "News",			// Means the forum is based on current events. Should retrieve entries based on recency.
@@ -38,10 +26,10 @@ export class Forum {
 	private desc: string;								// Full description of the forum.
 	
 	// Curation Restrictions: Permissions for interacting with the forum (e.g. Public, TrustedUsers, ModApproval, Curated, etc).
-	private curation: {
-		view: Curation,				// Permissions to view the forum.
-		post: Curation,				// Permissions to post.
-		comment: Curation,			// Permissions to comment.
+	private permissions: {
+		view: UserRole,				// Permissions to view the forum.
+		post: UserRole,				// Permissions to post.
+		comment: UserRole,			// Permissions to comment.
 	};
 	
 	// Custom Rules
@@ -54,10 +42,10 @@ export class Forum {
 		this.related = [];
 		this.communities = [];
 		this.desc = "";
-		this.curation = {
-			view: Curation.Public,
-			post: Curation.Curated,
-			comment: Curation.TrustedUser,
+		this.permissions = {
+			view: UserRole.Guest,
+			post: UserRole.TrustMid,
+			comment: UserRole.TrustLow,
 		};
 		this.rules = [];
 	}
@@ -141,10 +129,10 @@ export class Forum {
 		return this;
 	}
 	
-	private setPermissions(view: Curation, post: Curation, comment: Curation) {
-		this.curation.view = view;
-		this.curation.post = post;
-		this.curation.comment = comment;
+	private setPermissions(view: UserRole, post: UserRole, comment: UserRole) {
+		this.permissions.view = view;
+		this.permissions.post = post;
+		this.permissions.comment = comment;
 	}
 	
 	private setDescription(desc: string) { this.desc = desc; }

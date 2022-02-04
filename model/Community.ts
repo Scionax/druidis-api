@@ -1,4 +1,5 @@
-import { Curation, Forum } from "./Forum.ts";
+import { Forum } from "./Forum.ts";
+import { UserRole } from "./User.ts";
 
 /*
 	Only Druidis can create communities. Must have an official moderator in charge of it. They also act as a partial curator.
@@ -35,28 +36,28 @@ export class Community {
 	private desc: string;								// Full description of the forum.
 	
 	// Rules & Curation: Restrictions for interacting with the forum (e.g. Public, TrustedUsers, ModApproval, Curated, etc).
-	private rules: {
-		view: Curation,				// Permissions to view the forum.
-		post: Curation,				// Permissions to post.
-		comment: Curation,			// Permissions to comment.
+	private permissions: {
+		view: UserRole,				// Permissions to view the forum.
+		post: UserRole,				// Permissions to post.
+		comment: UserRole,			// Permissions to comment.
 	};
 	
 	constructor(name: string) {
 		this.name = name;
 		this.related = {};
 		this.desc = "";
-		this.rules = {
-			view: Curation.Public,
-			post: Curation.Curated,
-			comment: Curation.TrustedUser,
+		this.permissions = {
+			view: UserRole.Guest,
+			post: UserRole.TrustMid,
+			comment: UserRole.TrustLow,
 		};
 	}
 	
 	// Add costs for posting and commenting.
-	private setRules(view: Curation, post: Curation, comment: Curation) {
-		this.rules.view = view;
-		this.rules.post = post;
-		this.rules.comment = comment;
+	private setRules(view: UserRole, post: UserRole, comment: UserRole) {
+		this.permissions.view = view;
+		this.permissions.post = post;
+		this.permissions.comment = comment;
 	}
 	
 	// Add descriptions for the culture.
