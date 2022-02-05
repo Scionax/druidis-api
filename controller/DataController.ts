@@ -7,6 +7,17 @@ import ServerMechanics from "../core/ServerMechanics.ts";
 import { log } from "../deps.ts";
 import Data from "../core/Data.ts";
 
+/*
+	Allows interactions with specific data APIs.
+	
+	GET /data/forums			// Fetch forum schema.
+	GET /data/feeds				// Fetch feed schema.
+	GET /data/html				// Fetch a website's HTML, scraping.
+	GET /data/test
+	
+	POST /data/shutdown			// Runs a graceful shutdown.
+*/
+
 export default class DataController extends WebController {
 	
 	async runHandler(conn: Conn): Promise<Response> {

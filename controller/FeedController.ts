@@ -3,6 +3,12 @@ import { Feed, FeedList } from "../model/Feed.ts";
 import { ForumPost, TableType } from "../model/ForumPost.ts";
 import WebController from "./WebController.ts";
 
+/*
+	Retrieves data from a feed:
+	
+	/feed/{feed}
+*/
+
 export default class FeedController extends WebController {
 	
 	async runHandler(conn: Conn): Promise<Response> {

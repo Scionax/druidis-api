@@ -17,6 +17,7 @@ import { ArticleSectionJson, ArticleSection, ArticleText, ArticleBold, ArticleQu
 		- Video				// A simple video implemented into a view.
 		- H2				// A header to split up large sections.
 		- H3				// A header to split up moderate sections.
+		- H4				// A header to split up small sections.
 */
 
 export class Article {
