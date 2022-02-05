@@ -5,7 +5,7 @@ import { Feed } from "../model/Feed.ts";
 import { config } from "../config.ts";
 import ServerMechanics from "../core/ServerMechanics.ts";
 import { log } from "../deps.ts";
-import Data from "../core/Data.ts";
+import FileSys from "../core/FileSys.ts";
 
 /*
 	Allows interactions with specific data APIs.
@@ -90,7 +90,7 @@ export default class DataController extends WebController {
 			// const index = Feed.cached["Entertainment"];
 			// return await conn.sendJson(index);
 			
-			const files = await Data.getFilesRecursive(`images`);
+			const files = await FileSys.getFilesRecursive(`images`);
 			return await conn.sendJson(files);
 		}
 		

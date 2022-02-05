@@ -18,4 +18,19 @@ export default abstract class FileSys {
 		
 		return true;
 	}
+	
+	static async getFilesRecursive(baseDir: string, relativeDir = ""): Promise<string[]> {
+		const path = `${Deno.cwd()}/${baseDir}${relativeDir}`;
+		let files: string[] = [];
+		
+		for await (const dirEntry of Deno.readDir(path)) {
+			if(dirEntry.isFile) {
+				files.push(`${relativeDir}/${dirEntry.name}`);
+			} else if(dirEntry.isDirectory) {
+				files = files.concat(await FileSys.getFilesRecursive(baseDir, `${relativeDir}/${dirEntry.name}`));
+			}
+		}
+		
+		return files;
+	}
 }

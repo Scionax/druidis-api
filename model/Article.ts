@@ -1,4 +1,3 @@
-import Data from "../core/Data.ts";
 import FileSys from "../core/FileSys.ts";
 import ObjectStorage from "../core/ObjectStorage.ts";
 import Web from "../core/Web.ts";
@@ -67,7 +66,7 @@ export class Article {
 	}
 	
 	static getArticleList(forum: string, initYear = 0) {
-		return Data.getFilesRecursive(`data/articles/${forum}` + (initYear ? `/${initYear}` : ""));
+		return FileSys.getFilesRecursive(`data/articles/${forum}` + (initYear ? `/${initYear}` : ""));
 	}
 	
 	appendSection(section: ArticleSection) {

@@ -1,6 +1,6 @@
 import WebController from "./WebController.ts";
 import Conn from "../core/Conn.ts";
-import Data from "../core/Data.ts";
+import FileSys from "../core/FileSys.ts";
 
 export default class AdminController extends WebController {
 	
@@ -34,7 +34,7 @@ export default class AdminController extends WebController {
 			// const index = Feed.cached["Entertainment"];
 			// return await conn.sendJson(index);
 			
-			const files = await Data.getFilesRecursive(`images`);
+			const files = await FileSys.getFilesRecursive(`images`);
 			return await conn.sendJson(files);
 		}
 		
