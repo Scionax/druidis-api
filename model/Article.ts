@@ -1,7 +1,8 @@
 import Data from "../core/Data.ts";
+import FileSys from "../core/FileSys.ts";
 import ObjectStorage from "../core/ObjectStorage.ts";
 import Web from "../core/Web.ts";
-import { ensureDir, exists, log } from "../deps.ts";
+import { ensureDir, log } from "../deps.ts";
 import { ArticleSectionJson, ArticleSection, ArticleText, ArticleBold, ArticleQuote, ArticleVideo, ArticleVideoSource, ArticleImage, ArticleH2, ArticleH3 } from "./ArticleSection.ts";
 
 /*
@@ -46,7 +47,7 @@ export class Article {
 	
 	// Creates an Article Instance from a file.
 	static async createFromPath(path: string): Promise<Article|false> {
-		if(!(await exists(path))) { return false; }
+		if(!(await FileSys.exists(path))) { return false; }
 		
 		const content = await Deno.readTextFile(path);
 		const json = JSON.parse(content);

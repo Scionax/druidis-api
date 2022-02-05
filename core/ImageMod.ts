@@ -1,4 +1,5 @@
-import { exists, log, path } from "../deps.ts";
+import { log, path } from "../deps.ts";
+import FileSys from "./FileSys.ts";
 
 /*
 	This class modifies images into webp format.
@@ -51,7 +52,7 @@ export default abstract class ImageMod {
 		ImageMod.binFile = path.resolve(binPath, binName);
 		
 		// Make sure the bin file exists.
-		if(!(await exists(ImageMod.binFile))) {
+		if(!(await FileSys.exists(ImageMod.binFile))) {
 			log.critical("Error with ImageMod.initialize(). Unable to verify that the bin file exists.");
 			return;
 		}
@@ -151,7 +152,7 @@ export default abstract class ImageMod {
 		if(!ImageMod.binFile) { log.critical("Cannot find `cwebp` binary. See ImageMod class for details."); return; }
 		
 		// Make sure the input image exists:
-		if(!(await exists(inputPath))) {
+		if(!(await FileSys.exists(inputPath))) {
 			log.warning("Error with ImageMod.convert(). Image does not exist.");
 			return;
 		}
