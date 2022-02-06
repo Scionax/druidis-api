@@ -3,6 +3,7 @@ export abstract class Sanitize {
 	static alpha(text: string) { return text.replaceAll(/[^a-zA-Z]/g, ""); }
 	static alphaNumeric(text: string) { return text.replaceAll(/[^a-zA-Z0-9]/g, ""); }
 	static sentence(text: string) { return text.replaceAll(/[^a-zA-Z0-9\w\ \.,:\'\"\[\]\(\)\%\#;!?\-\_]/g, ""); }
+	static slug(text: string) { return text.replaceAll(/[^a-zA-Z0-9_\-]/g, ""); }
 }
 
 export default abstract class Validate {

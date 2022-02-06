@@ -25,21 +25,19 @@ export const enum ModEventType {
 	Mute = 6,						// Silences someone, preventing their posting.
 	TemporaryBan = 8,				// Temporarily bans.
 	Ban = 10,						// Prevents someone from accessing Druidis with their account.
-}
-
-const enum AdminEventType {
-	ChangeUserData = 8,
-	ChangeRole = 10,
+	Invalid = -1,					// Invalid Event Type. Submission was incorrect.
 }
 
 export const enum ModWarningType {
 	None = 0,						// No applicable warning type.
-	Other = 1,						// Includes any warnings that don't apply elsewhere.
-	ExcessNegativity = 2,			// User has been excessively negative or demoralizing.
-	Incite = 3,						// User incited hostility, anger, trolling, flaming, etc.
-	Inappropriate = 5,				// Includes inappropriate behavior for the context.
-	Misinformation = 8,				// User provided inaccurate information in context where it was very important.
+	Misinformation = 1,				// User provided inaccurate information, but doesn't seem intentional.
+	Other = 2,						// Includes any warnings that don't apply elsewhere.
+	ExcessNegativity = 3,			// User has been excessively negative or demoralizing.
+	Inappropriate = 4,				// Includes inappropriate behavior for the context.
+	Incite = 6,						// User incited hostility, anger, trolling, flaming, etc.
+	Disinformation = 8,				// User provided grossly inaccurate information in context where it was very important.
 	Hateful = 10,					// Includes racism, sexism, anti-minority, bigotry, and other forms of hate.
+	Invalid = -1,					// Invalid Warning Type. Submission was incorrect.
 }
 
 type ModEvent = {
@@ -66,6 +64,38 @@ export abstract class Mod {
 		return role >= UserRole.SuperMod;
 	}
 	
+	// ----- Type Conversions ----- //
+	
+	// Submission Data to ModEventType
+	static getModEventType(eventTypeNum: number): ModEventType {
+		switch(eventTypeNum) {
+			case ModEventType.Report: return ModEventType.Report;
+			case ModEventType.Warning: return ModEventType.Warning;
+			case ModEventType.Quiet: return ModEventType.Quiet;
+			case ModEventType.Mute: return ModEventType.Mute;
+			case ModEventType.TemporaryBan: return ModEventType.TemporaryBan;
+			case ModEventType.Ban: return ModEventType.Ban;
+		}
+		
+		return ModEventType.Invalid;
+	}
+	
+	// Submission Data to ModWarningType
+	static getModWarningType(warningNum: number): ModWarningType {
+		switch(warningNum) {
+			case ModWarningType.None: return ModWarningType.None;
+			case ModWarningType.Misinformation: return ModWarningType.Misinformation;
+			case ModWarningType.Other: return ModWarningType.Other;
+			case ModWarningType.ExcessNegativity: return ModWarningType.ExcessNegativity;
+			case ModWarningType.Inappropriate: return ModWarningType.Inappropriate;
+			case ModWarningType.Incite: return ModWarningType.Incite;
+			case ModWarningType.Disinformation: return ModWarningType.Disinformation;
+			case ModWarningType.Hateful: return ModWarningType.Hateful;
+		}
+		
+		return ModWarningType.Invalid;
+	}
+	
 	// ----- Mod Events ----- //
 	
 	static async getModEventHistory(count = 25): Promise<ModEvent[]> {
@@ -87,6 +117,11 @@ export abstract class Mod {
 		}
 		
 		return arr;
+	}
+	
+	static async getModEvent(modEventId: number): Promise<ModEvent> {
+		const rawEvent = (await RedisDB.db.get(`modEvents:${modEventId}`)) || "";
+		return Mod.parseModEventString(rawEvent);
 	}
 	
 	static async getModEventsByIds(ids: string[]): Promise<ModEvent[]> {
@@ -117,16 +152,17 @@ export abstract class Mod {
 		return Mod.getModEventsByIds(ids);
 	}
 	
-	static async createModEvent(modId: number, userId: number, type: ModEventType, reason: string, warning: ModWarningType = 0): Promise<boolean> {
+	// Returns ID of the created Mod Event (or 0 on failure)
+	static async createModEvent(modId: number, userId: number, type: ModEventType, reason: string, warning: ModWarningType = ModWarningType.None): Promise<number> {
 		
 		// Ensure that we're working with a valid User ID.
-		if(!(await User.idExists(userId))) { return false; }
+		if(!(await User.idExists(userId))) { return 0; }
 		
 		// Verify the Mod's UserRole
 		const modRole = await User.getRole(modId);
 		
 		// Make sure the mod can perform these actions.
-		if(!(await Mod.canModPerformThis(modRole, type))) { return false; }
+		if(!(await Mod.canModPerformThis(modRole, type))) { return 0; }
 		
 		// Generate the Mod Event
 		const event: ModEvent = {
@@ -144,7 +180,7 @@ export abstract class Mod {
 		await Mod.attachModReportToUser(userId, modEventId);
 		await Mod.attachModActionToMod(modId, modEventId);
 		
-		return true;
+		return modEventId;
 	}
 	
 	static async attachModReportToUser(userId: number, modEventId: number) {
@@ -197,7 +233,7 @@ export abstract class Mod {
 			case ModWarningType.ExcessNegativity: message += `for excess negativity.`; break;
 			case ModWarningType.Incite: message += `for inciting hostility.`; break;
 			case ModWarningType.Inappropriate: message += `for inappropriate behavior.`; break;
-			case ModWarningType.Misinformation: message += `for spreading misinformation.`; break;
+			case ModWarningType.Disinformation: message += `for spreading misinformation.`; break;
 			case ModWarningType.Hateful: message += `for spreading hate.`; break;
 		}
 		

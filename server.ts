@@ -22,6 +22,8 @@ import ServerMechanics from "./core/ServerMechanics.ts";
 import RedisDB from "./core/RedisDB.ts";
 import AdminController from "./controller/AdminController.ts";
 import ObjectStorage from "./core/ObjectStorage.ts";
+import ArticleController from "./controller/ArticleController.ts";
+import ModController from "./controller/ModController.ts";
 
 // Handle Setup Arguments
 // for( let i = 0; i < Deno.args.length; i++ ) {
@@ -34,11 +36,13 @@ await ServerMechanics.setupLogger(); // Logging Handler (saves to log.txt)
 
 // Custom Routing Map
 const RouteMap: { [name: string]: WebController } = {
-	"post": new PostController(),
 	"data": new DataController(),			// API to pull important data, such as Fixed Forum Data.
 	"feed": new FeedController(),
 	"forum": new ForumController(),
 	"user": new UserController(),
+	"article": new ArticleController(),
+	"post": new PostController(),
+	"mod": new ModController(),
 	"admin": new AdminController(),
 };
 

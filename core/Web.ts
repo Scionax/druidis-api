@@ -16,14 +16,14 @@ export default abstract class Web {
 	static getSlugFromTitle(title: string): string {
 		
 		// Removes all extra whitespace and special symbols. Replaces whitespace with dashes to make it url safe.
-		let slug: string = title.replace(/[^a-zA-Z0-9]/g, " ").trim().replace(/\s+/g, '-').substr(0, 50);
+		let slug: string = title.replace(/[^a-zA-Z0-9]/g, " ").trim().replace(/\s+/g, '-').substring(0, 50);
 		
 		// Find nearest position of whitespace below 50 characters.
 		// Cut the URL, but make sure it ends at a space so that it's whole words being used.
 		if(slug.length > 49) {
 			for(let i = slug.length; i > 35; i--) {
 				if(slug[i] == "-") {
-					slug = slug.substr(0, i);
+					slug = slug.substring(0, i);
 					break;
 				}
 			}

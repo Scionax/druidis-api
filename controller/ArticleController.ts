@@ -1,10 +1,11 @@
 import WebController from "./WebController.ts";
 import Conn from "../core/Conn.ts";
+import { Sanitize } from "../core/Validate.ts";
 
 /*
 	Retrieves articles.
 	
-	GET /article/{article}				// Fetch article JSON.
+	GET /article/{category}/{article}				// Fetch article JSON.
 */
 
 export default class ArticleController extends WebController {
@@ -29,19 +30,28 @@ export default class ArticleController extends WebController {
 			return await conn.sendJson("Invalid Article Category");
 		}
 		
-		const category = conn.url2;
+		const category = Sanitize.slug(conn.url2);
 		
 		// Make sure the article exists, e.g. /article/{category}/{article}.json
 		if(!conn.url3) {
 			return await conn.sendJson("No Article Was Selected");
 		}
 		
-		const article = conn.url3;
+		const article = Sanitize.slug(conn.url3);
 		
-		// Check if the article's JSON file exists:
-		// TODO
+		// Return the article's JSON (if valid)
+		try {
+			const fileContents = await Deno.readTextFile(`./data/articles/${category}/${article}.json`);
+			return conn.sendDirect(fileContents);
+		}
 		
-		// Something invalid.
+		// If the article doesn't exist, the request is invalid:
+		catch(e) {
+			if(e instanceof Deno.errors.NotFound) {
+				// Do Nothing - will result in invalid request.
+			}
+		}
+		
 		return await conn.sendFail("Invalid Request.");
 	}
 	

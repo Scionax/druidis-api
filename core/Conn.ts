@@ -60,6 +60,11 @@ export default class Conn {
 	// ----- API Response ----- //
 	// ------------------------ //
 	
+	// return await WebController.sendDirect("Send a message or a JSON object.");
+	sendDirect( content: string ): Response {
+		return new Response(content, { status: 200, headers: this.headers });
+	}
+	
 	// return await WebController.sendJson("Path successful!");
 	sendJson( jsonObj: unknown ): Response {
 		return new Response(JSON.stringify(jsonObj), { status: 200, headers: this.headers });
