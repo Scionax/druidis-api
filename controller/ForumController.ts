@@ -6,13 +6,13 @@ import WebController from "./WebController.ts";
 
 export default class ForumController extends WebController {
 	
-	async runHandler(conn: Conn): Promise<Response> {
+	async runHandler(conn: Conn): Promise<boolean> {
 		
 		if(conn.request.method == "GET") {
 			return await this.getController(conn);
 		}
 		
-		return await conn.sendFail("Method Not Allowed", 405);
+		return conn.badRequest("Method Not Allowed", 405);
 	}
 	
 	// GET /forum/{forum}?h=10
@@ -22,13 +22,13 @@ export default class ForumController extends WebController {
 	//			- 'new' scan (default) means we're searching for the newest results, and stopping if we hit the High ID.
 	//			- 'asc' scan means we're searching upward from the High ID.
 	//			- 'desc' scan means we're searching downward from the Low ID.
-	async getController(conn: Conn): Promise<Response> {
+	async getController(conn: Conn): Promise<boolean> {
 		
 		const forum = conn.url2;
 		
 		// Make sure the forum exists, if one is listed:
 		if(!Forum.exists(forum)) {
-			return await conn.sendFail(`Forum Request: ${forum} does not exist.`);
+			return conn.badRequest(`Forum Request: ${forum} does not exist.`);
 		}
 		
 		// Get the user's query string parameters.
@@ -75,6 +75,6 @@ export default class ForumController extends WebController {
 			postResults.push(obj);
 		}
 		
-		return await conn.sendJson(postResults);
+		return conn.successJSON(postResults);
 	}
 }

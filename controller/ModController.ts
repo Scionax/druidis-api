@@ -26,18 +26,18 @@ import { Sanitize } from "../core/Validate.ts";
 
 export default class ModController extends WebController {
 	
-	async runHandler(conn: Conn): Promise<Response> {
+	async runHandler(conn: Conn): Promise<boolean> {
 		
 		// Must be logged in, or no method is allowed.
 		if(!conn.id) {
-			return await conn.sendFail("Method Not Allowed", 405);
+			return conn.badRequest("Method Not Allowed", 405);
 		}
 		
 		// Must be a moderator, or this page is disabled.
 		const role = await User.getRole(conn.id);
 		
 		if(role < UserRole.Mod) {
-			return await conn.sendFail("Method Not Allowed", 405);
+			return conn.badRequest("Method Not Allowed", 405);
 		}
 		
 		if(conn.request.method === "GET") {
@@ -48,14 +48,14 @@ export default class ModController extends WebController {
 			return await this.postController(conn);
 		}
 		
-		return await conn.sendFail("Method Not Allowed", 405);
+		return conn.badRequest("Method Not Allowed", 405);
 	}
 	
-	async getController(conn: Conn): Promise<Response> {
+	async getController(conn: Conn): Promise<boolean> {
 		
 		// Viewing /mod
 		if(!conn.url2) {
-			return await conn.sendJson("No Mod Content Designated");
+			return conn.successJSON("No Mod Content Designated");
 		}
 		
 		// Paging Params
@@ -74,17 +74,17 @@ export default class ModController extends WebController {
 				const userId = await User.getId(conn.url3);
 				
 				if(userId === 0) {
-					return await conn.sendFail("Invalid user.");
+					return conn.badRequest("Invalid user.");
 				}
 				
 				// User exists. Review their reports in order of recency.
 				const userReports = await Mod.getModReports(userId, pageIndex, pageCount);
-				return await conn.sendJson(userReports);
+				return conn.successJSON(userReports);
 			}
 			
 			// No user associated. Get a list of all reports, sorted by most recent:
 			const recentReports = await Mod.getModEventHistory(pageIndex, pageCount);
-			return await conn.sendJson(recentReports);
+			return conn.successJSON(recentReports);
 		}
 		
 		// /mod/actions
@@ -97,52 +97,52 @@ export default class ModController extends WebController {
 				const modId = await User.getId(conn.url3);
 				
 				if(modId === 0) {
-					return await conn.sendFail("Invalid user.");
+					return conn.badRequest("Invalid user.");
 				}
 				
 				// User exists. Review their reports in order of recency.
 				const modActions = await Mod.getModActions(modId, pageIndex, pageCount);
-				return await conn.sendJson(modActions);
+				return conn.successJSON(modActions);
 			}
 			
 			// No user associated. Get a list of all actions, sorted by most recent:
 			const recentReports = await Mod.getModEventHistory(pageIndex, pageCount);
-			return await conn.sendJson(recentReports);
+			return conn.successJSON(recentReports);
 		}
 		
 		// Something invalid.
-		return await conn.sendFail("Invalid Request.");
+		return conn.badRequest("Invalid Request.");
 	}
 	
-	async postController(conn: Conn): Promise<Response> {
+	async postController(conn: Conn): Promise<boolean> {
 		
 		// Retrieve Post Data
 		const rawData = await conn.getPostData();
-		if(conn.errorMessage) { return await conn.sendFail(conn.errorMessage); }
+		if(conn.status !== 200) { return false; }
 		
 		if(conn.url2 === "report") {
 			
 			if(!rawData.username) {
-				return await conn.sendFail(`Invalid username provided.`);
+				return conn.badRequest(`Invalid username provided.`);
 			}
 			
 			if(!rawData.type) {
-				return await conn.sendFail(`Must specify a 'type' of mod report.`);
+				return conn.badRequest(`Must specify a 'type' of mod report.`);
 			}
 			
 			if(!rawData.warning) {
-				return await conn.sendFail(`Must specify a 'warning' level (severity).`);
+				return conn.badRequest(`Must specify a 'warning' level (severity).`);
 			}
 			
 			if(!rawData.reason) {
-				return await conn.sendFail(`Must provide a 'reason' field for the mod report.`);
+				return conn.badRequest(`Must provide a 'reason' field for the mod report.`);
 			}
 			
 			// Make sure the user exists
 			const userId = await User.getId(Sanitize.slug(rawData.username.toString()));
 			
 			if(userId === 0) {
-				return await conn.sendFail("Invalid username provided.");
+				return conn.badRequest("Invalid username provided.");
 			}
 			
 			// Make sure the mod event type & warning types are valid.
@@ -150,11 +150,11 @@ export default class ModController extends WebController {
 			const warningType = Mod.getModWarningType(Number(rawData.warning));
 			
 			if(modType == -1) {
-				return await conn.sendFail(`Invalid 'type' assigned to mod report.`);
+				return conn.badRequest(`Invalid 'type' assigned to mod report.`);
 			}
 			
 			if(warningType === -1) {
-				return await conn.sendFail(`Invalid 'warning' severity provided.`);
+				return conn.badRequest(`Invalid 'warning' severity provided.`);
 			}
 			
 			// Create Mod Event
@@ -162,12 +162,12 @@ export default class ModController extends WebController {
 			
 			if(modEventId > 0) {
 				const modEvent = await Mod.getModEvent(modEventId);
-				return await conn.sendJson(modEvent);
+				return conn.successJSON(modEvent);
 			}
 			
-			return await conn.sendFail("Unknown Error: Mod Event Submission failed.");
+			return conn.badRequest("Unknown Error: Mod Event Submission failed.");
 		}
 		
-		return await conn.sendFail("Invalid API.");
+		return conn.badRequest("Invalid API.");
 	}
 }

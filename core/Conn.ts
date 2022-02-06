@@ -18,7 +18,8 @@ export default class Conn {
 	public id = 0;			// The user's ID
 	
 	// Response
-	public errorMessage = "";
+	public status = 200;			// Set to 400 on bad request (internal), 404 on no discovery, etc.
+	public responseText = "";
 	public headers = new Headers({
 		"Content-Type": "application/json; charset=utf-8",
 		// "Access-Control-Allow-Origin": "*",						// Required for CORS (but is insecure, so need to update)
@@ -38,8 +39,24 @@ export default class Conn {
 		this.url3 = seg.length >= 4 ? seg[3] : "";
 	}
 	
-	error(reason = ""): false {
-		this.errorMessage = reason;
+	// ----- API Response Types ----- //
+	
+	successJSON(content: string | Record<string, unknown> | unknown): true {
+		this.responseText = JSON.stringify(content);
+		return true;
+	}
+	
+	badRequest(reason: string, status = 400): false {
+		this.status = status;
+		this.responseText = `{"error": "${reason}"}`;
+		if(config.local) { log.debug(`${this.url.pathname} :: Bad Request: ${reason}`); }
+		return false;
+	}
+	
+	notFound(): false {
+		this.status = 404;
+		this.responseText = `{"error": "404 Page Not Found"}`;
+		if(config.local) { log.debug(`${this.url.pathname} :: 404 Not Found`); }
 		return false;
 	}
 	
@@ -56,26 +73,6 @@ export default class Conn {
 		if(!this.id) { return; }
 	}
 	
-	// ------------------------ //
-	// ----- API Response ----- //
-	// ------------------------ //
-	
-	// return await WebController.sendDirect("Send a message or a JSON object.");
-	sendDirect( content: string ): Response {
-		return new Response(content, { status: 200, headers: this.headers });
-	}
-	
-	// return await WebController.sendJson("Path successful!");
-	sendJson( jsonObj: unknown ): Response {
-		return new Response(JSON.stringify(jsonObj), { status: 200, headers: this.headers });
-	}
-	
-	// return await WebController.sendBadRequest("So that error just happened.");
-	sendFail( reason = "Bad Request", status = 400 ): Response {
-		log.debug(`${this.url.pathname} :: sendFail(): ${reason}`);
-		return new Response(`{"error": "${reason}"}`, { status: status, statusText: "Bad Request", headers: this.headers});
-	}
-	
 	// ------------------------- //
 	// ----- API Post Data ----- //
 	// ------------------------- //
@@ -86,7 +83,7 @@ export default class Conn {
 		const contentType = this.request.headers.get("content-type");
 		
 		if(!contentType) {
-			this.error("Invalid 'Content-Type' Header");
+			this.badRequest("Invalid 'Content-Type' Header");
 			return {};
 		}
 		
@@ -95,7 +92,7 @@ export default class Conn {
 			try {
 				return await this.request.json();
 			} catch {
-				this.error("Improperly Formatted JSON Object");
+				this.badRequest("Improperly Formatted JSON Object");
 				return {};
 			}
 		}
@@ -110,7 +107,7 @@ export default class Conn {
 				}
 				return formData;
 			} catch {
-				this.error("Invalid Form Data");
+				this.badRequest("Invalid Form Data");
 				return {};
 			}
 		}

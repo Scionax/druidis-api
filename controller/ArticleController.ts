@@ -10,7 +10,7 @@ import { Sanitize } from "../core/Validate.ts";
 
 export default class ArticleController extends WebController {
 	
-	async runHandler(conn: Conn): Promise<Response> {
+	async runHandler(conn: Conn): Promise<boolean> {
 		
 		if(conn.request.method === "GET") {
 			return await this.getController(conn);
@@ -20,21 +20,21 @@ export default class ArticleController extends WebController {
 			return await this.postController(conn);
 		}
 		
-		return await conn.sendFail("Method Not Allowed", 405);
+		return conn.badRequest("Method Not Allowed", 405);
 	}
 	
-	async getController(conn: Conn): Promise<Response> {
+	async getController(conn: Conn): Promise<boolean> {
 		
 		// Make sure the category is set, e.g. /article/{category}
 		if(!conn.url2) {
-			return await conn.sendJson("Invalid Article Category");
+			return conn.successJSON("Invalid Article Category");
 		}
 		
 		const category = Sanitize.slug(conn.url2);
 		
 		// Make sure the article exists, e.g. /article/{category}/{article}.json
 		if(!conn.url3) {
-			return await conn.sendJson("No Article Was Selected");
+			return conn.successJSON("No Article Was Selected");
 		}
 		
 		const article = Sanitize.slug(conn.url3);
@@ -42,7 +42,7 @@ export default class ArticleController extends WebController {
 		// Return the article's JSON (if valid)
 		try {
 			const fileContents = await Deno.readTextFile(`./data/articles/${category}/${article}.json`);
-			return conn.sendDirect(fileContents);
+			return conn.successJSON(fileContents);
 		}
 		
 		// If the article doesn't exist, the request is invalid:
@@ -52,15 +52,15 @@ export default class ArticleController extends WebController {
 			}
 		}
 		
-		return await conn.sendFail("Invalid Request.");
+		return conn.badRequest("Invalid Request.");
 	}
 	
-	async postController(conn: Conn): Promise<Response> {
+	async postController(conn: Conn): Promise<boolean> {
 		
 		// Retrieve Post Data
 		const rawData = await conn.getPostData();
 		
 		// Return Success
-		return await conn.sendJson(rawData);
+		return conn.successJSON(rawData);
 	}
 }

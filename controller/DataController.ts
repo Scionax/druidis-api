@@ -20,7 +20,7 @@ import FileSys from "../core/FileSys.ts";
 
 export default class DataController extends WebController {
 	
-	async runHandler(conn: Conn): Promise<Response> {
+	async runHandler(conn: Conn): Promise<boolean> {
 		
 		if(conn.request.method === "GET") {
 			return await this.getController(conn);
@@ -31,17 +31,17 @@ export default class DataController extends WebController {
 		}
 		
 		else if(conn.request.method === "OPTIONS") {
-			return await conn.sendJson("SUCCESS");
+			return conn.successJSON("SUCCESS");
 		}
 		
-		return await conn.sendFail("Method Not Allowed", 405);
+		return conn.badRequest("Method Not Allowed", 405);
 	}
 	
-	async getController(conn: Conn): Promise<Response> {
+	async getController(conn: Conn): Promise<boolean> {
 		
 		// Viewing /data
 		if(!conn.url2) {
-			return await conn.sendJson("No Data Type Selected");
+			return conn.successJSON("No Data Type Selected");
 		}
 		
 		// /data/forums API (Fixed Forum Data)
@@ -49,38 +49,38 @@ export default class DataController extends WebController {
 			
 			// Full Forum Data
 			if(conn.url3 === "expanded") {
-				return await conn.sendJson( Forum.schema );
+				return conn.successJSON( Forum.schema );
 			}
 			
 			// Specific Forum
 			if(conn.url3) {
 				if(Forum.exists(conn.url3)) {
-					return await conn.sendJson( Forum.get(conn.url3) );
+					return conn.successJSON( Forum.get(conn.url3) );
 				} else {
-					return await conn.sendFail("Forum does not exist.");
+					return conn.badRequest("Forum does not exist.");
 				}
 			}
 			
 			// Return Compact Forum Data
-			return await conn.sendJson( Forum.getCompactSchema() );
+			return conn.successJSON( Forum.getCompactSchema() );
 		}
 		
 		// /data/feeds API (Fixed Forum Data)
 		if(conn.url2 === "feeds") {
-			return await conn.sendJson( Feed.getCompactSchema() );
+			return conn.successJSON( Feed.getCompactSchema() );
 		}
 		
 		// Fetch a website's HTML.
 		if(conn.url2 === "html") {
 			const url = conn.url.searchParams.get("url");
-			if(!url) { return await conn.sendFail("Must include a URL."); }
+			if(!url) { return conn.badRequest("Must include a URL."); }
 			
 			try {
 				const textResponse = await fetch(url);
 				const textData = await textResponse.text();
-				return await conn.sendJson(textData);
+				return conn.successJSON(textData);
 			} catch {
-				return await conn.sendFail("Error while attempting to retrieve website.");
+				return conn.badRequest("Error while attempting to retrieve website.");
 			}
 		}
 		
@@ -88,17 +88,17 @@ export default class DataController extends WebController {
 		if(conn.url2 === "test") {
 			
 			// const index = Feed.cached["Entertainment"];
-			// return await conn.sendJson(index);
+			// return conn.successJSON(index);
 			
 			const files = await FileSys.getFilesRecursive(`images`);
-			return await conn.sendJson(files);
+			return conn.successJSON(files);
 		}
 		
 		// Something invalid.
-		return await conn.sendFail("Invalid Request.");
+		return conn.badRequest("Invalid Request.");
 	}
 	
-	async postController(conn: Conn): Promise<Response> {
+	async postController(conn: Conn): Promise<boolean> {
 		
 		// Retrieve Post Data
 		const rawData = await conn.getPostData();
@@ -106,7 +106,7 @@ export default class DataController extends WebController {
 		// Run Shutdown
 		if(conn.url2 === "shutdown") {
 			// const pass = Deno.env.get('SHUTDOWN_PASS');
-			// if(rawData.pass !== pass) { conn.sendFail("Stop that, it tickles."); }
+			// if(rawData.pass !== pass) { conn.badRequest("Stop that, it tickles."); }
 			
 			if(config.local && !config.prod) {
 				ServerMechanics.gracefulExit();
@@ -116,10 +116,10 @@ export default class DataController extends WebController {
 		// Run POST Test
 		else if(conn.url2 === "test") {
 			log.info(rawData);
-			return await conn.sendJson(rawData);
+			return conn.successJSON(rawData);
 		}
 		
 		// Return Success
-		return await conn.sendJson(rawData);
+		return conn.successJSON(rawData);
 	}
 }

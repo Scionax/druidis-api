@@ -7,7 +7,7 @@ const MonthInSeconds = 2592000;
 
 export default class UserController extends WebController {
 	
-	async runHandler(conn: Conn): Promise<Response> {
+	async runHandler(conn: Conn): Promise<boolean> {
 		
 		if(conn.request.method === "GET") {
 			return await this.getController(conn);
@@ -18,30 +18,30 @@ export default class UserController extends WebController {
 		}
 		
 		else if(conn.request.method === "OPTIONS") {
-			return await conn.sendJson("SUCCESS");
+			return conn.successJSON("SUCCESS");
 		}
 		
-		return await conn.sendFail("Method Not Allowed", 405);
+		return conn.badRequest("Method Not Allowed", 405);
 	}
 	
 	// GET /user
-	async getController(conn: Conn): Promise<Response> {
-		return await conn.sendFail();
+	async getController(conn: Conn): Promise<boolean> {
+		return await conn.badRequest("Bad Request");
 	}
 	
 	// POST /user/login
 	// POST /user/sign-up
-	async postController(conn: Conn): Promise<Response> {
+	async postController(conn: Conn): Promise<boolean> {
 		
 		// Retrieve Post Data
 		const rawData = await conn.getPostData();
-		if(conn.errorMessage) { return await conn.sendFail(conn.errorMessage); }
+		if(conn.status !== 200) { return false; }
 		
 		if(conn.url2 === "login") { return await this.runLogin(conn, rawData); }
 		if(conn.url2 === "sign-up") { return await this.runSignUp(conn, rawData); }
 		if(conn.url2 === "logout") { return await this.runLogOut(conn, rawData); }
 		
-		return await conn.sendFail("Invalid API.");
+		return conn.badRequest("Invalid API.");
 	}
 	
 	async runLogin(conn: Conn, rawData: { [id: string]: FormDataEntryValue} ) {
@@ -50,17 +50,17 @@ export default class UserController extends WebController {
 		const username = rawData.user as string;
 		const password = rawData.pass as string;
 		
-		if(!username || username.length === 0) { return conn.sendFail("Invalid username provided."); }
-		if(!password || password.length === 0) { return conn.sendFail("Invalid password provided."); }
+		if(!username || username.length === 0) { return conn.badRequest("Invalid username provided."); }
+		if(!password || password.length === 0) { return conn.badRequest("Invalid password provided."); }
 		
 		// Confirm ID Exists
 		const id = await User.getId(username);
-		if(!id) { return conn.sendFail("Server Error: Issue with retrieving user. May need to contact webmaster."); }
+		if(!id) { return conn.badRequest("Server Error: Issue with retrieving user. May need to contact webmaster."); }
 		
 		// Attemept to validate the login:
 		const passHash = await User.getPassword(id);
 		const passed = (passHash === await Crypto.safeHash(password));
-		if(!passed) { return conn.sendFail("Unable to log in. User or password was not valid."); }
+		if(!passed) { return conn.badRequest("Unable to log in. User or password was not valid."); }
 		
 		// The password has cleared. Build the necessary cookie tokens.
 		// id - the id of the user
@@ -70,7 +70,7 @@ export default class UserController extends WebController {
 		// Return login cookie.
 		conn.cookieSet("login", `${id}.${token}`, MonthInSeconds);
 		
-		return await conn.sendJson("Login successful.");
+		return conn.successJSON("Login successful.");
 	}
 	
 	async runSignUp(conn: Conn, rawData: { [id: string]: FormDataEntryValue} ) {
@@ -82,15 +82,15 @@ export default class UserController extends WebController {
 		const tos = rawData.tos === "true" ? true : false;
 		const privacy = rawData.privacy === "true" ? true : false;
 		
-		if(!username || username.length === 0) { return conn.sendFail("Invalid username provided."); }
-		if(!password || password.length === 0) { return conn.sendFail("Invalid password provided."); }
-		if(!email || email.length === 0) { return conn.sendFail("Invalid email provided."); }
-		if(!tos) { return conn.sendFail("Must agree to the terms of service."); }
-		if(!privacy) { return conn.sendFail("Must agree to the privacy policy."); }
+		if(!username || username.length === 0) { return conn.badRequest("Invalid username provided."); }
+		if(!password || password.length === 0) { return conn.badRequest("Invalid password provided."); }
+		if(!email || email.length === 0) { return conn.badRequest("Invalid email provided."); }
+		if(!tos) { return conn.badRequest("Must agree to the terms of service."); }
+		if(!privacy) { return conn.badRequest("Must agree to the privacy policy."); }
 		
 		// Determine if the system can create user with the given parameters:
 		const createError = await User.canCreateUser(username, password, email, {});
-		if(createError !== "") { return conn.sendFail(createError); }
+		if(createError !== "") { return conn.badRequest(createError); }
 		
 		// Verification passed. Create the user.
 		const id = await User.createUser(username, password, email, {})
@@ -102,13 +102,13 @@ export default class UserController extends WebController {
 		conn.cookieSet("login", `${id}.${token}`, MonthInSeconds);
 		
 		// Respond with success.
-		return await conn.sendJson({ id: id, success: true });
+		return conn.successJSON({ id: id, success: true });
 	}
 	
 	async runLogOut(conn: Conn, rawData: { [id: string]: FormDataEntryValue} ) {
 		
 		// Check if the user is logged in.
-		if(!conn.id) { return await conn.sendJson("Already logged out."); }
+		if(!conn.id) { return conn.successJSON("Already logged out."); }
 		
 		// Log the user out of this session (expire the cookie).
 		conn.cookieDelete("login");
@@ -118,7 +118,7 @@ export default class UserController extends WebController {
 			User.clearToken(conn.id);
 		}
 		
-		return await conn.sendJson("Logged out.");
+		return await conn.successJSON("Logged out.");
 	}
 }
 

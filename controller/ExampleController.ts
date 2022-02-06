@@ -3,22 +3,22 @@ import WebController from "./WebController.ts";
 
 export default class ExampleController extends WebController {
 	
-	async runHandler(conn: Conn): Promise<Response> {
+	async runHandler(conn: Conn): Promise<boolean> {
 		
 		if(conn.request.method == "GET") {
 			return await this.getController(conn);
 		}
 		
-		return await conn.sendFail("Method Not Allowed", 405);
+		return conn.badRequest("Method Not Allowed", 405);
 	}
 	
-	async getController(conn: Conn): Promise<Response> {
+	async getController(conn: Conn): Promise<boolean> {
 		
 		// Make sure the forum exists
 		if(!conn.url2) {
-			return await conn.sendFail("No additional page data exists.");
+			return conn.badRequest("No additional page data exists.");
 		}
 		
-		return await conn.sendJson("Path successful!");
+		return await conn.successJSON("Path successful!");
 	}
 }

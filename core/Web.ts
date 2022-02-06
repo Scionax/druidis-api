@@ -53,20 +53,20 @@ export default abstract class Web {
 	static async fetchOGData( conn: Conn, url: string ): Promise<void> {
 		
 		// If there was not a valid URL provided, end here:
-		if(!url || !Validate.isValidURL(url)) { conn.sendFail("Must provide a valid URL."); return; }
+		if(!url || !Validate.isValidURL(url)) { conn.badRequest("Must provide a valid URL."); return; }
 		
 		// Retrieve the site's HTML
 		const html = await Web.fetchHTML(url);
 		
 		if(!html) {
-			conn.sendFail("No HTML to return."); return;
+			conn.badRequest("No HTML to return."); return;
 		}
 		
 		// Retrieve OpenGraph (og:) tags:
 		const ogData = OpenGraph.getOGData(html);
 		
 		// Return OpenGraph Tags through API
-		conn.sendJson( ogData );
+		conn.successJSON( ogData );
 	}
 	
 	// Download From URL

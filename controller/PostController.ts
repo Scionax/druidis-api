@@ -13,7 +13,7 @@ export default class PostController extends WebController {
 	
 	static recentPosts: { [authorId: number]: TrackRecentPost } = {};		// Used to prevent re-submitting same material.
 	
-	async runHandler(conn: Conn): Promise<Response> {
+	async runHandler(conn: Conn): Promise<boolean> {
 		
 		if(conn.request.method === "GET") {
 			return await this.getController(conn);
@@ -24,45 +24,45 @@ export default class PostController extends WebController {
 		}
 		
 		else if(conn.request.method === "OPTIONS") {
-			return await conn.sendJson("SUCCESS");
+			return conn.successJSON("SUCCESS");
 		}
 		
-		return await conn.sendFail("Method Not Allowed", 405);
+		return conn.badRequest("Method Not Allowed", 405);
 	}
 	
 	// GET /post/:forum							// Returns recent posts that the user hasn't acquired yet.
 	// GET /post/:forum/:id						// Returns a specific post based on an id.
-	async getController(conn: Conn): Promise<Response> {
+	async getController(conn: Conn): Promise<boolean> {
 		
 		// Make sure the forum exists
 		if(!conn.url2 || !Forum.exists(conn.url2)) {
-			return await conn.sendFail("Post Request: Forum does not exist.");
+			return conn.badRequest("Post Request: Forum does not exist.");
 		}
 		
 		// If we're checking IDs, e.g. GET /post/:forum/:id
 		if(conn.url3) {
 			
 			// Make sure the slug is valid:
-			if(!Validate.isValidSlug(conn.url3)) { return await conn.sendFail("Post Request: Invalid post url."); }
+			if(!Validate.isValidSlug(conn.url3)) { return conn.badRequest("Post Request: Invalid post url."); }
 			
 			// Retrieve the post
 			const post = await ForumPost.loadFromId(conn.url2, Number(conn.url3), TableType.Post);
 			
 			if(post) {
-				return await conn.sendJson(post);
+				return conn.successJSON(post);
 			} else {
-				conn.error("Post Request: Invalid post.");
+				return conn.badRequest("Post Request: Invalid post.");
 			}
 		}
 		
-		return await conn.sendFail(conn.errorMessage);
+		return conn.badRequest("Bad Request");
 	}
 	
-	async postController(conn: Conn): Promise<Response> {
+	async postController(conn: Conn): Promise<boolean> {
 		
 		// Retrieve Post Data
 		const rawData = await conn.getPostData();
-		if(conn.errorMessage) { return await conn.sendFail(conn.errorMessage); }
+		if(conn.status !== 200) { return false; }
 		
 		// Make sure the author hasn't re-submitted the same content (such as accidentally clicking twice).
 		const authorId = 0; // TODO: Change authorID based on the Connection.
@@ -73,7 +73,7 @@ export default class PostController extends WebController {
 				PostController.recentPosts[authorId].url === rawData.url ||
 				PostController.recentPosts[authorId].lastPost > Math.floor(Date.now() / 1000) - 5		// Posted within last five seconds.
 			) {
-				return await conn.sendFail(`Resubmission Error. Already posted "${rawData.title}" at ${rawData.url}, or a re-submission was attempted too quickly.`);
+				return conn.badRequest(`Resubmission Error. Already posted "${rawData.title}" at ${rawData.url}, or a re-submission was attempted too quickly.`);
 			}
 		} else {
 			PostController.recentPosts[authorId] = { lastPost: 0, title: "", url: "" };
@@ -84,11 +84,11 @@ export default class PostController extends WebController {
 		// If there is no image data, prevent the post.
 		// TODO: Allow video submissions (eventually).
 		if(!rawData.origImg) {
-			return await conn.sendFail("Must include: origImg, w, and h.");
+			return conn.badRequest("Must include: origImg, w, and h.");
 		}
 		
 		if(!rawData.w || !rawData.h || typeof rawData.w !== "number" || typeof rawData.h !== "number") {
-			return await conn.sendFail("Must include a valid `w` (image width) and `h` (image height).");
+			return conn.badRequest("Must include a valid `w` (image width) and `h` (image height).");
 		}
 		
 		const width = Number(rawData.w as string);
@@ -108,7 +108,7 @@ export default class PostController extends WebController {
 		);
 		
 		// On Failure
-		if(typeof post === "string") { return await conn.sendFail(post); }
+		if(typeof post === "string") { return conn.badRequest(post); }
 		
 		// Prepare Directory & Image Name
 		const imageDir = post.getImageDir();
@@ -119,13 +119,13 @@ export default class PostController extends WebController {
 			const downloadedImage = await Web.download(`images/${imageDir}`, imagePath, rawData.origImg);
 			
 			if(downloadedImage === false) {
-				return await conn.sendFail("Unable to retrieve source image.");
+				return conn.badRequest("Unable to retrieve source image.");
 			}
 		}
 		
 		// TODO: if(typeof rawData.origImg === "File") // No need to download from an external page.
 		else {
-			return await conn.sendFail("Must provide an image source URL.");
+			return conn.badRequest("Must provide an image source URL.");
 		}
 		
 		post.applyNewPost();							// Post Successful. Update NEW POST values.
@@ -153,10 +153,10 @@ export default class PostController extends WebController {
 			const fileContents = await Deno.readFile(fullImagePath);
 			ObjectStorage.save(imageDir, imagePath, fileContents, "image/webp");
 		} catch(e) {
-			return await conn.sendFail(`Error on image transfer: ${(e as Error).message}`);
+			return conn.badRequest(`Error on image transfer: ${(e as Error).message}`);
 		}
 		
 		// Return Success
-		return await conn.sendJson(post);
+		return conn.successJSON(post);
 	}
 }
