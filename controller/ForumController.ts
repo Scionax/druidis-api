@@ -75,6 +75,6 @@ export default class ForumController extends WebController {
 			postResults.push(obj);
 		}
 		
-		return conn.successJSON(postResults);
+		return conn.success(postResults);
 	}
 }

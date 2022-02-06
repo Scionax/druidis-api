@@ -51,6 +51,6 @@ export default class FeedController extends WebController {
 			postResults.push(obj);
 		}
 		
-		return conn.successJSON({ tag: Feed.cached[feed as FeedList].tag, start: start, end: end, posts: postResults });
+		return conn.success({ tag: Feed.cached[feed as FeedList].tag, start: start, end: end, posts: postResults });
 	}
 }

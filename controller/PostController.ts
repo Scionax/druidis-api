@@ -24,7 +24,7 @@ export default class PostController extends WebController {
 		}
 		
 		else if(conn.request.method === "OPTIONS") {
-			return conn.successJSON("SUCCESS");
+			return conn.success("SUCCESS");
 		}
 		
 		return conn.badRequest("Method Not Allowed", 405);
@@ -49,7 +49,7 @@ export default class PostController extends WebController {
 			const post = await ForumPost.loadFromId(conn.url2, Number(conn.url3), TableType.Post);
 			
 			if(post) {
-				return conn.successJSON(post);
+				return conn.success(post);
 			} else {
 				return conn.badRequest("Post Request: Invalid post.");
 			}
@@ -157,6 +157,6 @@ export default class PostController extends WebController {
 		}
 		
 		// Return Success
-		return conn.successJSON(post);
+		return conn.success(post);
 	}
 }

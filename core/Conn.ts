@@ -41,7 +41,7 @@ export default class Conn {
 	
 	// ----- API Response Types ----- //
 	
-	successJSON(content: string | Record<string, unknown> | unknown): true {
+	success(content: string | Record<string, unknown> | unknown): true {
 		this.responseText = JSON.stringify(content);
 		return true;
 	}

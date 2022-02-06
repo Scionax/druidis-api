@@ -18,7 +18,7 @@ export default class UserController extends WebController {
 		}
 		
 		else if(conn.request.method === "OPTIONS") {
-			return conn.successJSON("SUCCESS");
+			return conn.success("SUCCESS");
 		}
 		
 		return conn.badRequest("Method Not Allowed", 405);
@@ -70,7 +70,7 @@ export default class UserController extends WebController {
 		// Return login cookie.
 		conn.cookieSet("login", `${id}.${token}`, MonthInSeconds);
 		
-		return conn.successJSON("Login successful.");
+		return conn.success("Login successful.");
 	}
 	
 	async runSignUp(conn: Conn, rawData: { [id: string]: FormDataEntryValue} ) {
@@ -102,13 +102,13 @@ export default class UserController extends WebController {
 		conn.cookieSet("login", `${id}.${token}`, MonthInSeconds);
 		
 		// Respond with success.
-		return conn.successJSON({ id: id, success: true });
+		return conn.success({ id: id, success: true });
 	}
 	
 	async runLogOut(conn: Conn, rawData: { [id: string]: FormDataEntryValue} ) {
 		
 		// Check if the user is logged in.
-		if(!conn.id) { return conn.successJSON("Already logged out."); }
+		if(!conn.id) { return conn.success("Already logged out."); }
 		
 		// Log the user out of this session (expire the cookie).
 		conn.cookieDelete("login");
@@ -118,7 +118,7 @@ export default class UserController extends WebController {
 			User.clearToken(conn.id);
 		}
 		
-		return await conn.successJSON("Logged out.");
+		return await conn.success("Logged out.");
 	}
 }
 

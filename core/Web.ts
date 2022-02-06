@@ -66,7 +66,7 @@ export default abstract class Web {
 		const ogData = OpenGraph.getOGData(html);
 		
 		// Return OpenGraph Tags through API
-		conn.successJSON( ogData );
+		conn.success( ogData );
 	}
 	
 	// Download From URL

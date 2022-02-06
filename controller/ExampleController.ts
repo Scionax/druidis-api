@@ -19,6 +19,6 @@ export default class ExampleController extends WebController {
 			return conn.badRequest("No additional page data exists.");
 		}
 		
-		return await conn.successJSON("Path successful!");
+		return await conn.success("Path successful!");
 	}
 }

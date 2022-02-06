@@ -15,7 +15,7 @@ export default class AdminController extends WebController {
 		}
 		
 		else if(conn.request.method === "OPTIONS") {
-			return conn.successJSON("SUCCESS");
+			return conn.success("SUCCESS");
 		}
 		
 		return conn.badRequest("Method Not Allowed", 405);
@@ -25,7 +25,7 @@ export default class AdminController extends WebController {
 		
 		// Viewing /admin
 		if(!conn.url2) {
-			return conn.successJSON("No Admin Content Designated");
+			return conn.success("No Admin Content Designated");
 		}
 		
 		// /admin/user
@@ -35,12 +35,12 @@ export default class AdminController extends WebController {
 			// return conn.successJSON(index);
 			
 			const files = await FileSys.getFilesRecursive(`images`);
-			return conn.successJSON(files);
+			return conn.success(files);
 		}
 		
 		// /admin/user-list
 		if(conn.url2 === "user-list") {
-			return conn.successJSON("Some User Lists");
+			return conn.success("Some User Lists");
 		}
 		
 		// Something invalid.
@@ -53,6 +53,6 @@ export default class AdminController extends WebController {
 		const rawData = await conn.getPostData();
 		
 		// Return Success
-		return conn.successJSON(rawData);
+		return conn.success(rawData);
 	}
 }

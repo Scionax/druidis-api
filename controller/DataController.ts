@@ -31,7 +31,7 @@ export default class DataController extends WebController {
 		}
 		
 		else if(conn.request.method === "OPTIONS") {
-			return conn.successJSON("SUCCESS");
+			return conn.success("SUCCESS");
 		}
 		
 		return conn.badRequest("Method Not Allowed", 405);
@@ -41,7 +41,7 @@ export default class DataController extends WebController {
 		
 		// Viewing /data
 		if(!conn.url2) {
-			return conn.successJSON("No Data Type Selected");
+			return conn.success("No Data Type Selected");
 		}
 		
 		// /data/forums API (Fixed Forum Data)
@@ -49,25 +49,25 @@ export default class DataController extends WebController {
 			
 			// Full Forum Data
 			if(conn.url3 === "expanded") {
-				return conn.successJSON( Forum.schema );
+				return conn.success( Forum.schema );
 			}
 			
 			// Specific Forum
 			if(conn.url3) {
 				if(Forum.exists(conn.url3)) {
-					return conn.successJSON( Forum.get(conn.url3) );
+					return conn.success( Forum.get(conn.url3) );
 				} else {
 					return conn.badRequest("Forum does not exist.");
 				}
 			}
 			
 			// Return Compact Forum Data
-			return conn.successJSON( Forum.getCompactSchema() );
+			return conn.success( Forum.getCompactSchema() );
 		}
 		
 		// /data/feeds API (Fixed Forum Data)
 		if(conn.url2 === "feeds") {
-			return conn.successJSON( Feed.getCompactSchema() );
+			return conn.success( Feed.getCompactSchema() );
 		}
 		
 		// Fetch a website's HTML.
@@ -78,7 +78,7 @@ export default class DataController extends WebController {
 			try {
 				const textResponse = await fetch(url);
 				const textData = await textResponse.text();
-				return conn.successJSON(textData);
+				return conn.success(textData);
 			} catch {
 				return conn.badRequest("Error while attempting to retrieve website.");
 			}
@@ -91,7 +91,7 @@ export default class DataController extends WebController {
 			// return conn.successJSON(index);
 			
 			const files = await FileSys.getFilesRecursive(`images`);
-			return conn.successJSON(files);
+			return conn.success(files);
 		}
 		
 		// Something invalid.
@@ -116,10 +116,10 @@ export default class DataController extends WebController {
 		// Run POST Test
 		else if(conn.url2 === "test") {
 			log.info(rawData);
-			return conn.successJSON(rawData);
+			return conn.success(rawData);
 		}
 		
 		// Return Success
-		return conn.successJSON(rawData);
+		return conn.success(rawData);
 	}
 }

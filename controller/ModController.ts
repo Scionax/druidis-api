@@ -55,7 +55,7 @@ export default class ModController extends WebController {
 		
 		// Viewing /mod
 		if(!conn.url2) {
-			return conn.successJSON("No Mod Content Designated");
+			return conn.success("No Mod Content Designated");
 		}
 		
 		// Paging Params
@@ -79,12 +79,12 @@ export default class ModController extends WebController {
 				
 				// User exists. Review their reports in order of recency.
 				const userReports = await Mod.getModReports(userId, pageIndex, pageCount);
-				return conn.successJSON(userReports);
+				return conn.success(userReports);
 			}
 			
 			// No user associated. Get a list of all reports, sorted by most recent:
 			const recentReports = await Mod.getModEventHistory(pageIndex, pageCount);
-			return conn.successJSON(recentReports);
+			return conn.success(recentReports);
 		}
 		
 		// /mod/actions
@@ -102,12 +102,12 @@ export default class ModController extends WebController {
 				
 				// User exists. Review their reports in order of recency.
 				const modActions = await Mod.getModActions(modId, pageIndex, pageCount);
-				return conn.successJSON(modActions);
+				return conn.success(modActions);
 			}
 			
 			// No user associated. Get a list of all actions, sorted by most recent:
 			const recentReports = await Mod.getModEventHistory(pageIndex, pageCount);
-			return conn.successJSON(recentReports);
+			return conn.success(recentReports);
 		}
 		
 		// Something invalid.
@@ -162,7 +162,7 @@ export default class ModController extends WebController {
 			
 			if(modEventId > 0) {
 				const modEvent = await Mod.getModEvent(modEventId);
-				return conn.successJSON(modEvent);
+				return conn.success(modEvent);
 			}
 			
 			return conn.badRequest("Unknown Error: Mod Event Submission failed.");
