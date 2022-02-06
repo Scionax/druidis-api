@@ -98,12 +98,17 @@ export abstract class Mod {
 	
 	// ----- Mod Events ----- //
 	
-	static async getModEventHistory(count = 25): Promise<ModEvent[]> {
-		const eventCount = await RedisDB.getCounter("modEvents");
+	static async getModEvent(modEventId: number): Promise<ModEvent> {
+		const rawEvent = (await RedisDB.db.get(`modEvents:${modEventId}`)) || "";
+		return Mod.parseModEventString(rawEvent);
+	}
+	
+	static async getModEventHistory(index = 0, count = 25): Promise<ModEvent[]> {
+		const eventCount = (await RedisDB.getCounter("modEvents")) - index;
 		const pl = RedisDB.db.pipeline();
 		
 		// Loop through and retrieve the last {count} mod events:
-		const max = Math.max(1, eventCount - count);
+		const max = Math.max(1, eventCount - count + 1);
 		for(let i = eventCount; i >= max; i--) {
 			await pl.get(`modEvents:${i}`);
 		}
@@ -117,11 +122,6 @@ export abstract class Mod {
 		}
 		
 		return arr;
-	}
-	
-	static async getModEvent(modEventId: number): Promise<ModEvent> {
-		const rawEvent = (await RedisDB.db.get(`modEvents:${modEventId}`)) || "";
-		return Mod.parseModEventString(rawEvent);
 	}
 	
 	static async getModEventsByIds(ids: string[]): Promise<ModEvent[]> {
@@ -142,13 +142,13 @@ export abstract class Mod {
 		return arr;
 	}
 	
-	static async getModReports(userId: number, start = 0, count = 10): Promise<ModEvent[]> {
-		const ids = await RedisDB.db.lrange(`u:${userId}:reports`, start, start + count) || [];
+	static async getModReports(userId: number, index = 0, count = 10): Promise<ModEvent[]> {
+		const ids = await RedisDB.db.lrange(`u:${userId}:reports`, index, index + count - 1) || [];
 		return Mod.getModEventsByIds(ids);
 	}
 	
-	static async getModActions(modId: number, start = 0, count = 10): Promise<ModEvent[]> {
-		const ids = await RedisDB.db.lrange(`u:${modId}:modActions`, start, start + count) || [];
+	static async getModActions(modId: number, index = 0, count = 10): Promise<ModEvent[]> {
+		const ids = await RedisDB.db.lrange(`u:${modId}:modActions`, index, index + count - 1) || [];
 		return Mod.getModEventsByIds(ids);
 	}
 	

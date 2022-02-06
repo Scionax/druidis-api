@@ -1,7 +1,7 @@
 import WebController from "./WebController.ts";
 import Conn from "../core/Conn.ts";
 import { User, UserRole } from "../model/User.ts";
-import { Mod, ModEventType } from "../model/Mod.ts";
+import { Mod } from "../model/Mod.ts";
 import { Sanitize } from "../core/Validate.ts";
 
 /*
@@ -9,7 +9,12 @@ import { Sanitize } from "../core/Validate.ts";
 	
 	// Reviews
 	GET /mod/reports						// List of recent reports
-	GET /mod/reports?user={username}		// List of username's reports
+	GET /mod/reports/{username}				// List of username's reports
+	GET /mod/actions/{username}				// List of username's mod actions
+	
+	...
+		?page={page}						// Assign an index for pagination.
+		?count={count}						// Assign number of results for pagination. Defaults to 50.
 	
 	// Submitting a mod report:
 	POST /mod/report
@@ -40,7 +45,7 @@ export default class ModController extends WebController {
 		}
 		
 		else if(conn.request.method === "POST") {
-			return await this.postController(conn, role);
+			return await this.postController(conn);
 		}
 		
 		return await conn.sendFail("Method Not Allowed", 405);
@@ -53,30 +58,55 @@ export default class ModController extends WebController {
 			return await conn.sendJson("No Mod Content Designated");
 		}
 		
-		// /mod/recent
+		// Paging Params
+		const params = conn.url.searchParams;
+		const page = Math.max(Number(params.get("page")), 1);				// Page to start on (for pagination).
+		const pageCount = Math.min(Number(params.get("count")) || 25, 50);	// The number of reports to return per page.
+		const pageIndex = (page - 1) * pageCount;							// Index position to start at.
+		
+		// /mod/reports
 		if(conn.url2 === "reports") {
 			
-			const count = 50;
-			
-			// Check if we're looking at a specific user:
-			const username = conn.url.searchParams.get("user");
-			
-			if(username) {
+			// /mod/reports/{username}
+			if(conn.url3) {
 				
 				// Make sure the user exists
-				const userId = await User.getId(username);
+				const userId = await User.getId(conn.url3);
 				
 				if(userId === 0) {
-					return await conn.sendFail("Invalid username.");
+					return await conn.sendFail("Invalid user.");
 				}
 				
 				// User exists. Review their reports in order of recency.
-				const userReports = await Mod.getModReports(userId, 0, 10);
+				const userReports = await Mod.getModReports(userId, pageIndex, pageCount);
 				return await conn.sendJson(userReports);
 			}
 			
 			// No user associated. Get a list of all reports, sorted by most recent:
-			const recentReports = await Mod.getModEventHistory(count);
+			const recentReports = await Mod.getModEventHistory(pageIndex, pageCount);
+			return await conn.sendJson(recentReports);
+		}
+		
+		// /mod/actions
+		if(conn.url2 === "actions") {
+			
+			// /mod/actions/{username}
+			if(conn.url3) {
+				
+				// Make sure the user exists
+				const userId = await User.getId(conn.url3);
+				
+				if(userId === 0) {
+					return await conn.sendFail("Invalid user.");
+				}
+				
+				// User exists. Review their reports in order of recency.
+				const modActions = await Mod.getModActions(userId, pageIndex, pageCount);
+				return await conn.sendJson(modActions);
+			}
+			
+			// No user associated. Get a list of all actions, sorted by most recent:
+			const recentReports = await Mod.getModEventHistory(pageIndex, pageCount);
 			return await conn.sendJson(recentReports);
 		}
 		
@@ -84,7 +114,7 @@ export default class ModController extends WebController {
 		return await conn.sendFail("Invalid Request.");
 	}
 	
-	async postController(conn: Conn, role: UserRole): Promise<Response> {
+	async postController(conn: Conn): Promise<Response> {
 		
 		// Retrieve Post Data
 		const rawData = await conn.getPostData();
