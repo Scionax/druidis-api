@@ -94,14 +94,14 @@ export default class ModController extends WebController {
 			if(conn.url3) {
 				
 				// Make sure the user exists
-				const userId = await User.getId(conn.url3);
+				const modId = await User.getId(conn.url3);
 				
-				if(userId === 0) {
+				if(modId === 0) {
 					return await conn.sendFail("Invalid user.");
 				}
 				
 				// User exists. Review their reports in order of recency.
-				const modActions = await Mod.getModActions(userId, pageIndex, pageCount);
+				const modActions = await Mod.getModActions(modId, pageIndex, pageCount);
 				return await conn.sendJson(modActions);
 			}
 			
