@@ -4,18 +4,17 @@ import { log } from "../deps.ts";
 
 export default class Conn {
 	
-	// Core Values
-	public requestEvent: Deno.RequestEvent;
-	public request: Request;
-	public url: URL;
+	// Request Values
+	public readonly request: Request;
 	
 	// URL Segments
-	public url1: string;
-	public url2: string;
-	public url3: string;
+	public readonly url: URL;
+	public readonly url1: string;
+	public readonly url2: string;
+	public readonly url3: string;
 	
 	// Login Data
-	public id = 0;			// The user's ID
+	public id = 0;					// The user's ID
 	
 	// Response
 	public status = 200;			// Set to 400 on bad request (internal), 404 on no discovery, etc.
@@ -27,16 +26,51 @@ export default class Conn {
 		// "Access-Control-Allow-Credentials": "true",				// Required for CORS Pre-Flight (but is insecure, so need to update)
 	});
 	
-	constructor(requestEvent: Deno.RequestEvent) {
-		this.requestEvent = requestEvent;
-		this.request = this.requestEvent.request;
-		this.url = new URL(requestEvent.request.url);
-		
-		// Prepare URL Segments
+	constructor(request: Request) {
+		this.request = request;
+		this.url = new URL(request.url);
 		const seg = decodeURI(this.url.pathname).split("/");		// e.g. ["", "api", "post"]
 		this.url1 = seg.length >= 2 ? seg[1] : "";
 		this.url2 = seg.length >= 3 ? seg[2] : "";
 		this.url3 = seg.length >= 4 ? seg[3] : "";
+	}
+	
+	// ----- Create Testing Connection ----- //
+	
+	/*
+		// Example of creating a GET test connection:
+		const request = Conn.createGetRequest("http://localhost/api/somePath");
+		const conn = new Conn(request);
+	*/
+	
+	// const request = Conn.createGetRequest("http://localhost/api/somePath");
+	static createGetRequest(urlPath: string) {
+		const reqInit: RequestInit = {
+			"cache": "no-cache",
+			"credentials": "same-origin",
+			"method": "GET",
+			"redirect": "follow",
+			"headers": {
+				"content-type": "application/json",
+			}
+		};
+		return new Request(urlPath, reqInit);
+	}
+	
+	// const postBody = { "message": "Hello World!"; }
+	// const request = Conn.createPostRequest("http://localhost/api/somePath", postContents);
+	static createPostRequest(urlPath: string, postBody: Record<string, string>) {
+		const reqInit: RequestInit = {
+			"body": JSON.stringify(postBody),
+			"cache": "no-cache",
+			"credentials": "same-origin",
+			"method": "POST",
+			"redirect": "follow",
+			"headers": {
+				"content-type": "application/json",
+			}
+		};
+		return new Request(urlPath, reqInit);
 	}
 	
 	// ----- API Response Types ----- //

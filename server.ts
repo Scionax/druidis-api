@@ -68,7 +68,7 @@ async function handle(conn: Deno.Conn) {
 	const httpConn = Deno.serveHttp(conn);
 	
 	for await (const requestEvent of httpConn) {
-		const conn = new Conn(requestEvent);
+		const conn = new Conn(requestEvent.request);
 		
 		// Run the login / processing user step:
 		await conn.processActiveUser();

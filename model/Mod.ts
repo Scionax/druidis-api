@@ -230,10 +230,11 @@ export abstract class Mod {
 		switch(warning) {
 			case ModWarningType.None: message += `without attaching a warning.`; break;
 			case ModWarningType.Other: message += `for a custom reason.`; break;
+			case ModWarningType.Misinformation: message += `for spreading misinformation.`; break;
 			case ModWarningType.ExcessNegativity: message += `for excess negativity.`; break;
-			case ModWarningType.Incite: message += `for inciting hostility.`; break;
 			case ModWarningType.Inappropriate: message += `for inappropriate behavior.`; break;
-			case ModWarningType.Disinformation: message += `for spreading misinformation.`; break;
+			case ModWarningType.Incite: message += `for inciting hostility.`; break;
+			case ModWarningType.Disinformation: message += `for spreading disinformation.`; break;
 			case ModWarningType.Hateful: message += `for spreading hate.`; break;
 		}
 		

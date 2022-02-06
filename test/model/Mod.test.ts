@@ -23,8 +23,8 @@ Deno.test("Verify Mod Summaries.", () => {
 	const sum1 = Mod.summarizeModEvent("TheMod", "AnnoyingGuest", ModEventType.Report, ModWarningType.Incite);
 	assert(sum1 === "TheMod reported AnnoyingGuest for inciting hostility.", `Mod Summary (Report) is reporting incorrectly.`);
 	
-	const sum2 = Mod.summarizeModEvent("TheMod", "AnnoyingGuest", ModEventType.Mute, ModWarningType.Misinformation);
-	assert(sum2 === "TheMod muted AnnoyingGuest for spreading misinformation.", `Mod Summary (Mute) is reporting incorrectly.`);
+	const sum2 = Mod.summarizeModEvent("TheMod", "AnnoyingGuest", ModEventType.Mute, ModWarningType.Disinformation);
+	assert(sum2 === "TheMod muted AnnoyingGuest for spreading disinformation.", `Mod Summary (Mute) is reporting incorrectly.`);
 	
 	const sum3 = Mod.summarizeModEvent("TheMod", "AnnoyingGuest", ModEventType.Warning, ModWarningType.Inappropriate);
 	assert(sum3 === "TheMod warned AnnoyingGuest for inappropriate behavior.", `Mod Summary (Apply Warning) is reporting incorrectly.`);
@@ -32,7 +32,7 @@ Deno.test("Verify Mod Summaries.", () => {
 
 Deno.test("Parse Mod Event String.", () => {
 	const parse1 = Mod.parseModEventString("2~3~6~8~1631240337~Zoopy Boop");
-	const parse2 = Mod.parseModEventString("2~3~1~2~1631240337~Ziggle Zam");
+	const parse2 = Mod.parseModEventString("2~3~1~3~1631240337~Ziggle Zam");
 	
 	assert(parse1.reason === "Zoopy Boop" && parse1.modId === 2 && parse1.type === ModEventType.Mute, "Mod.parseModEventString() is parsing incorrectly.");
 	assert(parse2.userId === 3 && parse2.time === 1631240337 && parse2.warning === ModWarningType.ExcessNegativity, "Mod.parseModEventString() is parsing incorrectly.");
