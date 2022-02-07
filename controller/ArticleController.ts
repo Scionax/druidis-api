@@ -42,7 +42,7 @@ export default class ArticleController extends WebController {
 		// Return the article's JSON (if valid)
 		try {
 			const fileContents = await Deno.readTextFile(`./data/articles/${category}/${article}.json`);
-			return conn.success(fileContents);
+			return conn.success(JSON.parse(fileContents));
 		}
 		
 		// If the article doesn't exist, the request is invalid:
