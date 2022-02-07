@@ -16,13 +16,10 @@ export default class Conn {
 	// Login Data
 	public id = 0;					// The user's ID
 	
-	// Response
-	public headers = new Headers({
-		"Content-Type": "application/json; charset=utf-8",
-		// "Access-Control-Allow-Origin": "*",						// Required for CORS (but is insecure, so need to update)
-		// "Access-Control-Allow-Headers": "Content-Type",			// Required for CORS Pre-Flight
-		// "Access-Control-Allow-Credentials": "true",				// Required for CORS Pre-Flight (but is insecure, so need to update)
-	});
+	// Header Notes
+	// "Access-Control-Allow-Origin": "*",						// Required for CORS (but is insecure, so need to update)
+	// "Access-Control-Allow-Headers": "Content-Type",			// Required for CORS Pre-Flight
+	// "Access-Control-Allow-Credentials": "true",				// Required for CORS Pre-Flight (but is insecure, so need to update)
 	
 	constructor(request: Request) {
 		this.request = request;
