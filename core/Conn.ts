@@ -17,8 +17,6 @@ export default class Conn {
 	public id = 0;					// The user's ID
 	
 	// Response
-	public status = 200;			// Set to 400 on bad request (internal), 404 on no discovery, etc.
-	public responseText = "";
 	public headers = new Headers({
 		"Content-Type": "application/json; charset=utf-8",
 		// "Access-Control-Allow-Origin": "*",						// Required for CORS (but is insecure, so need to update)
@@ -75,23 +73,43 @@ export default class Conn {
 	
 	// ----- API Response Types ----- //
 	
-	success(content: string | Record<string, unknown> | unknown): true {
-		this.responseText = JSON.stringify(content);
-		return true;
+	// return conn.sendHTML("<div>Some Page!</div>");
+	sendHTML( html: string ): Response {
+		return new Response(html, { status: 200, headers: {
+			"Content-Type": "text/html; charset=utf-8",
+		}});
 	}
 	
-	badRequest(reason: string, status = 400): false {
-		this.status = status;
-		this.responseText = `{"error": "${reason}"}`;
+	// return conn.sendJSON("Path successful!");
+	sendJSON( jsonObj: unknown ): Response {
+		return new Response(JSON.stringify(jsonObj), { status: 200, headers: {
+			"Content-Type": "application/json; charset=utf-8",
+		}});
+	}
+	
+	// return conn.sendCustom("Some Data", 200, {"Content-Type": "text/html; charset=utf-8"}, true);
+	sendCustom( content: unknown, status: number, headers: Headers, isJson = true ): Response {
+		if(isJson) { return new Response(JSON.stringify(content), { status: status, headers }); }
+		return new Response(content as string, { status: status, headers });
+	}
+	
+	// return conn.badRequest("So that error just happened.");
+	badRequest( reason = "Bad Request", status = 400 ): Response {
 		if(config.local) { log.debug(`${this.url.pathname} :: Bad Request: ${reason}`); }
-		return false;
+		return new Response(`{"error": "${reason}"}`, {
+			status: status,
+			statusText: reason,
+			headers: {
+				"Content-Type": "application/json; charset=utf-8",
+		}});
 	}
 	
-	notFound(): false {
-		this.status = 404;
-		this.responseText = `{"error": "404 Page Not Found"}`;
+	// return conn.notFound("<div>Some Page!</div>");
+	notFound(): Response {
 		if(config.local) { log.debug(`${this.url.pathname} :: 404 Not Found`); }
-		return false;
+		return new Response(`{"error": "404 Page Not Found"}`, { status: 404, headers: {
+			"Content-Type": "text/html; charset=utf-8",
+		}});
 	}
 	
 	// ----- Process Active Users ----- //
@@ -111,14 +129,13 @@ export default class Conn {
 	// ----- API Post Data ----- //
 	// ------------------------- //
 	
-	async getPostData(): Promise<{ [id: string]: FormDataEntryValue }> {
+	async getPostData(): Promise<Response|{ [id: string]: FormDataEntryValue; }> {
 		
 		// Verify Correct Content-Type
 		const contentType = this.request.headers.get("content-type");
 		
 		if(!contentType) {
-			this.badRequest("Invalid 'Content-Type' Header");
-			return {};
+			return this.badRequest("Invalid 'Content-Type' Header");
 		}
 		
 		// Handle JSON data.
@@ -126,8 +143,7 @@ export default class Conn {
 			try {
 				return await this.request.json();
 			} catch {
-				this.badRequest("Improperly Formatted JSON Object");
-				return {};
+				return this.badRequest("Improperly Formatted JSON Object");
 			}
 		}
 		
@@ -141,8 +157,7 @@ export default class Conn {
 				}
 				return formData;
 			} catch {
-				this.badRequest("Invalid Form Data");
-				return {};
+				return this.badRequest("Invalid Form Data");
 			}
 		}
 		
@@ -152,12 +167,16 @@ export default class Conn {
 	// ----- Cookie Handling ----- //
 	
 	// maxAge is seconds to expire
-	cookieSet(name: string, value: string, maxAge: number, secure = config.prod, httpOnly = false, path = "/") {
-		this.headers.append("Set-Cookie", `${name}=${value}; Max-Age=${maxAge}; Path=${path}; SameSite=Lax;` + (httpOnly ? " HttpOnly;" : "") + (secure ? " Secure;" : ""));
+	// const headers = new Headers({"Content-Type": "application/json; charset=utf-8"});
+	// conn.cookieSet(headers, "login", `${id}.${token}`, MonthInSeconds);
+	cookieSet(headers: Headers, name: string, value: string, maxAge: number, secure = config.prod, httpOnly = false, path = "/") {
+		headers.append("Set-Cookie", `${name}=${value}; Max-Age=${maxAge}; Path=${path}; SameSite=Lax;` + (httpOnly ? " HttpOnly;" : "") + (secure ? " Secure;" : ""));
 	}
 	
-	cookieDelete(name: string, path = "/") {
-		this.headers.append("Set-Cookie", `${name}=deleted; Path=${path}; Expires=Thu, 01 Jan 1970 00:00:00 GMT;`);
+	// const headers = new Headers({"Content-Type": "application/json; charset=utf-8"});
+	// conn.cookieDelete(headers, "login");
+	cookieDelete(headers: Headers, name: string, path = "/") {
+		headers.append("Set-Cookie", `${name}=deleted; Path=${path}; Expires=Thu, 01 Jan 1970 00:00:00 GMT;`);
 	}
 	
 	cookieGet(): Record<string, string> {

@@ -4,7 +4,7 @@ import FileSys from "../core/FileSys.ts";
 
 export default class AdminController extends WebController {
 	
-	async runHandler(conn: Conn): Promise<boolean> {
+	async runHandler(conn: Conn): Promise<Response> {
 		
 		if(conn.request.method === "GET") {
 			return await this.getController(conn);
@@ -15,17 +15,17 @@ export default class AdminController extends WebController {
 		}
 		
 		else if(conn.request.method === "OPTIONS") {
-			return conn.success("SUCCESS");
+			return conn.sendJSON("SUCCESS");
 		}
 		
 		return conn.badRequest("Method Not Allowed", 405);
 	}
 	
-	async getController(conn: Conn): Promise<boolean> {
+	async getController(conn: Conn): Promise<Response> {
 		
 		// Viewing /admin
 		if(!conn.url2) {
-			return conn.success("No Admin Content Designated");
+			return conn.sendJSON("No Admin Content Designated");
 		}
 		
 		// /admin/user
@@ -35,24 +35,25 @@ export default class AdminController extends WebController {
 			// return conn.successJSON(index);
 			
 			const files = await FileSys.getFilesRecursive(`images`);
-			return conn.success(files);
+			return conn.sendJSON(files);
 		}
 		
 		// /admin/user-list
 		if(conn.url2 === "user-list") {
-			return conn.success("Some User Lists");
+			return conn.sendJSON("Some User Lists");
 		}
 		
 		// Something invalid.
 		return conn.badRequest("Invalid Request.");
 	}
 	
-	async postController(conn: Conn): Promise<boolean> {
+	async postController(conn: Conn): Promise<Response> {
 		
 		// Retrieve Post Data
 		const rawData = await conn.getPostData();
+		if(rawData instanceof Response) { return rawData; }
 		
 		// Return Success
-		return conn.success(rawData);
+		return conn.sendJSON(rawData);
 	}
 }

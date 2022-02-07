@@ -6,7 +6,7 @@ import WebController from "./WebController.ts";
 
 export default class ForumController extends WebController {
 	
-	async runHandler(conn: Conn): Promise<boolean> {
+	async runHandler(conn: Conn): Promise<Response> {
 		
 		if(conn.request.method == "GET") {
 			return await this.getController(conn);
@@ -22,7 +22,7 @@ export default class ForumController extends WebController {
 	//			- 'new' scan (default) means we're searching for the newest results, and stopping if we hit the High ID.
 	//			- 'asc' scan means we're searching upward from the High ID.
 	//			- 'desc' scan means we're searching downward from the Low ID.
-	async getController(conn: Conn): Promise<boolean> {
+	async getController(conn: Conn): Promise<Response> {
 		
 		const forum = conn.url2;
 		
@@ -75,6 +75,6 @@ export default class ForumController extends WebController {
 			postResults.push(obj);
 		}
 		
-		return conn.success(postResults);
+		return conn.sendJSON(postResults);
 	}
 }

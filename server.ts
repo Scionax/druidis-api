@@ -76,17 +76,14 @@ async function handle(conn: Deno.Conn) {
 		// Launch an associated Route Map, if found (such as 'api')
 		if(RouteMap[conn.url1]) {
 			try {
-				await RouteMap[conn.url1].runHandler(conn);
+				await requestEvent.respondWith( await RouteMap[conn.url1].runHandler(conn) );
 			} catch (error) {
 				log.error(error);
-				conn.badRequest("Internal issue with service.");
+				await requestEvent.respondWith( conn.badRequest("Internal issue with service.") );
 			}
 		} else {
-			conn.notFound();
+			await requestEvent.respondWith( conn.notFound() );
 		}
-		
-		// Run Response
-		await requestEvent.respondWith( new Response(conn.responseText, { status: conn.status, headers: conn.headers }) );
 	}
 }
 

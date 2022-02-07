@@ -11,7 +11,7 @@ import WebController from "./WebController.ts";
 
 export default class FeedController extends WebController {
 	
-	async runHandler(conn: Conn): Promise<boolean> {
+	async runHandler(conn: Conn): Promise<Response> {
 		
 		if(conn.request.method == "GET") {
 			return await this.getController(conn);
@@ -22,7 +22,7 @@ export default class FeedController extends WebController {
 	
 	// When requesting posts from a Feed, you must supply a tag ('tag') and a position ('p').
 	// If the 'tag' doesn't match, it means the feed was rebuilt, and it will send you the new results instead.
-	async getController(conn: Conn): Promise<boolean> {
+	async getController(conn: Conn): Promise<Response> {
 		
 		const feed = conn.url2 ? conn.url2 : "Home";
 		
@@ -51,6 +51,6 @@ export default class FeedController extends WebController {
 			postResults.push(obj);
 		}
 		
-		return conn.success({ tag: Feed.cached[feed as FeedList].tag, start: start, end: end, posts: postResults });
+		return conn.sendJSON({ tag: Feed.cached[feed as FeedList].tag, start: start, end: end, posts: postResults });
 	}
 }

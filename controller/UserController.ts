@@ -7,7 +7,7 @@ const MonthInSeconds = 2592000;
 
 export default class UserController extends WebController {
 	
-	async runHandler(conn: Conn): Promise<boolean> {
+	async runHandler(conn: Conn): Promise<Response> {
 		
 		if(conn.request.method === "GET") {
 			return await this.getController(conn);
@@ -18,24 +18,24 @@ export default class UserController extends WebController {
 		}
 		
 		else if(conn.request.method === "OPTIONS") {
-			return conn.success("SUCCESS");
+			return conn.sendJSON("SUCCESS");
 		}
 		
 		return conn.badRequest("Method Not Allowed", 405);
 	}
 	
 	// GET /user
-	async getController(conn: Conn): Promise<boolean> {
+	async getController(conn: Conn): Promise<Response> {
 		return await conn.badRequest("Bad Request");
 	}
 	
 	// POST /user/login
 	// POST /user/sign-up
-	async postController(conn: Conn): Promise<boolean> {
+	async postController(conn: Conn): Promise<Response> {
 		
 		// Retrieve Post Data
 		const rawData = await conn.getPostData();
-		if(conn.status !== 200) { return false; }
+		if(rawData instanceof Response) { return rawData; }
 		
 		if(conn.url2 === "login") { return await this.runLogin(conn, rawData); }
 		if(conn.url2 === "sign-up") { return await this.runSignUp(conn, rawData); }
@@ -68,9 +68,10 @@ export default class UserController extends WebController {
 		const token = await User.getToken(id, true);
 		
 		// Return login cookie.
-		conn.cookieSet("login", `${id}.${token}`, MonthInSeconds);
+		const headers = new Headers({"Content-Type": "application/json; charset=utf-8"});
+		conn.cookieSet(headers, "login", `${id}.${token}`, MonthInSeconds);
 		
-		return conn.success("Login successful.");
+		return conn.sendCustom("Login successful.", 200, headers, true);
 	}
 	
 	async runSignUp(conn: Conn, rawData: { [id: string]: FormDataEntryValue} ) {
@@ -99,26 +100,28 @@ export default class UserController extends WebController {
 		const token = await User.getToken(id, true);
 		
 		// Return login cookie.
-		conn.cookieSet("login", `${id}.${token}`, MonthInSeconds);
+		const headers = new Headers({"Content-Type": "application/json; charset=utf-8"});
+		conn.cookieSet(headers, "login", `${id}.${token}`, MonthInSeconds);
 		
 		// Respond with success.
-		return conn.success({ id: id, success: true });
+		return conn.sendCustom({ id: id, success: true }, 200, headers, true);
 	}
 	
 	async runLogOut(conn: Conn, rawData: { [id: string]: FormDataEntryValue} ) {
 		
 		// Check if the user is logged in.
-		if(!conn.id) { return conn.success("Already logged out."); }
+		if(!conn.id) { return conn.sendJSON("Already logged out."); }
 		
 		// Log the user out of this session (expire the cookie).
-		conn.cookieDelete("login");
+		const headers = new Headers({"Content-Type": "application/json; charset=utf-8"});
+		conn.cookieDelete(headers, "login");
 		
 		// If the user wants to log out of ALL instances, we must also remove the login token.
 		if(rawData.logOutFull) {
 			User.clearToken(conn.id);
 		}
 		
-		return await conn.success("Logged out.");
+		return await conn.sendCustom("Logged out.", 200, headers, true);
 	}
 }
 

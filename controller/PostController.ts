@@ -13,7 +13,7 @@ export default class PostController extends WebController {
 	
 	static recentPosts: { [authorId: number]: TrackRecentPost } = {};		// Used to prevent re-submitting same material.
 	
-	async runHandler(conn: Conn): Promise<boolean> {
+	async runHandler(conn: Conn): Promise<Response> {
 		
 		if(conn.request.method === "GET") {
 			return await this.getController(conn);
@@ -24,7 +24,7 @@ export default class PostController extends WebController {
 		}
 		
 		else if(conn.request.method === "OPTIONS") {
-			return conn.success("SUCCESS");
+			return conn.sendJSON("SUCCESS");
 		}
 		
 		return conn.badRequest("Method Not Allowed", 405);
@@ -32,7 +32,7 @@ export default class PostController extends WebController {
 	
 	// GET /post/:forum							// Returns recent posts that the user hasn't acquired yet.
 	// GET /post/:forum/:id						// Returns a specific post based on an id.
-	async getController(conn: Conn): Promise<boolean> {
+	async getController(conn: Conn): Promise<Response> {
 		
 		// Make sure the forum exists
 		if(!conn.url2 || !Forum.exists(conn.url2)) {
@@ -49,7 +49,7 @@ export default class PostController extends WebController {
 			const post = await ForumPost.loadFromId(conn.url2, Number(conn.url3), TableType.Post);
 			
 			if(post) {
-				return conn.success(post);
+				return conn.sendJSON(post);
 			} else {
 				return conn.badRequest("Post Request: Invalid post.");
 			}
@@ -58,11 +58,11 @@ export default class PostController extends WebController {
 		return conn.badRequest("Bad Request");
 	}
 	
-	async postController(conn: Conn): Promise<boolean> {
+	async postController(conn: Conn): Promise<Response> {
 		
 		// Retrieve Post Data
 		const rawData = await conn.getPostData();
-		if(conn.status !== 200) { return false; }
+		if(rawData instanceof Response) { return rawData; }
 		
 		// Make sure the author hasn't re-submitted the same content (such as accidentally clicking twice).
 		const authorId = 0; // TODO: Change authorID based on the Connection.
@@ -157,6 +157,6 @@ export default class PostController extends WebController {
 		}
 		
 		// Return Success
-		return conn.success(post);
+		return conn.sendJSON(post);
 	}
 }

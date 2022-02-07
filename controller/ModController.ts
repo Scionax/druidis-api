@@ -26,7 +26,7 @@ import { Sanitize } from "../core/Validate.ts";
 
 export default class ModController extends WebController {
 	
-	async runHandler(conn: Conn): Promise<boolean> {
+	async runHandler(conn: Conn): Promise<Response> {
 		
 		// Must be logged in, or no method is allowed.
 		if(!conn.id) {
@@ -51,11 +51,11 @@ export default class ModController extends WebController {
 		return conn.badRequest("Method Not Allowed", 405);
 	}
 	
-	async getController(conn: Conn): Promise<boolean> {
+	async getController(conn: Conn): Promise<Response> {
 		
 		// Viewing /mod
 		if(!conn.url2) {
-			return conn.success("No Mod Content Designated");
+			return conn.sendJSON("No Mod Content Designated");
 		}
 		
 		// Paging Params
@@ -79,12 +79,12 @@ export default class ModController extends WebController {
 				
 				// User exists. Review their reports in order of recency.
 				const userReports = await Mod.getModReports(userId, pageIndex, pageCount);
-				return conn.success(userReports);
+				return conn.sendJSON(userReports);
 			}
 			
 			// No user associated. Get a list of all reports, sorted by most recent:
 			const recentReports = await Mod.getModEventHistory(pageIndex, pageCount);
-			return conn.success(recentReports);
+			return conn.sendJSON(recentReports);
 		}
 		
 		// /mod/actions
@@ -102,23 +102,23 @@ export default class ModController extends WebController {
 				
 				// User exists. Review their reports in order of recency.
 				const modActions = await Mod.getModActions(modId, pageIndex, pageCount);
-				return conn.success(modActions);
+				return conn.sendJSON(modActions);
 			}
 			
 			// No user associated. Get a list of all actions, sorted by most recent:
 			const recentReports = await Mod.getModEventHistory(pageIndex, pageCount);
-			return conn.success(recentReports);
+			return conn.sendJSON(recentReports);
 		}
 		
 		// Something invalid.
 		return conn.badRequest("Invalid Request.");
 	}
 	
-	async postController(conn: Conn): Promise<boolean> {
+	async postController(conn: Conn): Promise<Response> {
 		
 		// Retrieve Post Data
 		const rawData = await conn.getPostData();
-		if(conn.status !== 200) { return false; }
+		if(rawData instanceof Response) { return rawData; }
 		
 		if(conn.url2 === "report") {
 			
@@ -162,7 +162,7 @@ export default class ModController extends WebController {
 			
 			if(modEventId > 0) {
 				const modEvent = await Mod.getModEvent(modEventId);
-				return conn.success(modEvent);
+				return conn.sendJSON(modEvent);
 			}
 			
 			return conn.badRequest("Unknown Error: Mod Event Submission failed.");
